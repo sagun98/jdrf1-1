@@ -5,3 +5,12 @@
 .protocol-doc {
     padding: 0 0 2px 7px;
 }
+
+.berry_red_text {
+    color:#8e0000;
+    font-weight: bold;
+}
+
+.berry_red_background {
+    background:#8e0000;
+}

@@ -14,6 +14,7 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
+    <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
   </head>
 
    <body>
@@ -40,7 +41,7 @@
             <div class="form-group">
               <input type="password" placeholder="Password" class="form-control">
             </div>
-            <button type="submit" class="btn btn-success" style="background: #11511b" disabled>Log in</button>
+            <button type="submit" class="btn btn-success berry_red_background" disabled>Log in</button>
           </form>
         </div><!--/.navbar-collapse -->
       </div>
@@ -48,14 +49,15 @@
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div class="jumbotron">
       <div class="container" style="background: url('{% static 'img/large_figure.png' %}') no-repeat center">
-        <img src="{% static 'img/hutlab_jdrf_logo_small_border.png' %}" heigh=100 width=125>
+        <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
       </div>
     </div>
 
     <div class="container">
           <h2>About</h2>
           <p>The JDRF Microbiome Bioinformatics Center (JDRF-MBIC) aims to create a common framework of computing infrastructure, software, and protocols to help translate the research of microbiome into actionable T1D diagnostics and therapies. We seek to implement scalable tools for data storage, retrieval, and integration; implement a web interface for data retrieval and deposition; and support and train the microbiome consortium. The Center will leverage existing computational infrastructure of the Harvard University Research Computing team. Members of the consortium include microbiome research groups from across the world.</p>
-          <p>This site is the data depostion site (JDRF1). It is the upload site for level 3 data.</p>
+          <p><span class="berry_red_text">This site is the data depostion site (JDRF1). It is the upload site for level 3 data.</span></p>
+          <span class="berry_red_text">Log in to the site to upload data and metadata.</span>
       </div>
 
       <hr>
