@@ -31,10 +31,16 @@
         </div>
           <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-              <li><a href="/login">Login</a></li>
+              {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
               <li class="active"><a href="/about">About</a></li>
               </li>
             </ul>
+        {% if user.is_authenticated %}
+          <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
+        </form>
+        {% endif %}
         </div><!--/.navbar-collapse -->
       </div>
     </nav>

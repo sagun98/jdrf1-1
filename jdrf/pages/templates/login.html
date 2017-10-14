@@ -48,15 +48,22 @@
       <h2>Login</h2>
           <p><span class="berry_red_text">This site is the data depostion site (JDRF1). It is the upload site for level 3 data.</span></p>
           <span class="berry_red_text">Log in to the site to upload data and metadata.</span>
-          <form>
+           <p></p>
+          <form method="post" action="{% url 'login' %}">
+           {% csrf_token %}
             <div class="form-group">
-              <input type="text" placeholder="Username" class="form-control login_width">
+              {{ form.username.label_tag }} {{ form.username }}
             </div>
             <div class="form-group">
-              <input type="password" placeholder="Password" class="form-control login_width">
+              {{ form.password.label_tag }} {{ form.password }}
             </div>
-            <button type="submit" class="btn btn-success berry_red_background" disabled>Log in</button>
+            <input type="submit" value="Log in" class="btn btn-success berry_red_background"/>
+            <input type="hidden" name="next" value="{{ next }}" />
           </form>
+         {% if form.errors %}
+          <p></p>
+          <p>Your username and password do not match. Please try again.</p>
+        {% endif %}
       </div>
 
       <hr>

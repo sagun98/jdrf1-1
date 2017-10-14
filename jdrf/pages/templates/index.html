@@ -23,7 +23,7 @@
             <div class="inner">
               <nav>
                 <ul class="nav masthead-nav">
-                  <li><a href="login">Login</a></li>
+                  {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
                   <li><a href="about">About</a></li>
                 </ul>
               </nav>

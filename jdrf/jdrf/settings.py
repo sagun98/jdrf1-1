@@ -35,6 +35,8 @@ DEBUG = True
 # ADD the host for this app here
 ALLOWED_HOSTS = ['0.0.0.0', 'localhost']
 
+# Set login redirect page
+LOGIN_REDIRECT_URL = "about"
 
 # Application definition
 
