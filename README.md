@@ -1,6 +1,6 @@
-# JDRF1 MBIC #
+# JDRF1 MIBC #
 
-This repository contains the source and configuration for the JDRF1 MBIC site.
+This repository contains the source and configuration for the JDRF1 MIBC site.
 
 The JDRF1 site is the data depository. This site hosts raw data and metadata uploads.
 
