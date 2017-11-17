@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import logging
 
 # set the location user will upload files to
 UPLOAD_FOLDER = "/opt/upload_folder/"
@@ -21,6 +22,14 @@ def get_env(key):
         return os.environ[key]
     except KeyError:
         print("Please set the environment variable: "+key)
+
+# set up the logger
+# set up logging config
+logging.basicConfig(filename='jdrf1.log',level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+    datefmt='%m/%d/%Y %I:%M:%S %p')
+logger=logging.getLogger('jdrf1')
+logger.info("Setting are being applied")
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

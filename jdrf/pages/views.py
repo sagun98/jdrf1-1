@@ -23,34 +23,31 @@ import logging
 @csrf_exempt
 @requires_csrf_token
 def upload_files(request):
-    # set up logging config
-    logging.basicConfig(filename='upload_file.log',level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p')
-
+    # get the logger
+    logger=logging.getLogger('jdrf1')
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
             # save the file as chunks
             file = request.FILES['file']
-            logging.info("Uploading file: %s", file.name)
+            logger.info("Uploading file: %s", file.name)
             user = str(request.user)
-            logging.info("Uploading for user: %s", user)
+            logger.info("Uploading for user: %s", user)
             upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
             # if a folder does not exist for the user, then create
             if not os.path.isdir(upload_folder):
                 try:
                     os.makedirs(upload_folder)
                 except EnvironmentError:
-                    logging.info("Unable to create upload folder")
+                    logger.info("Unable to create upload folder")
                     raise
 
             upload_file = os.path.join(upload_folder,file.name)
-            logging.info("Starting to upload file in chunks: %s", upload_file)
+            logger.info("Starting to upload file in chunks: %s", upload_file)
             with open(upload_file, 'wb+') as destination:
                 for chunk in file.chunks():
                     destination.write(chunk)
-            logging.info("Finished uploading file")
+            logger.info("Finished uploading file")
     else:
         form = UploadForm()
 
