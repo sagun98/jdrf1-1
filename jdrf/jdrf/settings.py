@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
+# set the location user will upload files to
+UPLOAD_FOLDER = "/opt/upload_folder/"
+
 # function to get environment variables
 def get_env(key):
     try:

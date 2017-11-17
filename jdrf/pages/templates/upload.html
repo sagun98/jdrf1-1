@@ -7,14 +7,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-    <title>JDRF MIBC About</title>
+    <title>JDRF MIBC Upload</title>
 
     <!-- Bootstrap core CSS -->
     <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
-    <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
+
+    <!-- Plupload -->
+    <link rel="stylesheet" href="{% static 'plupload/css/jquery.plupload.queue.css' %}" type="text/css">
+    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'plupload/js/plupload.full.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'plupload/js/jquery.plupload.queue.min.js' %}"></script>
+
   </head>
 
    <body>
@@ -55,6 +61,43 @@
     <div class="container">
           <h2>Upload</h2>
           <p>Using the application on this page, upload your raw data to deposit it with the JDRF MIBC for processing.</p>
+
+          <form enctype="multipart/form-data" method="post" action="{% url 'upload' %}">
+	    <div id="uploader">
+		<p>Your browser doesn't have HTML5 or HTML4 support.</p>
+	    </div>
+         </form>
+
+         <script type="text/javascript">
+           $(function() {
+	
+	    // Setup html5 version
+	    $("#uploader").pluploadQueue({
+		// General settings
+		runtimes : 'html5,html4',
+		url : "{% url 'upload' %}",
+		chunk_size: '1mb',
+		rename : true,
+		dragdrop: true,
+                // allow for multiple uploads, one after the next
+                multiple_queues: true,
+		
+		filters : {
+			// Maximum file size
+			max_file_size : '5gb',
+			// Specify what files to browse for
+			mime_types: [
+                                {title : "Image files", extensions : "jpg,gif,png"},
+				{title : "Tar files", extensions : "tar.gz"},
+				{title : "Zip files", extensions : "zip"},
+				{title : "Fasta files", extensions : "fasta,fa,fna"},
+				{title : "Fastq files", extensions : "fastq,fq"}
+			]
+		}
+	     });
+           });
+        </script>
+
 
       </div>
 
