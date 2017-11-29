@@ -1,0 +1,95 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <title>JDRF MIBC Process</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
+
+  </head>
+
+   <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" style="color: #e3ede4" href="/">JDRF MIBC</a>
+        </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
+              <li><a href="/upload">Upload</a></li>
+              <li class="active"><a href="/process">Process</a></li>
+              <li><a href="/about">About</a></li>
+              </li>
+            </ul>
+        {% if user.is_authenticated %}
+          <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
+        </form>
+        {% endif %}
+        </div><!--/.navbar-collapse -->
+      </div>
+    </nav>
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <div class="jumbotron">
+      <div class="container" style="background: url('{% static 'img/large_figure.png' %}') no-repeat center">
+        <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
+      </div>
+    </div>
+
+    <div class="container">
+          <h2>Process</h2>
+          <p>Once you have uploaded your raw data and metadata, run the following to validate your uploads and begin processing.</p>
+          
+          <ol><li>Verify the metadata and raw files are complete.</li>
+          <ul><li>Check that all raw data files have metadata.</li>
+            <li>Check that all files in the metadata have been uploaded.</li>
+            <li>Once this verification step is complete the files are ready to be processed.</li>
+            <li>If you see errors about missing files, upload the remaining files on the <a href="/upload">Upload</a> page.</li>  
+            <li>If you see errors about missing metadata, upload a new metadata file on the <a href="/metadata">Metadata</a> page.</li>
+            <li>This process only takes a few seconds so you will automatically see the status after clicking the button.</li>  
+           </ul>
+          <form method="post" action="{% url 'process' %}">
+            {% csrf_token %}
+            <button class="btn btn-success" style="background: #11511b" type="submit" name="verify">Verify Data</button>
+          </form>
+          <p>{{ message1 }} </p>
+
+          <li>Begin processing the raw data files.</li>
+          <ul><li>Validate the integrity of the raw files by checking the md5sum with that provided in the metadata.</li>
+              <ul><li>To compute an md5sum for a file, run the following command, replacing FILE with the file name: <code>$ md5sum FILE</code>.</li>
+                  <li>For more information on md5sum, see the Wikipedia entry <a href="https://en.wikipedia.org/wiki/Md5sum"> Md5sum</a>.</li></ul>
+              <li>Process the raw data through the workflow which will remove sensitive sequencing data.</li> 
+              <li>Once the data has been scrubbed, it will be transfered to JDRF2 ( at <a href="http://jdrf-mibc.org/">http://jdrf-mibc.org/</a> ).</li>
+              <li>The scrubbed data will be available on JDRF2 when you login to the site, on the downloads page.</li>
+              <li>JDRF2 will also host a Galaxy server which will allow for processing of the scrubbed data.</li>
+              <li>NOTE: This process will take a few hours at least so the progress will not be posted to this page. You will receive an email when your data is available on JDRF2.</li> 
+            </ul>
+          <form method="post" action="{% url 'process' %}">
+            {% csrf_token %}
+            <button class="btn btn-success" style="background: #11511b" type="submit" name="process">Process Data</button>
+          </form>
+          <p>{{ message2 }} </p>
+          </ol>
+
+      <hr>
+
+    </div> <!-- /container -->
+  </body>
+</html>

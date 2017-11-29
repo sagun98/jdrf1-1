@@ -53,3 +53,24 @@ def upload_files(request):
 
     return render(request,'upload.html', {'form': form})
 
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def process_files(request):
+    # get the logger
+    logger=logging.getLogger('jdrf1')
+
+    responses={"message1":"","message2":""}
+    if request.method == 'POST':
+        logger.info("Post from process page received")
+        if "verify" in request.POST:
+            responses["message1"]="Verify post received"
+        elif "process" in request.POST:
+            responses["message2"]="Process post received"
+
+    # log messages
+    for message_name, message in responses.items():
+        if message:
+            logger.info(message)
+
+    return render(request,'process.html',responses)
