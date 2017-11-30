@@ -52,7 +52,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['0.0.0.0', 'localhost']
 
 # Set login redirect page
-LOGIN_REDIRECT_URL = "about"
+LOGIN_REDIRECT_URL = "upload"
 
 # Application definition
 
