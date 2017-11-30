@@ -69,7 +69,15 @@
            </ul>
           <form method="post" action="{% url 'process' %}">
             {% csrf_token %}
-            <button class="btn btn-success" style="background: #11511b" type="submit" name="verify">Verify Data</button>
+            {% if message1 and message1|first == 0 %}
+                <button class="btn btn-success" type="submit" name="verify" disabled>Verify Data</button>
+            {% elif message2 and message2|first == 1 %}
+                <button class="btn btn-success" type="submit" name="verify" disabled>Verify Data</button>
+            {% elif message2 and message2|first == 0 %}
+                <button class="btn btn-success" type="submit" name="verify" disabled>Verify Data</button>
+            {% else %}
+                <button class="btn btn-success" style="background: #11511b" type="submit" name="verify">Verify Data</button>
+            {% endif %}
           </form>
           </p>
           {% if message1 and message1|first == 0 %}
@@ -92,7 +100,13 @@
             </ul>
           <form method="post" action="{% url 'process' %}">
             {% csrf_token %}
-            <button class="btn btn-success" style="background: #11511b" type="submit" name="process">Process Data</button>
+            {% if message1 and message1|first == 0 %}
+              <button class="btn btn-success" style="background: #11511b" type="submit" name="process">Process Data</button>
+            {% elif message2 and message2|first == 1 %}
+              <button class="btn btn-success" style="background: #11511b" type="submit" name="process">Process Data</button>
+            {% else %}
+              <button class="btn btn-success" type="submit" name="process" disabled>Process Data</button>
+            {% endif %}
           </form>
           </p>
           {% if message2 and message2|first == 0 %}
