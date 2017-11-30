@@ -16,6 +16,10 @@ import logging
 # set the location user will upload files to
 UPLOAD_FOLDER = "/opt/upload_folder/"
 
+# set the default metadata file names
+METADATA_FILE_NAME = "metadata.tsv"
+METADATA_GROUP_FILE_NAME = "metadata_group.tsv"
+
 # function to get environment variables
 def get_env(key):
     try:
