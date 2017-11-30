@@ -17,8 +17,9 @@ RUN apt-get update -y && \
         net-tools \
 	nginx
 
-# clone the django site
-RUN git clone https://github.com/biobakery/jdrf1.git /usr/local/src/
+# clone the django site and rename folder
+RUN git clone https://github.com/biobakery/jdrf1.git && \
+    mv jdrf1 /usr/local/src/jdrf
 
 # install python dependencies
 RUN pip install --upgrade pip && \
@@ -34,5 +35,7 @@ ADD etc/supervisor.ini /etc/supervisord.conf
 RUN rm -v /etc/nginx/nginx.conf
 ADD etc/jdrf_nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE :80
+# install workflows dependencies
+RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
 
+EXPOSE :80
