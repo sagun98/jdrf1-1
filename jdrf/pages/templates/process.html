@@ -15,6 +15,8 @@
     <!-- Custom styles for this template -->
     <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
 
+    <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
+
   </head>
 
    <body>
@@ -69,7 +71,14 @@
             {% csrf_token %}
             <button class="btn btn-success" style="background: #11511b" type="submit" name="verify">Verify Data</button>
           </form>
-          <p>{{ message1 }} </p>
+          </p>
+          {% if message1 and message1|first == 0 %}
+              <p><span class="green_bold_text">{{ message1|last }}</span></p>
+          {% endif %}
+          {% if message1 and message1|first == 1 %}
+              <p><span class="berry_red_text">{{ message1|last }}</span></p>
+          {% endif %}
+
 
           <li>Begin processing the raw data files.</li>
           <ul><li>Validate the integrity of the raw files by checking the md5sum with that provided in the metadata.</li>
@@ -85,7 +94,13 @@
             {% csrf_token %}
             <button class="btn btn-success" style="background: #11511b" type="submit" name="process">Process Data</button>
           </form>
-          <p>{{ message2 }} </p>
+          </p>
+          {% if message2 and message2|first == 0 %}
+              <p><span class="green_bold_text">{{ message2|last }}</span></p>
+          {% endif %}
+          {% if message2 and message2|first == 1 %}
+              <p><span class="berry_red_text">{{ message2|last }}</span></p>
+          {% endif %}
           </ol>
 
       <hr>

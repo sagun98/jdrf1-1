@@ -15,6 +15,8 @@ from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import requires_csrf_token
 
+from jdrf import process_data
+
 from .forms import UploadForm
 
 import logging
@@ -60,17 +62,27 @@ def process_files(request):
     # get the logger
     logger=logging.getLogger('jdrf1')
 
-    responses={"message1":"","message2":""}
+    responses={"message1":[],"message2":[]}
     if request.method == 'POST':
         logger.info("Post from process page received")
+        user = str(request.user)
+        logger.info("Processing data for user: %s", user)
+        # get the location of the upload file for the user
+        upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
+        logger.info("Upload folder: %s", upload_folder)
+        metadata_file = os.path.join(upload_folder,settings.METADATA_FILE_NAME)
+        logger.info("Metadata file: %s", metadata_file)
+
         if "verify" in request.POST:
-            responses["message1"]="Verify post received"
+            # check the metadata matches the raw uploads
+            responses["message1"] = process_data.check_metadata_files_complete(upload_folder,metadata_file)
         elif "process" in request.POST:
-            responses["message2"]="Process post received"
+            responses["message2"]=[0,"Process post received"]
 
     # log messages
     for message_name, message in responses.items():
         if message:
-            logger.info(message)
+            logger.info("Error code: %s", message[0])
+            logger.info("Message: %s", message[1])
 
     return render(request,'process.html',responses)

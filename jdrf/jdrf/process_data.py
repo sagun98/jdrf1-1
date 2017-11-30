@@ -40,7 +40,10 @@ def check_metadata_files_complete(folder,metadata_file):
     """
 
     # get all of the files that have been uploaded
-    raw_files = set(get_recursive_files_nonempty(folder))
+    all_raw_files = set(get_recursive_files_nonempty(folder))
+
+    # remove the metadata file from the set of raw files
+    raw_files = all_raw_files.difference([os.path.basename(metadata_file)])
 
     # check if there are not any raw files
     if len(list(raw_files)) == 0:
