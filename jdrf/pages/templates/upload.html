@@ -78,7 +78,6 @@
 		runtimes : 'html5,html4',
 		url : "{% url 'upload' %}",
 		chunk_size: '1mb',
-		rename : true,
 		dragdrop: true,
                 // allow for multiple uploads, one after the next
                 multiple_queues: true,
@@ -89,7 +88,10 @@
 			// Specify what files to browse for
 			mime_types: [
                                 {title : "Image files", extensions : "jpg,gif,png"},
-				{title : "Tar files", extensions : "tar.gz"},
+				{title : "Tar files", extensions : "tar"},
+				{title : "Gzip files", extensions : "gzip"},
+				{title : "Bzip2 files", extensions : "bz2"},
+				{title : "Text files", extensions : "txt,tsv,csv"},
 				{title : "Zip files", extensions : "zip"},
 				{title : "Fasta files", extensions : "fasta,fa,fna"},
 				{title : "Fastq files", extensions : "fastq,fq"}
