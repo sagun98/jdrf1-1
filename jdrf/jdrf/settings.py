@@ -15,6 +15,7 @@ import logging
 
 # set the location user will upload files to
 UPLOAD_FOLDER = "/opt/upload_folder/"
+PROCESS_FOLDER = "/opt/process_folder/"
 
 # set the default metadata file names
 METADATA_FILE_NAME = "metadata.tsv"
