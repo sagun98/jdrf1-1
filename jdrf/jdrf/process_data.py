@@ -167,6 +167,16 @@ def check_metadata_files_md5sum(upload_folder,process_folder,metadata_file):
             depends=[sum_file,metadata_file],
             targets=[check_file])
 
+    # create a summary file of the checks to set a target for the end of this
+    # portion of the workflow and show all files that passed in one file
+    summary_file = os.path.join(md5sum_folder,"summary.txt")
+    workflow.add_task(
+        "grep Match [args[0]]/*.check > [targets[0]]",
+        depends=md5sum_checks,
+        targets=summary_file,
+        args=md5sum_folder,
+        name="md5sum_summary")
+
     return raw_files, workflow
 
 def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
@@ -181,6 +191,14 @@ def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
     results = process_data(workflow, raw_files, process_folder)
 
     return results
+
+def run_workflow(workflow,reporter):
+    """ First run the md5sum steps then run the remainder of the workflow """
+
+    # run the checksums
+    workflow.go(reporter=reporter,until_task="md5sum_summary")
+    # run the wmgx workflow
+    workflow.go(reporter=reporter)
 
 def process_data(workflow, input_files, process_folder):
     """ Run the files through the biobakery workflow """
@@ -226,7 +244,7 @@ def process_data(workflow, input_files, process_folder):
 
     # run the workflow
     try:
-        thread = threading.Thread(target=workflow.go, kwargs={'reporter':logger_reporter})
+        thread = threading.Thread(target=run_workflow, args=[workflow,logger_reporter])
         thread.daemon = True
         thread.start()
     except threading.ThreadError:
