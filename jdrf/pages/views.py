@@ -72,12 +72,14 @@ def process_files(request):
         logger.info("Upload folder: %s", upload_folder)
         metadata_file = os.path.join(upload_folder,settings.METADATA_FILE_NAME)
         logger.info("Metadata file: %s", metadata_file)
+        process_folder = os.path.join(settings.PROCESS_FOLDER,user)
+        logger.info("Process folder: %s", process_folder)
 
         if "verify" in request.POST:
             # check the metadata matches the raw uploads
             responses["message1"] = process_data.check_metadata_files_complete(upload_folder,metadata_file)
         elif "process" in request.POST:
-            responses["message2"]=[0,"Process post received"]
+            responses["message2"] = process_data.check_md5sum_and_process_data(upload_folder,process_folder,metadata_file)
 
     # log messages
     for message_name, message in responses.items():

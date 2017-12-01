@@ -2,6 +2,7 @@
 import sys
 import os
 import threading
+import logging
 
 def get_recursive_files_nonempty(folder,include_path=False):
     """ Get all files in all folder and subfolders that are not empty"""
@@ -125,10 +126,6 @@ def check_metadata_files_md5sum(upload_folder,process_folder,metadata_file):
     # remove the metadata file from the set of raw files
     raw_files = list(all_raw_files.difference([metadata_file]))
 
-    # check if there are not any raw files
-    if len(list(raw_files)) == 0:
-        return 1, "ERROR: Unable to find any uploaded raw files. Please upload files."
-
     # create the user process folder if it does not already exist
     if not os.path.isdir(process_folder):
         try:
@@ -159,14 +156,71 @@ def check_metadata_files_md5sum(upload_folder,process_folder,metadata_file):
             verify_checksum,
             depends=[sum_file,metadata_file],
             targets=[check_file])
+
+    return raw_files, workflow
+
+def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
+    """ First check md5sums then run the data through the workflow """
+
+    raw_files, workflow = check_metadata_files_md5sum(upload_folder,process_folder,metadata_file)
+
+    # check if there are raw files to process
+    if len(list(raw_files)) == 0:
+        return 1, "ERROR: Unable to find any uploaded raw files. Please upload files."
+
+    results = process_data(workflow, raw_files, process_folder)
+
+    return results
+
+def process_data(workflow, input_files, process_folder):
+    """ Run the files through the biobakery workflow """
     
+    from biobakery_workflows.tasks import shotgun
+    from biobakery_workflows import utilities, config
+
+    # create anadama2 logger to avoid overlap with jdrf logger
+    from anadama2.reporters import LoggerReporter
+    log_file=os.path.join(process_folder, "anadama.log")
+    logger_reporter = LoggerReporter(loglevel_str="INFO",log=log_file)
+    handler = logging.FileHandler(log_file)
+    logger_reporter.logger = logging.getLogger("anadama2")
+    logger_reporter.logger.setLevel("INFO")
+    logger_reporter.logger.addHandler(handler)
+
+    # set the defaults
+    threads = 1
+    pair_identifier = ".R1"
+    qc_options = ""
+    remove_intermediate_output = True
+
+    # get the contaminate databases for qc
+    workflow_config = config.ShotGun()
+    contaminate_databases = [workflow_config.kneaddata_db_human_genome,workflow_config.kneaddata_db_rrna]
+
+    # determine the input extension for the files
+    input_extension = input_files[0].split(".")[-1]
+
+    # add qc tasks
+    qc_output_files, filtered_read_counts = shotgun.quality_control(workflow, 
+        input_files, input_extension, process_folder, threads, contaminate_databases, 
+        pair_identifier, qc_options, remove_intermediate_output)
+    input_extension = input_extension.replace(".gz","")
+
+    # run taxonomic profiling
+    merged_taxonomic_profile, taxonomy_tsv_files, taxonomy_sam_files = shotgun.taxonomic_profile(workflow, 
+        qc_output_files,process_folder,threads,input_extension)
+
+    # run functional profiling
+    genes_relab, ecs_relab, path_relab, genes, ecs, path = shotgun.functional_profile(workflow,
+        qc_output_files,input_extension,process_folder,threads,taxonomy_tsv_files,remove_intermediate_output)
+
     # run the workflow
     try:
-        thread = threading.Thread(target=workflow.go, args=[])
+        thread = threading.Thread(target=workflow.go, kwargs={'reporter':logger_reporter})
         thread.daemon = True
         thread.start()
     except threading.ThreadError:
-        return 1, "ERROR: Unable to run workflow to check md5sums"
+        return 1, "ERROR: Unable to run workflow"
 
     return 0, "Success! The workflow is running. It will take at least a few hours. Look for an email notification when it has completed."
 
