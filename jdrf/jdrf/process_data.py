@@ -115,6 +115,17 @@ def verify_checksum(task):
         sys.stderr.write(new_sum)
         sys.stderr.write(md5sum)
 
+def create_folder(folder):
+    """ Create a folder if it does not exist """
+
+    # create the user process folder if it does not already exist
+    if not os.path.isdir(folder):
+        try:
+            os.makedirs(folder)
+        except EnvironmentError:
+            logger.info("Unable to create folder: " + folder)
+            raise
+
 def check_metadata_files_md5sum(upload_folder,process_folder,metadata_file):
     """ Read the metadata to get the md5sums for all files.
         Check all files match the md5sums provided.
@@ -127,12 +138,7 @@ def check_metadata_files_md5sum(upload_folder,process_folder,metadata_file):
     raw_files = list(all_raw_files.difference([metadata_file]))
 
     # create the user process folder if it does not already exist
-    if not os.path.isdir(process_folder):
-        try:
-            os.makedirs(process_folder)
-        except EnvironmentError:
-            logger.info("Unable to create process folder")
-            raise
+    create_folder(process_folder)
 
     # create a workflow to check the md5sums for each file
     from anadama2 import Workflow
@@ -142,15 +148,19 @@ def check_metadata_files_md5sum(upload_folder,process_folder,metadata_file):
     workflow = Workflow(cli=False)
     workflow.vars._arguments["output"].keywords["default"]= process_folder
 
+    # create a workflow subfolder for the md5sum check files
+    md5sum_folder = os.path.join(process_folder,"md5sum")
+    create_folder(md5sum_folder)
+
     # for each raw input file, generate an md5sum file
-    md5sum_outputs = [os.path.join(process_folder,os.path.basename(file))+".md5sum" for file in raw_files]
+    md5sum_outputs = [os.path.join(md5sum_folder,os.path.basename(file))+".md5sum" for file in raw_files]
     workflow.add_task_group(
         "md5sum [depends[0]] > [targets[0]]",
         depends=raw_files,
         targets=md5sum_outputs)
 
     # for each file, verify the checksum
-    md5sum_checks = [os.path.join(process_folder,os.path.basename(file))+".check" for file in raw_files]
+    md5sum_checks = [os.path.join(md5sum_folder,os.path.basename(file))+".check" for file in raw_files]
     for sum_file, check_file in zip(md5sum_outputs, md5sum_checks):
         workflow.add_task(
             verify_checksum,
