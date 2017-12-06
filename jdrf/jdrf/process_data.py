@@ -3,6 +3,16 @@ import sys
 import os
 import threading
 import logging
+import subprocess
+
+# name the general workflow stdout/stderr files
+WORKFLOW_STDOUT = "workflow.stdout"
+WORKFLOW_STDERR = "workflow.stderr"
+
+# name the files for the process subfolders
+WORKFLOW_MD5SUM_FOLDER="md5sum_check"
+WORKFLOW_DATA_PRODUCTS_FOLDER="data_products"
+WORFLOW_VISUALIZATIONS_FOLDER="visualizations"
 
 def get_recursive_files_nonempty(folder,include_path=False):
     """ Get all files in all folder and subfolders that are not empty"""
@@ -85,35 +95,14 @@ def check_metadata_files_complete(folder,metadata_file):
 
     error_code = 1
     if not message:
-        message="SUCCESS! The metadata and raw files match! Please select the button to process the data."
+        message="VERIFIED: All raw files have metadata.\n"
+        message+="VERIFIED: All files in the metadata have been uploaded.\n"
+        message+="SUCCESS! The metadata and raw files match.\n"
+        message+="NEXT STEP: The files are now ready to be processed.\n"
         error_code = 0
 
     # return the error code and message
     return error_code, message
-
-def verify_checksum(task):
-    """ Verify the checksum matches that found in the metadata file """
-
-    # read in the md5sums from the metadata file
-    file_basename = os.path.basename(task.depends[0].name).replace(".md5sum","")
-    try:
-        md5sum = filter(lambda x: file_basename == x[0], get_metadata_file_md5sums(task.depends[1].name))[0][1]
-    except IndexError:
-        sys.stderr.write("ERROR: md5sum not found for sample: "+file_basename)
-        sys.stderr.write(get_metadata_file_md5sums(task.depends[1].name))
-
-    # read in the md5sum computed on the raw file
-    with open(task.depends[0].name) as file_handle:
-        new_sum = file_handle.readline().strip().split(" ")[0]
-
-    if new_sum == md5sum:
-        file_handle=open(task.targets[0].name,"w")
-        file_handle.write("Match")
-        file_handle.close()
-    else:
-        sys.stderr.write("ERROR: Sums do not match")
-        sys.stderr.write(new_sum)
-        sys.stderr.write(md5sum)
 
 def create_folder(folder):
     """ Create a folder if it does not exist """
@@ -126,129 +115,71 @@ def create_folder(folder):
             logger.info("Unable to create folder: " + folder)
             raise
 
-def check_metadata_files_md5sum(upload_folder,process_folder,metadata_file):
-    """ Read the metadata to get the md5sums for all files.
-        Check all files match the md5sums provided.
-    """
+def subprocess_capture_stdout_stderr(command,output_folder):
+    """ Run the command and capture stdout and stderr to files """
 
+    stdout_file = os.path.join(output_folder, WORKFLOW_STDOUT)
+    stderr_file = os.path.join(output_folder, WORKFLOW_STDERR)
+
+    try:
+        with open(stdout_file,"a") as stdout:
+            with open(stderr_file,"a") as stderr:
+                subprocess.check_call(command,stderr=stderr,stdout=stdout)
+    except EnvironmentError, subprocess.CalledProcessError:
+        raise
+
+def run_workflow(upload_folder,process_folder,metadata_file):
+    """ First run the md5sum steps then run the remainder of the workflow """
+
+    # get the location of the workflow file
+    folder = os.path.dirname(os.path.realpath(__file__))
+
+    # get the workflow subfolders
+    md5sum_check = os.path.join(process_folder,WORKFLOW_MD5SUM_FOLDER)
+    data_products = os.path.join(process_folder,WORKFLOW_DATA_PRODUCTS_FOLDER)
+    visualizations = os.path.join(process_folder,WORFLOW_VISUALIZATIONS_FOLDER)
+ 
+    create_folder(md5sum_check)
+    create_folder(data_products)
+    create_folder(visualizations) 
+
+    # get the input file extensions
     # get all of the files that have been uploaded
     all_raw_files = set(get_recursive_files_nonempty(upload_folder,include_path=True))
 
     # remove the metadata file from the set of raw files
-    raw_files = list(all_raw_files.difference([metadata_file]))
+    input_files = list(all_raw_files.difference([metadata_file]))
 
-    # create the user process folder if it does not already exist
-    create_folder(process_folder)
-
-    # create a workflow to check the md5sums for each file
-    from anadama2 import Workflow
-
-    # create a workflow without a command line interface (will not prompt)
-    # and set output default to the process folder (to write the database)
-    workflow = Workflow(cli=False)
-    workflow.vars._arguments["output"].keywords["default"]= process_folder
-
-    # create a workflow subfolder for the md5sum check files
-    md5sum_folder = os.path.join(process_folder,"md5sum")
-    create_folder(md5sum_folder)
-
-    # for each raw input file, generate an md5sum file
-    md5sum_outputs = [os.path.join(md5sum_folder,os.path.basename(file))+".md5sum" for file in raw_files]
-    workflow.add_task_group(
-        "md5sum [depends[0]] > [targets[0]]",
-        depends=raw_files,
-        targets=md5sum_outputs)
-
-    # for each file, verify the checksum
-    md5sum_checks = [os.path.join(md5sum_folder,os.path.basename(file))+".check" for file in raw_files]
-    for sum_file, check_file in zip(md5sum_outputs, md5sum_checks):
-        workflow.add_task(
-            verify_checksum,
-            depends=[sum_file,metadata_file],
-            targets=[check_file])
-
-    # create a summary file of the checks to set a target for the end of this
-    # portion of the workflow and show all files that passed in one file
-    summary_file = os.path.join(md5sum_folder,"summary.txt")
-    workflow.add_task(
-        "grep Match [args[0]]/*.check > [targets[0]]",
-        depends=md5sum_checks,
-        targets=summary_file,
-        args=md5sum_folder,
-        name="md5sum_summary")
-
-    return raw_files, workflow
-
-def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
-    """ First check md5sums then run the data through the workflow """
-
-    raw_files, workflow = check_metadata_files_md5sum(upload_folder,process_folder,metadata_file)
-
-    # check if there are raw files to process
-    if len(list(raw_files)) == 0:
-        return 1, "ERROR: Unable to find any uploaded raw files. Please upload files."
-
-    results = process_data(workflow, raw_files, process_folder)
-
-    return results
-
-def run_workflow(workflow,reporter):
-    """ First run the md5sum steps then run the remainder of the workflow """
+    if input_files[0].endswith(".gz"):
+        extension = ".".join(input_files[0].split(".")[-2:])
+    else:
+        extension = input_files[0].split(".")[-1]
 
     # run the checksums
-    workflow.go(reporter=reporter,until_task="md5sum_summary")
+    subprocess_capture_stdout_stderr(["python",os.path.join(folder,"md5sum_workflow.py"),
+        "--input",upload_folder,"--output",md5sum_check,"--input-metadata",
+        metadata_file,"--input-extension",extension],md5sum_check)
+
     # run the wmgx workflow
-    workflow.go(reporter=reporter)
+    subprocess_capture_stdout_stderr(["biobakery_workflows","wmgx","--input",
+        upload_folder,"--output",data_products,"--input-extension",
+        extension,"--remove-intermediate-output","--bypass-strain-profiling"],data_products)
 
-def process_data(workflow, input_files, process_folder):
-    """ Run the files through the biobakery workflow """
+    # run the vis workflow
+    subprocess_capture_stdout_stderr(["biobakery_workflows","wmgx_vis",
+        "--input",data_products,"--output",visualizations,"--project-name",
+        "JDRF MIBC Generated"],visualizations)
+
+def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
+    """ Run the files through the md5sum check, biobakery workflow (data and vis) """
     
-    from biobakery_workflows.tasks import shotgun
-    from biobakery_workflows import utilities, config
-
-    # create anadama2 logger to avoid overlap with jdrf logger
-    from anadama2.reporters import LoggerReporter
-    log_file=os.path.join(process_folder, "anadama.log")
-    logger_reporter = LoggerReporter(loglevel_str="INFO",log=log_file)
-    handler = logging.FileHandler(log_file)
-    logger_reporter.logger = logging.getLogger("anadama2")
-    logger_reporter.logger.setLevel("INFO")
-    logger_reporter.logger.addHandler(handler)
-
-    # set the defaults
-    threads = 1
-    pair_identifier = ".R1"
-    qc_options = ""
-    remove_intermediate_output = True
-
-    # get the contaminate databases for qc
-    workflow_config = config.ShotGun()
-    contaminate_databases = [workflow_config.kneaddata_db_human_genome,workflow_config.kneaddata_db_rrna]
-
-    # determine the input extension for the files
-    input_extension = input_files[0].split(".")[-1]
-
-    # add qc tasks
-    qc_output_files, filtered_read_counts = shotgun.quality_control(workflow, 
-        input_files, input_extension, process_folder, threads, contaminate_databases, 
-        pair_identifier, qc_options, remove_intermediate_output)
-    input_extension = input_extension.replace(".gz","")
-
-    # run taxonomic profiling
-    merged_taxonomic_profile, taxonomy_tsv_files, taxonomy_sam_files = shotgun.taxonomic_profile(workflow, 
-        qc_output_files,process_folder,threads,input_extension)
-
-    # run functional profiling
-    genes_relab, ecs_relab, path_relab, genes, ecs, path = shotgun.functional_profile(workflow,
-        qc_output_files,input_extension,process_folder,threads,taxonomy_tsv_files,remove_intermediate_output)
-
-    # run the workflow
+    # run the workflows
     try:
-        thread = threading.Thread(target=run_workflow, args=[workflow,logger_reporter])
+        thread = threading.Thread(target=run_workflow, args=[upload_folder,process_folder,metadata_file])
         thread.daemon = True
         thread.start()
     except threading.ThreadError:
         return 1, "ERROR: Unable to run workflow"
-
+    
     return 0, "Success! The workflow is running. It will take at least a few hours. Look for an email notification when it has completed."
 
