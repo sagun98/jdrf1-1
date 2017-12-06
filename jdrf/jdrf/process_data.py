@@ -181,5 +181,5 @@ def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
     except threading.ThreadError:
         return 1, "ERROR: Unable to run workflow"
     
-    return 0, "Success! The workflow is running. It will take at least a few hours. Look for an email notification when it has completed."
+    return 0, "Success! The first workflow is running. It will take at least a few hours to run through all processing steps. The progress for each of the workflows will be shown below. Refresh this page to get the latest progress."
 
