@@ -98,7 +98,9 @@
               <li>Once the data has been scrubbed, it will be transfered to JDRF2 ( at <a href="http://jdrf-mibc.org/">http://jdrf-mibc.org/</a> ).</li>
               <li>The scrubbed data will be available on JDRF2 when you login to the site, on the downloads page.</li>
               <li>JDRF2 will also host a Galaxy server which will allow for processing of the scrubbed data.</li>
-              <li>NOTE: This process will take a few hours at least so the progress will not be posted to this page. You will receive an email when your data is available on JDRF2.</li> 
+              <li>After scrubbing the data will be run through the bioBakery data products workflow.</li>
+              <li>Finally it will be run through the bioBakery visualization workflow.</li>
+              <li>NOTE: This process will take a few hours at least. You can continue to refresh this page to see the progress for each of the three workflows.</li> 
             </ul>
           <form method="post" action="{% url 'process' %}">
             {% csrf_token %}
@@ -117,6 +119,34 @@
           {% if message2 and message2|first == 1 %}
               <p><span class="berry_red_text">{{ message2|last }}</span></p>
           {% endif %}
+
+          {% if md5sum_stdout %}
+            <p><span class="bold_text">MD5SUM Workflow Progress</span></p>
+            {% if "failed" in md5sum_stdout %}
+              <div class="container terminalstylered"><span style="white-space: pre-line">{{ md5sum_stdout }}</span></div>
+            {% else %}
+              <div class="container terminalstyle"><span style="white-space: pre-line">{{ md5sum_stdout }}</span></div>
+            {% endif %}
+              </p>
+          {% endif %}
+          {% if data_products_stdout %}
+            <p><span class="bold_text">Data Products Workflow Progress</span></p>
+            {% if "failed" in data_products_stdout %}
+              <div class="container terminalstylered"><span style="white-space: pre-line">{{ data_products_stdout }}</span></div>
+            {% else %}
+              <div class="container terminalstyle"><span style="white-space: pre-line">{{ data_products_stdout }}</span></div>
+            {% endif %}
+              </p>
+          {% endif %}
+          {% if visualizations_stdout %}
+            <p><span class="bold_text">Visualization Workflow Progress</span></p>
+            {% if "failed" in visualizations_stdout %}
+              <div class="container terminalstylered"><span style="white-space: pre-line">{{ visualizations_stdout }}</span></div>
+            {% else %}
+              <div class="container terminalstyle"><span style="white-space: pre-line">{{ visualizations_stdout }}</span></div>
+            {% endif %}
+              </p>
+           {% endif %}
           </ol>
 
       <hr>

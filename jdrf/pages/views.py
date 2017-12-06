@@ -55,6 +55,18 @@ def upload_files(request):
 
     return render(request,'upload.html', {'form': form})
 
+def try_read_file(file_name):
+    """ Try to read the file if it exists """
+
+    lines=""
+    try:
+        with open(file_name) as file_handle:
+            lines="".join(file_handle.readlines())
+    except EnvironmentError:
+        pass
+
+    return lines
+
 @login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
@@ -71,6 +83,9 @@ def process_files(request):
     # get the location of the upload file for the user
     upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
     logger.info("Upload folder: %s", upload_folder)
+    # get the location of the process folder for the user
+    process_folder = os.path.join(settings.PROCESS_FOLDER,user)
+    logger.info("Process folder: %s", process_folder)
 
     responses["raw_input"]="The following raw files have been uploaded and are ready to verify:\n"
     responses["raw_input"]+="\n".join(process_data.get_recursive_files_nonempty(upload_folder,include_path=False))+"\n"
@@ -93,5 +108,11 @@ def process_files(request):
         if message:
             logger.info("Error code: %s", message[0])
             logger.info("Message: %s", message[1])
+
+    # get the stdout for the processing workflows
+    stdout_file=process_data.WORKFLOW_STDOUT
+    responses["md5sum_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORKFLOW_MD5SUM_FOLDER,stdout_file))
+    responses["data_products_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORKFLOW_DATA_PRODUCTS_FOLDER,stdout_file))
+    responses["visualizations_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORFLOW_VISUALIZATIONS_FOLDER,stdout_file))
 
     return render(request,'process.html',responses)
