@@ -20,6 +20,19 @@
     font-weight: bold;
 }
 
+.bold_text {
+    font-weight: bold;
+}
+
 .login_width {
     width: 300px;
+}
+
+.terminalstyle {
+    background-color: #e3ede4;
+    border: 2px solid #11511b;
+    color: #11511b;
+    font-weight: bold;
+    padding: 8px;
+    font-family: courier new;
 }
