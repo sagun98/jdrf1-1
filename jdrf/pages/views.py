@@ -61,15 +61,22 @@ def upload_files(request):
 def process_files(request):
     # get the logger
     logger=logging.getLogger('jdrf1')
-
+ 
+    # set the default responses
     responses={"message1":[],"message2":[]}
+ 
+    # get the list of raw files to process
+    user = str(request.user)
+    logger.info("Processing data for user: %s", user)
+    # get the location of the upload file for the user
+    upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
+    logger.info("Upload folder: %s", upload_folder)
+
+    responses["raw_input"]="The following raw files have been uploaded and are ready to verify:\n"
+    responses["raw_input"]+="\n".join(process_data.get_recursive_files_nonempty(upload_folder,include_path=False))+"\n"
+
     if request.method == 'POST':
         logger.info("Post from process page received")
-        user = str(request.user)
-        logger.info("Processing data for user: %s", user)
-        # get the location of the upload file for the user
-        upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
-        logger.info("Upload folder: %s", upload_folder)
         metadata_file = os.path.join(upload_folder,settings.METADATA_FILE_NAME)
         logger.info("Metadata file: %s", metadata_file)
         process_folder = os.path.join(settings.PROCESS_FOLDER,user)
