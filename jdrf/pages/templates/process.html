@@ -76,12 +76,14 @@
             {% elif message2 and message2|first == 0 %}
                 <button class="btn btn-success" type="submit" name="verify" disabled>Verify Data</button>
             {% else %}
+                <div class="container terminalstyle"><span style="white-space: pre-line">{{ raw_input }}</span></div>
+                </p>
                 <button class="btn btn-success" style="background: #11511b" type="submit" name="verify">Verify Data</button>
             {% endif %}
           </form>
           </p>
           {% if message1 and message1|first == 0 %}
-              <p><span class="green_bold_text">{{ message1|last }}</span></p>
+              <p><span class="green_bold_text" style="white-space: pre-line">{{ message1|last }}</span></p>
           {% endif %}
           {% if message1 and message1|first == 1 %}
               <p><span class="berry_red_text">{{ message1|last }}</span></p>
