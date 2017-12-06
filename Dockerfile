@@ -52,4 +52,21 @@ RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.
     rm metaphlan2-2.6.0.tar.gz && \
     rm -r biobakery-metaphlan2-c43e40a443ed
 
+# install workflow visualizations dependencies
+RUN apt-get install python-matplotlib python-scipy pandoc texlive software-properties-common python-pandas python-biopython -y
+
+# Install the latest R
+RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/'
+RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9
+RUN gpg -a --export E084DAB9 | apt-key add -
+RUN apt-get -qq update && apt-get install r-base -y
+RUN R -q -e "install.packages('vegan', repos='http://cran.r-project.org')"
+
+# install hclust2
+RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
+    tar xzvf 3d589ab2cb68.tar.gz && \
+    mv nsegata-hclust2-3d589ab2cb68/hclust2.py /usr/local/bin/ && \
+    rm -r nsegata-hclust2-3d589ab2cb68/ && \
+    rm 3d589ab2cb68.tar.gz
+
 EXPOSE :80
