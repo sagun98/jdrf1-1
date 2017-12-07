@@ -109,10 +109,24 @@ def process_files(request):
             logger.info("Error code: %s", message[0])
             logger.info("Message: %s", message[1])
 
+    # check if the workflow is running
+    responses["workflow_running"] = process_data.check_workflow_running(user, process_folder)
+
     # get the stdout for the processing workflows
     stdout_file=process_data.WORKFLOW_STDOUT
     responses["md5sum_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORKFLOW_MD5SUM_FOLDER,stdout_file))
     responses["data_products_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORKFLOW_DATA_PRODUCTS_FOLDER,stdout_file))
     responses["visualizations_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORFLOW_VISUALIZATIONS_FOLDER,stdout_file))
+
+    # if the workflow just started, wait for a refresh before updating status
+    if not responses["message2"]:
+        if not responses["workflow_running"]:
+            if list(filter(lambda x: "fail" in x, [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])):
+                # one of the workflows had a task that failed
+                responses["message2"]=(1, "ERROR: The workflows have finished running. One of the tasks failed.")
+            elif len(list(filter(lambda x: "Finished" in x, [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])))  == 3:
+                responses["message2"]=(0, "Success! All three workflows (md5sum check, data processing, and visualization) finished without error.")
+        elif responses["md5sum_stdout"] or responses["data_products_stdout"] or responses["visualizations_stdout"]:
+            responses["message2"]=(0, "The processing workflows (md5sum check, data processing, and visualization) are still running.")
 
     return render(request,'process.html',responses)

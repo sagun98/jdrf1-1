@@ -106,6 +106,8 @@ def check_metadata_files_complete(folder,metadata_file):
 
 def create_folder(folder):
     """ Create a folder if it does not exist """
+    # get the logger instance
+    logger=logging.getLogger('jdrf1')
 
     # create the user process folder if it does not already exist
     if not os.path.isdir(folder):
@@ -169,6 +171,27 @@ def run_workflow(upload_folder,process_folder,metadata_file):
     subprocess_capture_stdout_stderr(["biobakery_workflows","wmgx_vis",
         "--input",data_products,"--output",visualizations,"--project-name",
         "JDRF MIBC Generated"],visualizations)
+
+def check_workflow_running(user, process_folder):
+    """ Check if any of the process workflows are running for a user """
+
+    # get the logger instance
+    logger=logging.getLogger('jdrf1')
+
+    try:
+        ps_output = subprocess.check_output(["ps","aux"])
+    except EnvironmentError:
+        ps_output = ""
+
+    logger.info("Checking if workflow is running for user: " + user)
+    user_workflow_processes = list(filter(lambda x: process_folder in x and "workflow" in x, ps_output))
+    
+    if user_workflow_processes:
+        logger.info("Workflows running for user: ", "\n".join(user_workflow_processes))
+        return True
+    else:
+        logger.info("No workflows running for user")
+        return False
 
 def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
     """ Run the files through the md5sum check, biobakery workflow (data and vis) """
