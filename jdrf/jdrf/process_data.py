@@ -124,8 +124,8 @@ def subprocess_capture_stdout_stderr(command,output_folder):
     stderr_file = os.path.join(output_folder, WORKFLOW_STDERR)
 
     try:
-        with open(stdout_file,"a") as stdout:
-            with open(stderr_file,"a") as stderr:
+        with open(stdout_file,"w") as stdout:
+            with open(stderr_file,"w") as stderr:
                 subprocess.check_call(command,stderr=stderr,stdout=stdout)
     except EnvironmentError, subprocess.CalledProcessError:
         raise
