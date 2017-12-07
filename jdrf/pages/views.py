@@ -126,6 +126,10 @@ def process_files(request):
                 responses["message2"]=(1, "ERROR: The workflows have finished running. One of the tasks failed.")
             elif len(list(filter(lambda x: "Finished" in x, [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])))  == 3:
                 responses["message2"]=(0, "Success! All three workflows (md5sum check, data processing, and visualization) finished without error.")
+            elif ( responses["md5sum_stdout"] and not ( responses["data_products_stdout"] or responses["visualizations_stdout"] ) or 
+                responses["md5sum_stdout"] and responses["data_products_stdout"] and not responses["visualizations_stdout"] ):
+                # add the case where we are in between workflows running
+                responses["message2"]=(0, "The processing workflows (md5sum check, data processing, and visualization) are still running.")
         elif responses["md5sum_stdout"] or responses["data_products_stdout"] or responses["visualizations_stdout"]:
             responses["message2"]=(0, "The processing workflows (md5sum check, data processing, and visualization) are still running.")
 
