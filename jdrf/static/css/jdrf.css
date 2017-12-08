@@ -45,3 +45,20 @@
     padding: 8px;
     font-family: courier new;
 }
+
+.table_bold {
+    font-weight: bold;
+    width: 100%;
+}
+
+.width_20 {
+    width: 20%;
+}
+
+.width_5 {
+    width: 5%;
+}
+
+.width_75 {
+    width: 75%;
+}

@@ -30,5 +30,7 @@ urlpatterns = [
     url(r'^logout/', auth_views.LogoutView.as_view(next_page="login"),name="logout"),
     url(r'^upload/', views.upload_files,name="upload"),
     url(r'^process/', views.process_files,name="process"),
+    url(r'^download/$', views.download_files,name="download"),
     url(r'^about/', TemplateView.as_view(template_name='about.html'),name="about"),
+    url(r'^download-file/(?P<file_name>.*)/$', views.download_file, name="download_file")
 ]
