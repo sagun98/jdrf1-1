@@ -69,4 +69,8 @@ RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
     rm -r nsegata-hclust2-3d589ab2cb68/ && \
     rm 3d589ab2cb68.tar.gz
 
+# install ldap dependencies
+RUN apt-get install python-ldap -y
+RUN pip install django-auth-ldap
+
 EXPOSE :80
