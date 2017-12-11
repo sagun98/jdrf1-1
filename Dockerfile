@@ -54,6 +54,9 @@ RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.
 
 # install workflow visualizations dependencies
 RUN apt-get install python-matplotlib python-scipy pandoc texlive software-properties-common python-pandas python-biopython -y
+# remove texlive docs to save ~330 MB
+RUN apt-get install texlive -y && \
+    apt-get remove texlive-fonts-recommended-doc texlive-latex-base-doc texlive-latex-recommended-doc texlive-pictures-doc texlive-pstricks-doc
 
 # Install the latest R
 RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/'
