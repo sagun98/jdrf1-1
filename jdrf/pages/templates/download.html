@@ -1,0 +1,95 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <title>JDRF MIBC Download</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
+
+    <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
+
+  </head>
+
+   <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" style="color: #e3ede4" href="/">JDRF MIBC</a>
+        </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
+              <li><a href="/upload">Upload</a></li>
+              <li><a href="/process">Process</a></li>
+              <li class="active"><a href="/download">Download</a></li>
+              <li><a href="/about">About</a></li>
+              </li>
+            </ul>
+        {% if user.is_authenticated %}
+          <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
+        </form>
+        {% endif %}
+        </div><!--/.navbar-collapse -->
+      </div>
+    </nav>
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <div class="jumbotron">
+      <div class="container" style="background: url('{% static 'img/large_figure.png' %}') no-repeat center">
+        <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
+      </div>
+    </div>
+
+    <div class="container">
+          <h2>Download</h2>
+          <p>The files generated from running the raw files uploaded through the workflows are shown on this page. Click on a file to download.</p>
+
+    <div class="container">
+        <p><span class="bold_text">MD5SUM Workflow Output</span></p>
+          <table class="table_bold">
+            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+            {% for name, file, size, mtime in md5sum_files %}
+              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+            {% endfor %}
+          </table>
+        </p>
+        <p><span class="bold_text">Data Products Workflow Output</span></p>
+          <table class="table_bold">
+            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+            {% for name, file, size, mtime in data_product_files %}
+              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+            {% endfor %}
+          </table>
+        </p>
+        <p><span class="bold_text">Visualization Workflow Output</span></p>
+          <table class="table_bold">
+            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+            {% for name, file, size, mtime in visualization_files %}
+              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+            {% endfor %}
+          </table>
+        </p>
+      </div>
+      </div>
+
+      <hr>
+
+    </div> <!-- /container -->
+  </body>
+</html>
