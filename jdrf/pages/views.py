@@ -49,13 +49,16 @@ def get_user_and_folders_plus_logger(request):
 def upload_files(request):
     # get the user, folders, and logger
     logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
-
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
             # save the file as chunks
+            # use chunking from plupload (so request.FILES['file'] might be blob)
+            # write to temp file then move when all chunks are written
             file = request.FILES['file']
-            logger.info("Uploading file: %s", file.name)
+            file_name = request.POST['name']
+            file_name_part = file_name+".part"
+            logger.info("Uploading file in chunks: %s", file_name_part)
             upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
             # if a folder does not exist for the user, then create
             if not os.path.isdir(upload_folder):
@@ -65,12 +68,20 @@ def upload_files(request):
                     logger.info("Unable to create upload folder")
                     raise
 
-            upload_file = os.path.join(upload_folder,file.name)
+            upload_file = os.path.join(upload_folder,file_name_part)
             logger.info("Starting to upload file in chunks: %s", upload_file)
-            with open(upload_file, 'wb+') as destination:
+            with open(upload_file, 'a') as destination:
                 for chunk in file.chunks():
                     destination.write(chunk)
-            logger.info("Finished uploading file")
+
+            logger.info("Finished uploading file chunk")
+
+            # move the file if all chunks have been written
+            chunks = int(request.POST['chunks'])
+            chunk = int(request.POST['chunk'])
+            if chunks == 0 or chunk == chunks -1:
+                os.rename(upload_file, os.path.join(upload_folder,file_name))
+                logger.info("Finished uploading file")
     else:
         form = UploadForm()
 
