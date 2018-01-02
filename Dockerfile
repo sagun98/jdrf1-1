@@ -18,7 +18,7 @@ RUN apt-get update -y && \
 	nginx
 
 # clone the django site and rename folder
-RUN git clone https://github.com/biobakery/jdrf1.git && \
+RUN git clone https://github.com/carze/jdrf1 && \
     mv jdrf1 /usr/local/src/jdrf
 
 # install python dependencies
