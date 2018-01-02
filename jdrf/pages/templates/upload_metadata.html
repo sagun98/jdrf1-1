@@ -1,0 +1,111 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <title>JDRF MIBC Upload Metadata</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
+
+    <!-- Plupload -->
+    <link rel="stylesheet" href="{% static 'plupload/css/jquery.plupload.queue.css' %}" type="text/css">
+    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'plupload/js/plupload.full.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'plupload/js/jquery.plupload.queue.min.js' %}"></script>
+
+  </head>
+
+   <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" style="color: #e3ede4" href="/">JDRF MIBC</a>
+        </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
+              <li class="active"><a href="/upload_metadata">Upload Metadata</a></li>
+              <li><a href="/upload">Upload Sequence Files</a></li>
+              <li><a href="/process">Process</a></li>
+              <li><a href="/download">Download</a></li>
+              <li><a href="/about">About</a></li>
+              </li>
+            </ul>
+        {% if user.is_authenticated %}
+          <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
+        </form>
+        {% endif %}
+        </div><!--/.navbar-collapse -->
+      </div>
+    </nav>
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <div class="jumbotron">
+      <div class="container" style="background: url('{% static 'img/large_figure.png' %}') no-repeat center">
+        <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
+      </div>
+    </div>
+
+    <div class="container">
+          <h2>Upload Metadata</h2>
+          <p>Select project metadata is assocaited with:</p>
+
+          <div id="project_select">
+              <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <span class="caret"></span>
+                  <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <ul id="project_select_opts" class="dropdown-menu">
+                </ul>
+          </div>
+          <a href="#" data-toggle="modal" data-target="#modal_new_project" class="btn btn-success btn-lg">
+              <span class="glyphicon glyphicon-plus"></span> Add New Project
+          </a>
+          
+          <div class="modal fade" id="modal_new_project" tabindex="-1" role="dialog"
+               aria-labelledby="modal_new_project_label" aria-hidden="true">
+               <div class="modal-dialog">
+                   <div class="modal-header">
+                       <button type="button" class="close" data-dismiss="modal">
+                           <span aria-hidden="true">&times;</span>
+                           <span class="sr-only">Close</span>
+                       </button>
+                       <h4 class="modal-title" id="modal_new_project_label">
+                           Add a New Project
+                       </h4>
+                   </div>
+               </div>
+
+               <div class="modal-body">
+                    <form method="post" novalidate>
+                            {% csrf_token %}
+                            {% include 'includes/new_project_form.html' with form=form %}
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <button id="modal_new_project_cancel" class="btn btn-danger">Cancel</button>
+                    </form>
+               </div>
+
+          </div>
+
+      </div>
+
+      <hr>
+
+    </div> <!-- /container -->
+  </body>
+</html>

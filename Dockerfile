@@ -25,7 +25,8 @@ RUN git clone https://github.com/biobakery/jdrf1.git && \
 RUN pip install --upgrade pip && \
     pip install setuptools && \
     pip install supervisor && \
-    pip install django==1.11.0 gunicorn==19.7 MySQL-python==1.2.5
+    pip install django==1.11.0 gunicorn==19.7 MySQL-python==1.2.5 && \
+    pip install django-widget-tweaks
 
 # add supervisor conf
 RUN mkdir -pv /var/log/supervisord
@@ -39,7 +40,7 @@ ADD etc/jdrf_nginx.conf /etc/nginx/nginx.conf
 RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
 
 # install java for kneaddata
-RUN apt-get install -y openjdk-8-jre
+RUN apt-get update -y && apt-get install -y openjdk-8-jre
 
 # install metaphlan2 and dependencies
 RUN apt-get install -y python-numpy
@@ -56,13 +57,15 @@ RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.
 RUN apt-get install python-matplotlib python-scipy pandoc texlive software-properties-common python-pandas python-biopython -y
 # remove texlive docs to save ~330 MB
 RUN apt-get install texlive -y && \
-    apt-get remove texlive-fonts-recommended-doc texlive-latex-base-doc texlive-latex-recommended-doc texlive-pictures-doc texlive-pstricks-doc
+    apt-get remove -y texlive-fonts-recommended-doc texlive-latex-base-doc texlive-latex-recommended-doc texlive-pictures-doc texlive-pstricks-doc
 
 # Install the latest R
+RUN apt-get install apt-transport-https
+
 RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/'
 RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9
 RUN gpg -a --export E084DAB9 | apt-key add -
-RUN apt-get -qq update && apt-get install r-base -y
+RUN apt-get -qq update && apt-get install -y r-base
 RUN R -q -e "install.packages('vegan', repos='http://cran.r-project.org')"
 
 # install hclust2

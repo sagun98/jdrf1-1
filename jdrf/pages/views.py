@@ -20,7 +20,7 @@ from django.http import StreamingHttpResponse
 
 from jdrf import process_data
 
-from .forms import UploadForm
+from .forms import UploadForm, NewProjectForm
 
 import logging
 
@@ -86,6 +86,41 @@ def upload_files(request):
         form = UploadForm()
 
     return render(request,'upload.html', {'form': form})
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def upload_metadata(request):
+    """Handles user upload of any metadata associated with JDRF projects."""
+    data = {}
+    optional_fields = ('tissue', 'sample_type', 'geo_loc_name', 'bioproject_accession',
+                       'animal_vendor', 'env_biom', 'env_feature', 'env_material')
+
+    if request.method == "POST":
+        form = NewProjectForm(request.POST)
+
+        if form.is_valid():
+            project = JDRFProject()
+            project.study_id = form.cleaned_data.get('study_id')
+            project.pi_name = form.cleaned_data.get('pi_name')
+
+            for field in optional_fields:
+                if field in form.cleaned_data:
+                    setattr(project, field, form.cleaned_data.get(field))
+
+            project.save()
+
+            data['success'] = True
+        else:
+            data['success'] = False
+            data['form'] = form
+
+        return HttpResponse(json.dumps(data), mimetype="application/json")
+    else:
+        form = NewProjectForm()
+        return render(request, 'upload_metadata.html', {'form': form})
+
 
 def try_read_file(file_name):
     """ Try to read the file if it exists """
