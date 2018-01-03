@@ -11,7 +11,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import requires_csrf_token
@@ -89,9 +89,20 @@ def upload_files(request):
 
 
 @login_required(login_url='/login/')
+def get_projects(request):
+    """Retrieves all projects associated with the logged in user"""
+    projects = request.user.JDRFProject.objects.all()
+
+    data['success'] = True
+    data['projects'] = projects if project else ['No projects found']   
+
+    return JsonResponse(data)
+
+
+@login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
-def upload_metadata(request):
+def create_project(request):
     """Handles user upload of any metadata associated with JDRF projects."""
     data = {}
     optional_fields = ('tissue', 'sample_type', 'geo_loc_name', 'bioproject_accession',
@@ -102,6 +113,7 @@ def upload_metadata(request):
 
         if form.is_valid():
             project = JDRFProject()
+            project.user = request.user
             project.study_id = form.cleaned_data.get('study_id')
             project.pi_name = form.cleaned_data.get('pi_name')
 
@@ -117,9 +129,16 @@ def upload_metadata(request):
             data['form'] = form
 
         return HttpResponse(json.dumps(data), mimetype="application/json")
-    else:
-        form = NewProjectForm()
-        return render(request, 'upload_metadata.html', {'form': form})
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def upload_metadata(request):
+    """Handles user upload of any metadata associated with JDRF projects."""
+    data = {}
+
+    return render(request, 'upload_metadata.html')
 
 
 def try_read_file(file_name):

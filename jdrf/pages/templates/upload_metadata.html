@@ -14,12 +14,11 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
+    <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
 
-    <!-- Plupload -->
-    <link rel="stylesheet" href="{% static 'plupload/css/jquery.plupload.queue.css' %}" type="text/css">
-    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'plupload/js/plupload.full.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'plupload/js/jquery.plupload.queue.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}" async></script>
+
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}" async></script>
 
   </head>
 
@@ -63,7 +62,11 @@
 
     <div class="container">
           <h2>Upload Metadata</h2>
-          <p>Select project metadata is assocaited with:</p>
+          <p>Upload JDRF project metadata in Excel/CSV format below. A template containing the 
+            required metadata schema can be found <a href="#">here</a>.
+          </p>
+
+          <p>Please select a project to associate metadata with or create a new project:</p>
 
           <div id="project_select">
               <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -73,6 +76,8 @@
                 <ul id="project_select_opts" class="dropdown-menu">
                 </ul>
           </div>
+
+          <br />
           <a href="#" data-toggle="modal" data-target="#modal_new_project" class="btn btn-success btn-lg">
               <span class="glyphicon glyphicon-plus"></span> Add New Project
           </a>
@@ -80,25 +85,27 @@
           <div class="modal fade" id="modal_new_project" tabindex="-1" role="dialog"
                aria-labelledby="modal_new_project_label" aria-hidden="true">
                <div class="modal-dialog">
-                   <div class="modal-header">
-                       <button type="button" class="close" data-dismiss="modal">
-                           <span aria-hidden="true">&times;</span>
-                           <span class="sr-only">Close</span>
-                       </button>
-                       <h4 class="modal-title" id="modal_new_project_label">
-                           Add a New Project
-                       </h4>
-                   </div>
+                 <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                      <span aria-hidden="true">&times;</span>
+                      <span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title" id="modal_new_project_label">
+                      Add a New Project
+                    </h4>
+                  </div>
+                  <div class="modal-body">
+                        <form method="post" novalidate>
+                          {% csrf_token %}
+                          {% include 'includes/new_project_form.html' with form=new_project_form %}
+                          <button type="submit" class="btn btn-primary">Submit</button>
+                          <button id="modal_new_project_cancel" class="btn btn-danger close" data-dismiss="modal">Cancel</button>
+                        </form>
+                  </div>
+                </div>
                </div>
 
-               <div class="modal-body">
-                    <form method="post" novalidate>
-                            {% csrf_token %}
-                            {% include 'includes/new_project_form.html' with form=form %}
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                            <button id="modal_new_project_cancel" class="btn btn-danger">Cancel</button>
-                    </form>
-               </div>
 
           </div>
 
