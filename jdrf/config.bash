@@ -23,6 +23,6 @@ python manage.py createsuperuser
 # collect static content
 python manage.py collectstatic
 
-# print command to start gunicorn
-START_COMMAND="gunicorn --bind 127.0.0.1:8000 jdrf.wsgi"
-printf "The environment is now configured.\nNext run the command to start gunicorn.\n${START_COMMAND}\n"
+# start gunicorn
+ssupervisorctl start gunicorn
+printf "The environment is now configured and the JDRF1 MIBC website is now running.\n"

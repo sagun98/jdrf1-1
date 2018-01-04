@@ -10,15 +10,19 @@
     <title>JDRF MIBC Upload Metadata</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
-    <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fileinput.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+    <link href="{% static 'bootstrap/css/jumbotron.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+    <link href="{% static 'css/jdrf.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+    <link href="{% static 'css/datatables.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
 
-    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}" async></script>
-
-    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}" async></script>
+    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fileinput.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jdrf_upload_metadata.js' %}"></script>
 
   </head>
 
@@ -63,54 +67,74 @@
     <div class="container">
           <h2>Upload Metadata</h2>
           <p>Upload JDRF project metadata in Excel/CSV format below. A template containing the 
-            required metadata schema can be found <a href="#">here</a>.
-          </p>
+            required metadata schema can be found <a href="#">here</a>.</p>
 
-          <p>Please select a project to associate metadata with or create a new project:</p>
-
-          <div id="project_select">
-              <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <span class="caret"></span>
-                  <span class="sr-only">Toggle Dropdown</span>
-                </button>
-                <ul id="project_select_opts" class="dropdown-menu">
-                </ul>
-          </div>
-
+          <p>Metadata will be validated and any errors found will be displayed. Errors must be 
+            corrected before metadata can be properly submitted.</p>
           <br />
-          <a href="#" data-toggle="modal" data-target="#modal_new_project" class="btn btn-success btn-lg">
-              <span class="glyphicon glyphicon-plus"></span> Add New Project
-          </a>
           
-          <div class="modal fade" id="modal_new_project" tabindex="-1" role="dialog"
-               aria-labelledby="modal_new_project_label" aria-hidden="true">
-               <div class="modal-dialog">
-                 <div class="modal-content">
-                  <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">
-                      <span aria-hidden="true">&times;</span>
-                      <span class="sr-only">Close</span>
-                    </button>
-                    <h4 class="modal-title" id="modal_new_project_label">
-                      Add a New Project
-                    </h4>
-                  </div>
-                  <div class="modal-body">
-                        <form method="post" novalidate>
-                          {% csrf_token %}
-                          {% include 'includes/new_project_form.html' with form=new_project_form %}
-                          <button type="submit" class="btn btn-primary">Submit</button>
-                          <button id="modal_new_project_cancel" class="btn btn-danger close" data-dismiss="modal">Cancel</button>
-                        </form>
-                  </div>
-                </div>
-               </div>
-
-
+          <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+              <input id="metadata_file_upload" name="metadata_file_upload" type="file">
+            </div>
           </div>
+          <br />
 
-      </div>
+          <div id="validation">
+            <h2>Validation </h2>
+            <p>Errors in the submitted metadata file are displayed below. 
+              Please correct errors and resubmit file.</p>
+            <p>A spreadsheet containing all validation errors can be downloaded <a href="#">here</a></p>.
 
+            <table id="metadata_file_preview" class="table table-striped table-bordered" 
+              cellspacing="0" width="100%">
+              <thead>
+                  <tr>
+                      <th>Study ID</th>
+                      <th>PI Name</th>
+                      <th>BioProject Accession</th>
+                      <th>Host Subject ID</th>
+                      <th>Host Body Mass Index</th>
+                      <th>Host Diet</th>
+                      <th>Host Disease</th>
+                      <th>Host Body Product</th>
+                      <th>Host Family Relationship</th>
+                      <th>Host Genotype</th>
+                      <th>Host Phenotype</th>
+                      <th>Host Tissue Sampled</th>
+                      <th>Gastrointestinal Disease</th>
+                      <th>IHMC Medication Code</th>
+                      <th>Subject Tax ID</th>
+                      <th>Subject Age</th>
+                      <th>Subject Sex</th>
+                      <th>Ethnicity</th>
+                      <th>Geo Location Name</th>
+                      <th>Sample ID</th>
+                      <th>Sample Type</th>
+                      <th>Collection Date</th>
+                      <th>Source Material</th>
+                      <th>Isolation Source</th>
+                      <th>Sample Material Process</th>
+                      <th>Sample Storage Duration</th>
+                      <th>Sample Storage Temperature</th>
+                      <th>Sample Storage Mass</th>
+                      <th>Animal Vendor</th>
+                      <th>Variable Region</th>
+                      <th>Organism Count</th>
+                      <th>EnvO Biom</th>
+                      <th>EnvO Feature</th>
+                      <th>EnvO Material</th>
+                      <th>Sequencer</th>
+                      <th>Read Number</th>
+                      <th>Sequencing Facility</th>
+                      <th>File Name</th>
+                      <th>MD5 Checksum</th>
+                  </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
       <hr>
 
     </div> <!-- /container -->
