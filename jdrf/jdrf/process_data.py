@@ -5,6 +5,11 @@ import threading
 import logging
 import subprocess
 
+import pandas as pd
+
+from jdrf.metadata_schema import schema
+
+
 # name the general workflow stdout/stderr files
 WORKFLOW_STDOUT = "workflow.stdout"
 WORKFLOW_STDERR = "workflow.stderr"
@@ -13,6 +18,7 @@ WORKFLOW_STDERR = "workflow.stderr"
 WORKFLOW_MD5SUM_FOLDER="md5sum_check"
 WORKFLOW_DATA_PRODUCTS_FOLDER="data_products"
 WORFLOW_VISUALIZATIONS_FOLDER="visualizations"
+
 
 def get_recursive_files_nonempty(folder,include_path=False):
     """ Get all files in all folder and subfolders that are not empty"""
@@ -53,6 +59,44 @@ def get_metadata_file_md5sums(metadata_file):
 def get_metadata_file_names(metadata_file):
     """ Read the metadata file and get a list of all file names """
     return get_metadata_column_by_name(metadata_file, "file")
+
+
+def errors_to_json(errors, metadata_df):
+    """ Takes any JDRF metadata validation errors and converts them into a
+        JSON object for consumption on the JDRF MIBC website via jquery 
+        DataTables.
+    """
+    def _map_errors_to_df(err):
+        """ Quick little closure to handle mapping our errors to the dataframe """
+        metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
+ 
+    map(_map_errors_to_df, errors)
+    return metadata_df.to_json(orient='records')
+
+
+def errors_to_csv(errors, metadata_df):
+    """ Takes any JDRF metadata validation errors and writes them out to an 
+        Excel file with cells containing errors denoted.
+    """    
+    pass
+
+
+def validate_metadata_file(metadata_file, logger):
+    """ Validates the provided JDRF metadata file and returns any errors 
+        if they are present.
+    """
+    is_valid = False
+    error_context = {}
+
+    metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+    errors = schema.validate(metadata_df)
+
+    if errors:
+        error_context['errors_datatable'] = errors_to_json(errors, metadata_df)
+        error_context['errors_file'] = errors_to_csv(errors, metadata_df)
+
+    return (is_valid, error_context)
+
 
 def check_metadata_files_complete(folder,metadata_file):
     """ Read the metadata and find all raw files for user.

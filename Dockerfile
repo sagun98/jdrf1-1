@@ -36,8 +36,17 @@ ADD etc/supervisor.ini /etc/supervisord.conf
 RUN rm -v /etc/nginx/nginx.conf
 ADD etc/jdrf_nginx.conf /etc/nginx/nginx.conf
 
+# Move over cutplace metadata CID
+ADD opt/validation/ /opt/
+
 # install workflows dependencies
 RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
+
+# install modules needed for validation
+RUN pip install pandas && \
+    pip install pathlib && \
+    pip install typing && \
+    pip install git+https://github.com/carze/PandasSchema.git
 
 # install java for kneaddata
 RUN apt-get update -y && apt-get install -y openjdk-8-jre
