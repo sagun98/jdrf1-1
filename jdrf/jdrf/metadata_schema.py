@@ -5,8 +5,10 @@ from pandas_schema.validation import (LeadingWhitespaceValidation, TrailingWhite
 
 
 schema = Schema([
-    Column('study_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the study_id column.')]),
-    Column('pi_name', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.')]),
+    Column('study_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the study_id column.') &
+                        ~InListValidation([''])]),
+    Column('pi_name', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.') &
+                        ~InListValidation([''])]),
     Column('sample_type', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_type column.'),
                            InListValidation(['MGX', 'MTX', '16S'])]),
     Column('geo_loc_name', [MatchesPatternValidation(r'\w+:\w+:\w+')]),
@@ -19,15 +21,16 @@ schema = Schema([
     Column('host_genotype', [MatchesPatternValidation(r'^https')]),
     Column('isolation_source', [LeadingWhitespaceValidation()]),
     Column('samp_mat_process', [LeadingWhitespaceValidation()]),
-    Column('bioproject_accession', [MatchesPatternValidation(r'PRJNA\d+')]),
-    Column('env_biom', [MatchesPatternValidation(r'DOID:\d+')]),
-    Column('env_feature', [MatchesPatternValidation(r'DOID:\d+')]),
-    Column('env_material', [MatchesPatternValidation(r'DOID:\d+')]),
+    Column('bioproject_accession', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+                                    MatchesPatternValidation(r'PRJNA\d+')]),
+    Column('env_biom', [MatchesPatternValidation(r'ENVO:\d+')]),
+    Column('env_feature', [MatchesPatternValidation(r'ENVO:\d+')]),
+    Column('env_material', [MatchesPatternValidation(r'ENVO:\d+')]),
     Column('filename', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the filename column.'),
                         MatchesPatternValidation(r'\w+.fastq(.gz)?')]),
     Column('sample_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_id column.')]),
     Column('collection_date', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the collection_date column.'),
-                               DateFormatValidation('%Y-%M-%D')]),
+                               DateFormatValidation('%Y-%m-%d')]),
     Column('subject_tax_id', [MatchesPatternValidation(r'\d+')]),
     Column('subject_age', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_age column.'),
                            InRangeValidation(0, 120)]),
@@ -37,17 +40,20 @@ schema = Schema([
                             MatchesPatternValidation(r'[a-zA-Z0-9]{32}')]),
     Column('host_body_mass_index', [CanConvertValidation(float)]),
     Column('host_disease', [MatchesPatternValidation(r'DOID:\d+')]),
-    Column('variable_region', [MatchesPatternValidation(r'(V[1-9],?)+')]),
+    Column('variable_region', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+                               MatchesPatternValidation(r'(V[1-9],?)+')]),
     Column('gastrointest_disord', [CanConvertValidation(int)]),
     Column('host_body_product', [MatchesPatternValidation(r'GENEPIO_\d+')]),
     Column('host_phenotype', [CanConvertValidation(int)]),
     Column('host_tissue_sampled', [MatchesPatternValidation(r'BTO_\d+')]),
-    Column('ihmc_medication_code', [MatchesPatternValidation(r'(\d+,?)+]')]),
-    Column('organism_count', [InRangeValidation(1)]),
+    Column('ihmc_medication_code', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+                                    MatchesPatternValidation(r'(\d+,?)+]')]),
+    Column('organism_count', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+                              InRangeValidation(1)]),
     Column('samp_store_dur', [InRangeValidation(1)]),
     Column('samp_store_temp', [CanConvertValidation(int)]),
     Column('samp_vol_mass', [MatchesPatternValidation(r'\d+[.]?\d*(g|ml)')]),
-    Column('sequencer', [InListValidation(["IlluminaMiSeq", "Illumina NextSeq",
+    Column('sequencer', [InListValidation(["Illumina MiSeq", "Illumina NextSeq",
                                            "Illumina HiSeq", "Illumina HiSeq X",
                                            "PacBio Sequel", "Nanopore MinION",
                                            "Nanopore PromethION", "Nanopore SmidgION",
