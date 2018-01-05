@@ -4,6 +4,16 @@ import os
 import threading
 import logging
 import subprocess
+import time
+
+import smtplib
+import socket
+from email.mime.text import MIMEText
+
+# Set default email options
+EMAIL_FROM = "jdrfmibc_dev@hutlab-jdrf01.rc.fas.harvard.edu"
+EMAIL_TO = "lauren.j.mciver@gmail.com"
+EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu.off"
 
 # name the general workflow stdout/stderr files
 WORKFLOW_STDOUT = "workflow.stdout"
@@ -54,7 +64,7 @@ def get_metadata_file_names(metadata_file):
     """ Read the metadata file and get a list of all file names """
     return get_metadata_column_by_name(metadata_file, "file")
 
-def check_metadata_files_complete(folder,metadata_file):
+def check_metadata_files_complete(user,folder,metadata_file):
     """ Read the metadata and find all raw files for user.
         Then check that all files have metadata.
         Finally check that all files in the metadata exist. 
@@ -101,6 +111,10 @@ def check_metadata_files_complete(folder,metadata_file):
         message+="NEXT STEP: The files are now ready to be processed.\n"
         error_code = 0
 
+    # email status of verify
+    subject="data verify run by user "+user
+    send_email_update(subject,message)
+
     # return the error code and message
     return error_code, message
 
@@ -117,8 +131,34 @@ def create_folder(folder):
             logger.info("Unable to create folder: " + folder)
             raise
 
+def send_email_update(subject,message):
+    """ Send an email to update the status of workflows """
+    # get the logger instance
+    logger=logging.getLogger('jdrf1')
+
+    # create email message
+    msg = MIMEText(message)
+    msg['Subject'] = "JDRF1 MIBC Status Update: " + subject
+    msg['From'] = EMAIL_FROM
+    msg['To'] = EMAIL_TO
+
+    logger.info("Sending email")
+    logger.info("Email subject: " + subject)
+    logger.info("Email message: " + message)
+
+    # send the message
+    try:
+        s = smtplib.SMTP(EMAIL_SERVER)
+        s.sendmail(msg['From'], msg['To'], msg.as_string())
+        s.quit()
+        logger.info("Email sent successfully")
+    except (smtplib.SMTPRecipientsRefused, socket.gaierror):
+        logger.error("Unable to send email")
+
 def subprocess_capture_stdout_stderr(command,output_folder):
     """ Run the command and capture stdout and stderr to files """
+    # get the logger instance
+    logger=logging.getLogger('jdrf1')
 
     stdout_file = os.path.join(output_folder, WORKFLOW_STDOUT)
     stderr_file = os.path.join(output_folder, WORKFLOW_STDERR)
@@ -127,10 +167,46 @@ def subprocess_capture_stdout_stderr(command,output_folder):
         with open(stdout_file,"w") as stdout:
             with open(stderr_file,"w") as stderr:
                 subprocess.check_call(command,stderr=stderr,stdout=stdout)
-    except EnvironmentError, subprocess.CalledProcessError:
+    except (EnvironmentError, subprocess.CalledProcessError):
+        logger.error("Unable to run subprocess command: " + " ".join(command))
+
+    # check for error in stderr file
+    time.sleep(2)
+    try:
+        with open(stderr_file) as file_handle:
+            stderr_output = "".join(file_handle.readlines())
+    except EnvironmentError:
+        logger.error("Unable to read stderr file")
+        stderr_output = ""
+
+    if "ERROR" in stderr_output:
+        logger.error("Error found in subprocess command stderr: " + " ".join(command))
+        raise EnvironmentError
+
+    logger.info("Subprocess command terminated")
+
+def email_workflow_status(user,command,output_folder,workflow):
+    """ Run the subprocess and send status emails """
+
+    # start the subprocess
+    subject="workflow "+workflow+" for user "+user
+    message="The following subprocess was run to execute "+\
+        "workflow "+workflow+" for user "+user+".\n\n"+" ".join(command)
+
+    start_message = "Workflow started.\n\n"+message
+    end_message = "Workflow finished without error.\n\n"+message
+    error_message = "Workflow error.\n\n"+message+\
+        "\n\nPlease review the workflow logs to determine the error."
+
+    try:
+        send_email_update("Starting "+subject,start_message) 
+        subprocess_capture_stdout_stderr(command,output_folder)
+        send_email_update("Completed without error "+subject,end_message)
+    except (EnvironmentError, subprocess.CalledProcessError):
+        send_email_update("Ended with error "+subject,error_message)
         raise
 
-def run_workflow(upload_folder,process_folder,metadata_file):
+def run_workflow(user,upload_folder,process_folder,metadata_file):
     """ First run the md5sum steps then run the remainder of the workflow """
 
     # get the location of the workflow file
@@ -158,19 +234,22 @@ def run_workflow(upload_folder,process_folder,metadata_file):
         extension = input_files[0].split(".")[-1]
 
     # run the checksums
-    subprocess_capture_stdout_stderr(["python",os.path.join(folder,"md5sum_workflow.py"),
+    command=["python",os.path.join(folder,"md5sum_workflow.py"),
         "--input",upload_folder,"--output",md5sum_check,"--input-metadata",
-        metadata_file,"--input-extension",extension],md5sum_check)
+        metadata_file,"--input-extension",extension]
+    email_workflow_status(user,command,md5sum_check,"md5sum")
 
     # run the wmgx workflow
-    subprocess_capture_stdout_stderr(["biobakery_workflows","wmgx","--input",
+    command=["biobakery_workflows","wmgx","--input",
         upload_folder,"--output",data_products,"--input-extension",
-        extension,"--remove-intermediate-output","--bypass-strain-profiling"],data_products)
+        extension,"--remove-intermediate-output","--bypass-strain-profiling"]
+    email_workflow_status(user,command,data_products,"wmgx")
 
     # run the vis workflow
-    subprocess_capture_stdout_stderr(["biobakery_workflows","wmgx_vis",
+    command=["biobakery_workflows","wmgx_vis",
         "--input",data_products,"--output",visualizations,"--project-name",
-        "JDRF MIBC Generated"],visualizations)
+        "JDRF MIBC Generated"]
+    email_workflow_status(user,command,visualizations,"visualization")
 
 def check_workflow_running(user, process_folder):
     """ Check if any of the process workflows are running for a user """
@@ -193,12 +272,12 @@ def check_workflow_running(user, process_folder):
         logger.info("No workflows running for user")
         return False
 
-def check_md5sum_and_process_data(upload_folder,process_folder,metadata_file):
+def check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file):
     """ Run the files through the md5sum check, biobakery workflow (data and vis) """
-    
+
     # run the workflows
     try:
-        thread = threading.Thread(target=run_workflow, args=[upload_folder,process_folder,metadata_file])
+        thread = threading.Thread(target=run_workflow, args=[user,upload_folder,process_folder,metadata_file])
         thread.daemon = True
         thread.start()
     except threading.ThreadError:

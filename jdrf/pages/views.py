@@ -121,13 +121,13 @@ def process_files(request):
 
         if "verify" in request.POST:
             # check the metadata matches the raw uploads
-            responses["message1"] = process_data.check_metadata_files_complete(upload_folder,metadata_file)
+            responses["message1"] = process_data.check_metadata_files_complete(user,upload_folder,metadata_file)
         elif "process" in request.POST:
-            responses["message2"] = process_data.check_md5sum_and_process_data(upload_folder,process_folder,metadata_file)
+            responses["message2"] = process_data.check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file)
 
     # log messages
     for message_name, message in responses.items():
-        if message:
+        if message and not message_name == "raw_input":
             logger.info("Error code: %s", message[0])
             logger.info("Message: %s", message[1])
 
