@@ -9,6 +9,22 @@
     if (Cookies.get('study_metadata') == '1') {
         // Need to do an AJAX request here to parse the contents of our CSV file and fill in 
         // form data
+        $.ajax({
+            url: '/metadata/study',
+            method: 'GET',
+            data: {
+                csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val()
+            },
+            success: function(data) {
+                var form_elts = data.study_form;
+                $.each(form_elts, function(key, val) {
+                    $('#panel_study_metadata #' + key).val(val);
+                });
+            },
+            error: function(data) {
+                // Do stuff to handle errors here
+            }
+        });
 
         // Load the metadata file and hide our panel.
         $('#panel_study_metadata .panel-body').hide();
@@ -28,24 +44,38 @@
             // Do nothing for the time being.
         } else {
            e.preventDefault();
-            // Assuming everything goes well here let's do some fancy javascript stuff.
-            $('#panel_study_metadata .panel-body').slideUp();
-            $('#panel_study_metadata .panel-heading').on('click', function() {
-                $(this).css('cursor', 'pointer');
 
-                $('#panel_study_metadata .panel-body').slideToggle();
-            });
+            // Write our form data to a CSV file
+            data = $('#study_metadata_form').serialize(); 
+            data['csrfmiddlewaretoken'] = $("input[name='csrfmiddlewaretoken']").val()
+            $.ajax({
+                url: '/metadata/study',
+                data: data,
+                success: function(data) {
+                    $('#panel_study_metadata .panel-body').slideUp();
+                    $('#panel_study_metadata .panel-heading').html('<h3 class="panel-title">Study Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
+                    $('#panel_study_metadata .panel-heading').on('click', function() {
+                        $(this).css('cursor', 'pointer');
 
-            $('#panel_sample_metadata .panel-heading').css('opacity', '1');
-            $('#panel_sample_metadata .panel-body').slideDown();
-            Cookies.set('study_metadata', "1");
+                        $('#panel_study_metadata .panel-body').slideToggle();
+                    });
+
+                    $('#panel_sample_metadata .panel-heading').css('opacity', '1');
+                    $('#panel_sample_metadata .panel-body').slideDown();
+                    Cookies.set('study_metadata', "1");
+                },
+                error: function(data) {
+                    // Do stuff to handle errors here
+                }
+            })
+
         }
     })
 
      $('#metadata_file_upload').fileinput({
          showPreview: false,
          uploadAsync: false,
-         uploadUrl: '/upload_metadata/sample',
+         uploadUrl: '/metadata/sample',
          msgPlaceholder: 'Select metadata file to upload...',
          uploadExtraData: { 
              'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),

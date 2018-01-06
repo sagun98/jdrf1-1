@@ -5,6 +5,8 @@ import os
 import sys
 import time
 
+import pandas as pd
+
 from django.conf import settings
 
 from django.shortcuts import render
@@ -144,7 +146,23 @@ def validate_metadata(request):
 @requires_csrf_token
 def upload_study_metadata(request):
     """ Validates and saves study metadata provided by the logged in user. """
+    (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
     data = {}
+
+    if request.method == 'GET':
+        # Read in our CSV and populate our form field values.
+        study_metadata_file = os.path.join(upload_folder, 'study_metadata.csv')
+        if os.path.exists(study_metadata_file):
+            study_metadata_df = pd.read_csv(study_metadata_file)
+
+            data['success'] = True
+            data['study_form'] = study_metadata_df.to_dict(orient='records')[0]
+        else:
+            data['succes'] = False
+            data['error_msg'] = "Could not find study metadata file at path %s" % study_metadata_file
+    elif request.method == 'POST':
+        # Now we are saving our study metadata to a CSV file. Don't forget to validate!
+        pass
 
     return JsonResponse(data)
 

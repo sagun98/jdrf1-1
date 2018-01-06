@@ -4,7 +4,7 @@ from pandas_schema.validation import (LeadingWhitespaceValidation, TrailingWhite
                                       InRangeValidation, InListValidation, DateFormatValidation)
 
 
-schema = Schema([
+study_schema = Schema([
     Column('study_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the study_id column.') &
                         ~InListValidation([''])]),
     Column('pi_name', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.') &
@@ -12,6 +12,10 @@ schema = Schema([
     Column('sample_type', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_type column.'),
                            InListValidation(['MGX', 'MTX', '16S'])]),
     Column('geo_loc_name', [MatchesPatternValidation(r'\w+:\w+:\w+')]),
+    Column('host_tissue_sample_id', [MatchesPatternValidation(r'BTO_\d+')]),
+])
+
+sample_schema = Schema([
     Column('animal_vendor', [LeadingWhitespaceValidation()]),
     Column('host_subject_id', [LeadingWhitespaceValidation()]),
     Column('host_diet', [LeadingWhitespaceValidation()]),
@@ -45,7 +49,6 @@ schema = Schema([
     Column('gastrointest_disord', [CanConvertValidation(int)]),
     Column('host_body_product', [MatchesPatternValidation(r'GENEPIO_\d+')]),
     Column('host_phenotype', [CanConvertValidation(int)]),
-    Column('host_tissue_sampled', [MatchesPatternValidation(r'BTO_\d+')]),
     Column('ihmc_medication_code', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
                                     MatchesPatternValidation(r'(\d+,?)+]')]),
     Column('organism_count', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
