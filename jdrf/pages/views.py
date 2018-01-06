@@ -142,7 +142,17 @@ def validate_metadata(request):
 @login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
-def upload_metadata(request):
+def upload_study_metadata(request):
+    """ Validates and saves study metadata provided by the logged in user. """
+    data = {}
+
+    return JsonResponse(data)
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def upload_sample_metadata(request):
     """ Validates the user-provided JDRF metadata file and if valid saves to the users 
         data storage directory.
     """ 

@@ -3,12 +3,49 @@
  */
 
  jQuery(document).ready(function() {
-     $('#validation').hide();
+    $('#validation').hide();
+
+    // On page load we want to see if a cookie exists to indicate study metadata has been created for this file.
+    if (Cookies.get('study_metadata') == '1') {
+        // Need to do an AJAX request here to parse the contents of our CSV file and fill in 
+        // form data
+
+        // Load the metadata file and hide our panel.
+        $('#panel_study_metadata .panel-body').hide();
+        $('#panel_study_metadata .panel-heading').css('cursor', 'pointer');
+        $('#panel_study_metadata .panel-heading').html('<h3 class="panel-title">Study Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
+        $('#panel_study_metadata .panel-heading').on('click', function() {
+            $('#panel_study_metadata .panel-body').slideToggle();
+        })
+
+        $('#panel_sample_metadata .panel-heading').css('opacity', 1)
+        $('#panel_sample_metadata .panel-body').show();
+        
+    }
+
+    $('#study_metadata_form').validator().on('submit', function(e) {
+        if (e.isDefaultPrevented()) {
+            // Do nothing for the time being.
+        } else {
+           e.preventDefault();
+            // Assuming everything goes well here let's do some fancy javascript stuff.
+            $('#panel_study_metadata .panel-body').slideUp();
+            $('#panel_study_metadata .panel-heading').on('click', function() {
+                $(this).css('cursor', 'pointer');
+
+                $('#panel_study_metadata .panel-body').slideToggle();
+            });
+
+            $('#panel_sample_metadata .panel-heading').css('opacity', '1');
+            $('#panel_sample_metadata .panel-body').slideDown();
+            Cookies.set('study_metadata', "1");
+        }
+    })
 
      $('#metadata_file_upload').fileinput({
          showPreview: false,
          uploadAsync: false,
-         uploadUrl: '/upload_metadata/',
+         uploadUrl: '/upload_metadata/sample',
          msgPlaceholder: 'Select metadata file to upload...',
          uploadExtraData: { 
              'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
