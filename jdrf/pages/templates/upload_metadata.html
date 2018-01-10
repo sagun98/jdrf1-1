@@ -42,8 +42,8 @@
           <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
               {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
-              <li class="active"><a href="/upload_metadata">Upload Metadata</a></li>
-              <li><a href="/upload">Upload Sequence Files</a></li>
+              <li class="active"><a href="/metadata">Upload Metadata</a></li>
+              <li><a href="/upload">Upload Data</a></li>
               <li><a href="/process">Process</a></li>
               <li><a href="/download">Download</a></li>
               <li><a href="/about">About</a></li>
@@ -67,7 +67,8 @@
 
     <div class="container">
         <h2>Upload Metadata</h2>
-        <br />
+        <p>Using the application on this page, upload study and sample metadata to deposit it with the JDRF MIBC for processing.</p>
+        <div class="alert alert-warning"><div class="glyphicon glyphicon-exclamation-sign"></div><div>Only one complete dataset (study and sample metadata + corresponding sequence files) may be processed at a time.</div></div>
 
         <div id="panel_study_metadata" class="panel panel-default">
             <div class="panel-heading">
@@ -77,32 +78,32 @@
                 <form id="study_metadata_form" method="post" action="{% url 'upload_study_metadata' %}" data-toggle="validator">
                     <div class="form-group has-feedback">
                         <label for="study_id" class="control-label">Study ID</label>
-                        <input type="text" pattern="^[a-zA-Z0-9]+" class="form-control" id="study_id" placeholder="" required>
+                        <input type="text" pattern="^[a-zA-Z0-9]+" class="form-control" id="study_id" name="study_id", placeholder="" required>
                         <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                     </div>
                     <div class="form-group has-feedback">
                         <label for="pi_name" class="control-label">PI Name</label>
-                        <input type="text" pattern="^[A-Za-z]+" class="form-control" id="pi_name", placeholder="" data-error="Please provide a valid PI name." required>
+                        <input type="text" pattern="^[A-Za-z]+" class="form-control" id="pi_name", name="pi_name", placeholder="" data-error="Please provide a valid PI name." required>
                         <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                         <div class="help-block with-errors"></div>
                     </div>
                     <div id="optional_fields_msg">The following fields are OPTIONAL and can be overridden in sample metadata.</div>
                     <div class="form-group has-feedback">
                         <label for="host_tissue_sampled" class="control-label">Host Tissue Sampled</label>
-                        <input type="text" pattern="^BTO_[0-9]+" class="form-control" id="host_tissue_sample_id" data-error="Please provide a valid BRENDA ontology ID." placeholder="BTO_99999">
+                        <input type="text" pattern="^BTO_[0-9]+" class="form-control" id="host_tissue_sampled", name="host_tissue_sampled", data-error="Please provide a valid BRENDA ontology ID." placeholder="BTO_99999">
                         <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
                         <div class="help-block with-errors"></div>
                     </div>
                     <div class="form-group has-feedback">
                         <label for="geo_loc_name" class="control-label">Geo Location Name</label>
-                        <input type="text" pattern="[a-zA-Z]+:[a-zA-Z]+:[a-zA-Z]+" class="form-control" id="geo_loc_name" data-error="Please provide a geolocation name in format Country:State:City" placeholder="US:Massachusetts:Boston">
+                        <input type="text" pattern="[a-zA-Z]+:[a-zA-Z]+:[a-zA-Z]+" class="form-control" id="geo_loc_name", name="geo_loc_name", data-error="Please provide a geolocation name in format Country:State:City" placeholder="US:Massachusetts:Boston">
                         <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
                         <div class="help-block with-errors"></div>
                     </div>
                     <div class="col-xs-5">
                       <div class="form-group">
                         <label for="sample_type" class="control-label">Sample Type</label>
-                        <select id="sample_type" class="form-control" data-width="50%">
+                        <select id="sample_type", name="sample_type" class="form-control" data-width="50%">
                           <option value="">Please choose a sample type...</option>
                           <option value="MGX">Metagenomics</option>
                           <option value="MTX">Metatranscriptomics</option>
@@ -118,85 +119,79 @@
           </div>
         
         <div id="panel_sample_metadata" class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Sample Metadata</h3>
-            </div>
-            <div class="panel-body">
-              <p>Upload JDRF sample metadata in Excel/CSV format below. An example template containing
-                the required metadata fieleds can be found <a href="#">here</a>.</p>
+          <div class="panel-heading">
+            <h3 class="panel-title">Sample Metadata</h3>
+          </div>
+          <div class="panel-body">
+            <p>Upload JDRF sample metadata in Excel/CSV format below. An example template containing
+              the required metadata fields can be found <a href="#">here</a>.</p>
 
-              <p>Metadata will be validated and any errors found will be displayed. Errors must be 
-                corrected before metadata can be properly submitted.</p>
-              <br />
-              <div class="row">
-                <div class="col-md-8 col-md-offset-2">
-                  <form id="upload_form" enctype="multipart/form-data" method="post" >
-                    <input id="metadata_file_upload" name="metadata_file" type="file">
-                  </form>
-                </div>
+            <p>Metadata will be validated and any errors found will be displayed. Errors must be 
+              corrected before metadata can be properly submitted.</p>
+            <br />
+            <div class="row">
+              <div class="col-md-8 col-md-offset-2">
+                <form id="upload_form" enctype="multipart/form-data" method="post" >
+                  <input id="metadata_file_upload" name="metadata_file" type="file">
+                </form>
               </div>
             </div>
-        </div>
-          
-          <br />
-
-          <div id="validation">
-            <h2>Validation </h2>
-            <p>Errors in the submitted metadata file are displayed below. 
-              Please correct errors and resubmit file.</p>
-            <p>A spreadsheet containing all validation errors can be downloaded <a href="#">here</a></p>.
-
-            <table id="metadata_file_preview" class="table table-striped table-bordered" 
-              cellspacing="0" width="100%">
-              <thead>
-                  <tr>
-                      <th>Study ID</th>
-                      <th>PI Name</th>
-                      <th>BioProject Accession</th>
-                      <th>Host Subject ID</th>
-                      <th>Host Body Mass Index</th>
-                      <th>Host Diet</th>
-                      <th>Host Disease</th>
-                      <th>Host Body Product</th>
-                      <th>Host Family Relationship</th>
-                      <th>Host Genotype</th>
-                      <th>Host Phenotype</th>
-                      <th>Host Tissue Sampled</th>
-                      <th>Gastrointestinal Disease</th>
-                      <th>IHMC Medication Code</th>
-                      <th>Subject Tax ID</th>
-                      <th>Subject Age</th>
-                      <th>Subject Sex</th>
-                      <th>Ethnicity</th>
-                      <th>Geo Location Name</th>
-                      <th>Sample ID</th>
-                      <th>Sample Type</th>
-                      <th>Collection Date</th>
-                      <th>Source Material ID</th>
-                      <th>Isolation Source</th>
-                      <th>Sample Material Process</th>
-                      <th>Sample Storage Duration</th>
-                      <th>Sample Storage Temperature</th>
-                      <th>Sample Storage Mass</th>
-                      <th>Animal Vendor</th>
-                      <th>Variable Region</th>
-                      <th>Organism Count</th>
-                      <th>EnvO Biom</th>
-                      <th>EnvO Feature</th>
-                      <th>EnvO Material</th>
-                      <th>Sequencer</th>
-                      <th>Read Number</th>
-                      <th>Sequencing Facility</th>
-                      <th>File Name</th>
-                      <th>MD5 Checksum</th>
-                  </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
+            <div id="validation" class="hidden">
+              <h3>Validation </h3>
+              <p>Errors in the submitted metadata file are displayed below. 
+                Please correct errors and resubmit file.</p>
+              <p>A spreadsheet containing all validation errors can be downloaded <a href="#">here</a>.</p>
+              
+              <div id="validation_error_single" class="alert alert-danger hidden"></div>
+              <div id="datatables_div">
+                <table id="metadata_file_preview" class="table table-striped table-bordered" 
+                  cellspacing="0" width="100%">
+                  <thead>
+                      <tr>
+                          <th>BioProject Accession</th>
+                          <th>Host Subject ID</th>
+                          <th>Host Body Mass Index</th>
+                          <th>Host Diet</th>
+                          <th>Host Disease</th>
+                          <th>Host Body Product</th>
+                          <th>Host Family Relationship</th>
+                          <th>Host Genotype</th>
+                          <th>Host Phenotype</th>
+                          <th>Gastrointestinal Disease</th>
+                          <th>IHMC Medication Code</th>
+                          <th>Subject Tax ID</th>
+                          <th>Subject Age</th>
+                          <th>Subject Sex</th>
+                          <th>Ethnicity</th>
+                          <th>Sample ID</th>
+                          <th>Collection Date</th>
+                          <th>Source Material ID</th>
+                          <th>Isolation Source</th>
+                          <th>Sample Material Process</th>
+                          <th>Sample Storage Duration</th>
+                          <th>Sample Storage Temperature</th>
+                          <th>Sample Storage Mass</th>
+                          <th>Animal Vendor</th>
+                          <th>Variable Region</th>
+                          <th>Organism Count</th>
+                          <th>EnvO Biom</th>
+                          <th>EnvO Feature</th>
+                          <th>EnvO Material</th>
+                          <th>Sequencer</th>
+                          <th>Read Number</th>
+                          <th>Sequencing Facility</th>
+                          <th>File Name</th>
+                          <th>MD5 Checksum</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-      <hr>
-
+        </div>
+        <div id="upload_success" class="alert alert-success hidden" role="alert"><div class="glyphicon glyphicon-ok-sign"></div><div>Metadata successfully uploaded. Please proceed to the <a class="alert-link" href="{% url 'upload' %}">Upload Data</a> page to continue.</div></div>
     </div> <!-- /container -->
   </body>
 </html>

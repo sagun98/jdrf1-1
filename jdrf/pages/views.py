@@ -92,79 +92,38 @@ def upload_files(request):
 
 
 @login_required(login_url='/login/')
-def validate_metadata(request):
-    """Handles validation of JDRF metadata file uploaded by user."""
-    data = {'data': [
-        {
-            "study_id": "EX9999",
-            "pi_name": "Huttenhower",
-            "bioproject_accession": "PRJNA99999",
-            "host_subject_id": "HL0001",
-            "host_body_mass_index": "26.5",
-            "host_diet": "",
-            "host_disease": "DOID:0050117",
-            "host_body_product": "GENEPIO_0001636",
-            "host_family_relationship": "",
-            "host_genotype": "https://www.ncbi.nlm.nih.gov/my_gap_url",
-            "host_phenotype": "154700",
-            "host_tissue_sampled": "BTO_0000155",
-            "gastrointest_disord": "11405",
-            "ihmc_medication_code": "",
-            "subject_tax_id": "9606",
-            "subject_age": "33",
-            "subject_sex": "F",
-            "ethnicity": "Other_European",
-            "geo_loc_name": "US:Massachusetts:Boston",
-            "sample_id": "108817",
-            "sample_type": "MGX",
-            "collection_date": "2017-10-23",
-            "source_material_id": "abc123",
-            "isolation_source": "",
-            "samp_mat_process": "",
-            "samp_store_dur": "124",
-            "samp_store_temp": "-80C",
-            "samp_vol_mass": "24.5g",
-            "animal_vendor": "",
-            "variable_region": "",
-            "organism_count": "",
-            "env_biom": "ENVO:00000428",
-            "env_feature": "ENVO:00002297",
-            "env_material": "ENVO:00010483",
-            "sequencer": "Illumina MiSeq",
-            "read_number": "1001345",
-            "sequencing_facility": "Harvard Sequencing Core",
-            "filename": "my_sample.fastq.gz",
-            "md5_checksum": "a530ed018ca181fdd9538e6cf3f96df8"
-        },
-    ]}
-
-    return JsonResponse(data)
-
-
-@login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
 def upload_study_metadata(request):
     """ Validates and saves study metadata provided by the logged in user. """
     (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
     data = {}
+    response_code = 200
 
     if request.method == 'GET':
         # Read in our CSV and populate our form field values.
         study_metadata_file = os.path.join(upload_folder, 'study_metadata.csv')
         if os.path.exists(study_metadata_file):
-            study_metadata_df = pd.read_csv(study_metadata_file)
+            study_metadata_df = pd.read_csv(study_metadata_file, keep_default_na=False)
 
-            data['success'] = True
             data['study_form'] = study_metadata_df.to_dict(orient='records')[0]
         else:
-            data['succes'] = False
+            response_code = 500
             data['error_msg'] = "Could not find study metadata file at path %s" % study_metadata_file
     elif request.method == 'POST':
-        # Now we are saving our study metadata to a CSV file. Don't forget to validate!
-        pass
+        study_csv_file = os.path.join(upload_folder, 'study_metadata.csv')
 
-    return JsonResponse(data)
+        post_dict = dict(request.POST.iterlists())
+        (is_valid, metadata_df, error_context) = process_data.validate_study_metadata(post_dict, logger)
+        logger.info("Study Metadata validation: %s" % is_valid)
+        if is_valid:
+            metadata_df.to_csv(study_csv_file, index=False)
+        else:
+           response_code = 500
+           data['error_msg'] = "Validation failed!"
+           data.update(error_context)
+
+    return JsonResponse(data, status=response_code)
 
 
 @login_required(login_url='/login/')
@@ -194,12 +153,15 @@ def upload_sample_metadata(request):
 
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
-            metadata_file = os.path.join(upload_folder, file_name)
-            (is_valid, error_context) = process_data.validate_metadata_file(file, logger)
+            metadata_file = os.path.join(upload_folder, 'sample_metadata.csv')
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, logger)
 
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'
                 data.update(error_context)
+            else:
+                metadata_df.to_csv(metadata_file, index=False)
+
         else:
             data['error'] = 'Oops something went wrong here.'                
 

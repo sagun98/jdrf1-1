@@ -9,15 +9,14 @@ study_schema = Schema([
                         ~InListValidation([''])]),
     Column('pi_name', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.') &
                         ~InListValidation([''])]),
-    Column('sample_type', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_type column.'),
-                           InListValidation(['MGX', 'MTX', '16S'])]),
-    Column('geo_loc_name', [MatchesPatternValidation(r'\w+:\w+:\w+')]),
-    Column('host_tissue_sample_id', [MatchesPatternValidation(r'BTO_\d+')]),
+    Column('sample_type', [InListValidation(['', 'MGX', 'MTX', '16S'])]),
+    Column('geo_loc_name', [InListValidation(['']) | MatchesPatternValidation(r'\w+:\w+:\w+')]),
+    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')])
 ])
 
 sample_schema = Schema([
     Column('animal_vendor', [LeadingWhitespaceValidation()]),
-    Column('host_subject_id', [LeadingWhitespaceValidation()]),
+    Column('host_subject_id', [MatchesPatternValidation(r'\w+')]),
     Column('host_diet', [LeadingWhitespaceValidation()]),
     Column('source_material_id', [LeadingWhitespaceValidation()]),
     Column('ethnicity', [CanConvertValidation(str)]),
@@ -25,7 +24,7 @@ sample_schema = Schema([
     Column('host_genotype', [MatchesPatternValidation(r'^https')]),
     Column('isolation_source', [LeadingWhitespaceValidation()]),
     Column('samp_mat_process', [LeadingWhitespaceValidation()]),
-    Column('bioproject_accession', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+    Column('bioproject_accession', [InListValidation(['']) |
                                     MatchesPatternValidation(r'PRJNA\d+')]),
     Column('env_biom', [MatchesPatternValidation(r'ENVO:\d+')]),
     Column('env_feature', [MatchesPatternValidation(r'ENVO:\d+')]),
@@ -44,14 +43,14 @@ sample_schema = Schema([
                             MatchesPatternValidation(r'[a-zA-Z0-9]{32}')]),
     Column('host_body_mass_index', [CanConvertValidation(float)]),
     Column('host_disease', [MatchesPatternValidation(r'DOID:\d+')]),
-    Column('variable_region', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+    Column('variable_region', [CustomSeriesValidation(lambda x: ~x.isnull(), 'lol') |
                                MatchesPatternValidation(r'(V[1-9],?)+')]),
     Column('gastrointest_disord', [CanConvertValidation(int)]),
     Column('host_body_product', [MatchesPatternValidation(r'GENEPIO_\d+')]),
     Column('host_phenotype', [CanConvertValidation(int)]),
-    Column('ihmc_medication_code', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+    Column('ihmc_medication_code', [CustomSeriesValidation(lambda x: ~x.isnull(), 'lol') |
                                     MatchesPatternValidation(r'(\d+,?)+]')]),
-    Column('organism_count', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
+    Column('organism_count', [CustomSeriesValidation(lambda x: ~x.isnull(), 'lol') |
                               InRangeValidation(1)]),
     Column('samp_store_dur', [InRangeValidation(1)]),
     Column('samp_store_temp', [CanConvertValidation(int)]),
@@ -64,3 +63,5 @@ sample_schema = Schema([
     Column('read_number', [InRangeValidation(1)]),
     Column('sequencing_facility', [LeadingWhitespaceValidation()])
 ])
+
+schemas = {'sample': sample_schema, 'study': study_schema}

@@ -7,7 +7,7 @@ import subprocess
 
 import pandas as pd
 
-from jdrf.metadata_schema import schema
+from jdrf.metadata_schema import schemas
 
 
 # name the general workflow stdout/stderr files
@@ -69,7 +69,7 @@ def errors_to_json(errors, metadata_df):
     def _map_errors_to_df(err):
         """ Quick little closure to handle mapping our errors to the dataframe """
         metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
- 
+
     map(_map_errors_to_df, errors)
     return metadata_df.to_json(orient='records')
 
@@ -81,18 +81,40 @@ def errors_to_csv(errors, metadata_df):
     pass
 
 
-def validate_metadata_file(metadata_file, logger):
-    """ Validates the provided JDRF metadata file and returns any errors 
+def validate_study_metadata(metadata_dict, logger):
+    """ Validates the provded JDRF study metadata form and returns any errors
+        present.
+    """
+    metadata_df = pd.DataFrame(metadata_dict)
+    (is_valid, error_context) = _validate_metadata(metadata_df, 'study', logger)
+    return (is_valid, metadata_df, error_context)
+
+
+def validate_sample_metadata(metadata_file, logger):
+    """ Validates the provided JDRF sample metadata file and returns any errors
+        presesnt.
+    """
+    metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+    (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger)
+    return (is_valid, metadata_df, error_context)
+
+
+def _validate_metadata(metadata_df, file_type, logger):
+    """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
     """
-    is_valid = False
     error_context = {}
 
-    metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+    schema = schemas[file_type]
     errors = schema.validate(metadata_df)
-
+    
+    is_valid = False if errors else True
     if errors:
-        error_context['errors_datatable'] = errors_to_json(errors, metadata_df)
+        if len(errors) == 1:
+            error_context['error_msg'] = str(errors[0])
+        else:
+            error_context['errors_datatable'] = errors_to_json(errors, metadata_df)
+
         error_context['errors_file'] = errors_to_csv(errors, metadata_df)
 
     return (is_valid, error_context)
