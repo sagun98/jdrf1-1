@@ -167,9 +167,7 @@ def upload_sample_metadata(request):
                 data['error'] = 'Metadata validation failed!'
                 data.update(error_context)
             else:
-                metadata_file = os.path.join(process_folder, 
-                                            process_data.WORKFLOW_DATA_PRODUCTS_FOLDER,
-                                            'sample_metadata.csv')
+                metadata_file = os.path.join(metadata_folder, 'sample_metadata.csv')
                 metadata_df.to_csv(metadata_file, index=False)
 
         else:
