@@ -100,18 +100,26 @@ def upload_study_metadata(request):
     data = {}
     response_code = 200
 
+    metadata_folder = os.path.join(process_folder, process_data.METADATA_FOLDER)
+    study_csv_file = os.path.join(metadata_folder, 'study_metadata.csv')
+
     if request.method == 'GET':
         # Read in our CSV and populate our form field values.
-        study_metadata_file = os.path.join(upload_folder, 'study_metadata.csv')
-        if os.path.exists(study_metadata_file):
-            study_metadata_df = pd.read_csv(study_metadata_file, keep_default_na=False)
+        if os.path.exists(study_csv_file):
+            study_metadata_df = pd.read_csv(study_csv_file, keep_default_na=False)
 
             data['study_form'] = study_metadata_df.to_dict(orient='records')[0]
         else:
             response_code = 500
-            data['error_msg'] = "Could not find study metadata file at path %s" % study_metadata_file
+            data['error_msg'] = "Could not find study metadata file at path %s" % study_csv_file
     elif request.method == 'POST':
-        study_csv_file = os.path.join(upload_folder, 'study_metadata.csv')
+        for folder in [upload_folder, metadata_folder]:
+            if not os.path.isdir(folder):
+                try:
+                    os.makedirs(folder)
+                except EnvironmentError:
+                    logger.info("Unable to create folder %s" % folder)
+                    raise
 
         post_dict = dict(request.POST.iterlists())
         (is_valid, metadata_df, error_context) = process_data.validate_study_metadata(post_dict, logger)
@@ -135,31 +143,33 @@ def upload_sample_metadata(request):
     """ 
     data = {} 
     (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
+    metadata_folder = os.path.join(process_folder, process_data.METADATA_FOLDER)
 
     if request.method == 'POST':
         if request.FILES['metadata_file']:
             file = request.FILES['metadata_file']
             file_name = file.name
 
-            upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
-
             # if a folder does not exist for the user, then create
-            if not os.path.isdir(upload_folder):
-                try:
-                    os.makedirs(upload_folder)
-                except EnvironmentError:
-                    logger.info("Unable to create upload folder")
-                    raise
+            for folder in [upload_folder, metadata_folder]:
+                if not os.path.isdir(folder):
+                    try:
+                        os.makedirs(folder)
+                    except EnvironmentError:
+                        logger.info("Unable to create folder %s" % folder)
+                        raise
 
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
-            metadata_file = os.path.join(upload_folder, 'sample_metadata.csv')
-            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, logger)
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
 
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'
                 data.update(error_context)
             else:
+                metadata_file = os.path.join(process_folder, 
+                                            process_data.WORKFLOW_DATA_PRODUCTS_FOLDER,
+                                            'sample_metadata.csv')
                 metadata_df.to_csv(metadata_file, index=False)
 
         else:
@@ -310,7 +320,11 @@ def download_file(request, file_name):
     logger.info("Downloading file for user: %s", user)
 
     # get file path
-    download_file = os.path.join(process_folder,file_name)
+    if file_name == "sample_metadata.errors.xlsx":
+        download_file = os.path.join(upload_folder, file_name)
+    else: 
+        download_file = os.path.join(process_folder,file_name)
+
     logger.info("File to download: %s", download_file)
 
     response = StreamingHttpResponse(open(download_file, 'r'), content_type="text")

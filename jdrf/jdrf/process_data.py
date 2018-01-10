@@ -15,6 +15,7 @@ WORKFLOW_STDOUT = "workflow.stdout"
 WORKFLOW_STDERR = "workflow.stderr"
 
 # name the files for the process subfolders
+METADATA_FOLDER="metadata"
 WORKFLOW_MD5SUM_FOLDER="md5sum_check"
 WORKFLOW_DATA_PRODUCTS_FOLDER="data_products"
 WORFLOW_VISUALIZATIONS_FOLDER="visualizations"
@@ -71,15 +72,26 @@ def errors_to_json(errors, metadata_df):
         metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
 
     map(_map_errors_to_df, errors)
-    return metadata_df.to_json(orient='records')
+    return (metadata_df, metadata_df.to_json(orient='records'))
 
 
-def errors_to_csv(errors, metadata_df):
+def errors_to_excel(metadata_df, output_folder):
     """ Takes any JDRF metadata validation errors and writes them out to an 
         Excel file with cells containing errors denoted.
     """    
-    pass
+    def _highlight_error(s):
+        return ['background-color: red' if isinstance(v, str) 
+                 and v.startswith('ERROR') else '' for v in s]
+    def _color_error(s):
+        return ['color: white' if isinstance(v, str)
+                and v.startswith('ERROR') else 'black' for v in s]                 
 
+    errors_file = os.path.join(output_folder, 'sample_metadata.errors.xlsx')
+    styled_df = metadata_df.style.apply(_highlight_error).apply(_color_error)
+    styled_df.to_excel(errors_file, index=False, engine='openpyxl')
+
+    return errors_file
+    
 
 def validate_study_metadata(metadata_dict, logger):
     """ Validates the provded JDRF study metadata form and returns any errors
@@ -90,16 +102,16 @@ def validate_study_metadata(metadata_dict, logger):
     return (is_valid, metadata_df, error_context)
 
 
-def validate_sample_metadata(metadata_file, logger):
+def validate_sample_metadata(metadata_file, output_folder, logger):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
     metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
-    (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger)
+    (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger, output_folder)
     return (is_valid, metadata_df, error_context)
 
 
-def _validate_metadata(metadata_df, file_type, logger):
+def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
     """
@@ -113,9 +125,11 @@ def _validate_metadata(metadata_df, file_type, logger):
         if len(errors) == 1:
             error_context['error_msg'] = str(errors[0])
         else:
-            error_context['errors_datatable'] = errors_to_json(errors, metadata_df)
+            (errors_metadata_df, errors_json) = errors_to_json(errors,metadata_df)
+            error_context['errors_datatable'] = errors_json
 
-        error_context['errors_file'] = errors_to_csv(errors, metadata_df)
+            if output_folder:
+               error_context['errors_file'] = errors_to_excel(errors_metadata_df, output_folder)
 
     return (is_valid, error_context)
 

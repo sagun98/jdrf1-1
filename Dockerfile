@@ -46,7 +46,9 @@ RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
 RUN pip install pandas && \
     pip install pathlib && \
     pip install typing && \
-    pip install git+https://github.com/carze/PandasSchema.git
+    pip install git+https://github.com/carze/PandasSchema.git && \
+    pip install Jinja2 && \
+    pip install openpyxl
 
 # install java for kneaddata
 RUN apt-get update -y && apt-get install -y openjdk-8-jre
