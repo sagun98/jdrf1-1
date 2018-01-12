@@ -90,4 +90,4 @@ RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
 RUN apt-get install python-ldap -y
 RUN pip install django-auth-ldap
 
-EXPOSE :80
+EXPOSE 80
