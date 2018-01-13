@@ -19,7 +19,8 @@ RUN apt-get update -y && \
 
 # clone the django site and rename folder
 RUN git clone https://github.com/biobakery/jdrf1.git && \
-    mv jdrf1 /usr/local/src/jdrf
+    mv jdrf1/* jdrf1/.git* /usr/local/src/ && \
+    rmdir jdrf1
 
 # install python dependencies
 RUN pip install --upgrade pip && \
