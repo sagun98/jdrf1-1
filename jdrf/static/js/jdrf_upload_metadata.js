@@ -51,6 +51,7 @@
 
     if (Cookies.get('sample_metadata') == '1') {
         $('#panel_sample_metadata .panel-body').hide();
+        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
         $('#upload_success').removeClass('hidden')
     }
 
@@ -179,6 +180,8 @@
         var response = data.response;
 
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
+        Cookies.remove('sample_metadata');
+
         if (response.hasOwnProperty('error_msg')) {
             // We have a larger structural problem here so don't render 
             // the table and just display the error message.
@@ -209,6 +212,7 @@
      $('#metadata_file_upload').on('change', function(event) {
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata</h3>');
         $('#validation').addClass('hidden');
+        $('#upload_success').addClass('hidden');
      });
      
      $('#metadata_file_upload').on('filebatchuploadsuccess', function(event, files, extra) {

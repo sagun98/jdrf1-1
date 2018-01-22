@@ -20,7 +20,8 @@ TEMP_FOLDER = "/opt/temp/"
 
 # set the default metadata file names
 METADATA_FILE_NAME = "metadata.tsv"
-METADATA_GROUP_FILE_NAME = "metadata_group.tsv"
+METADATA_GROUP_FILE_NAME = "metadata_study.tsv"
+METADATA_VALIDATION_FILE_NAME = "sample_metadata.errors.xlsx"
 
 # function to get environment variables
 def get_env(key):

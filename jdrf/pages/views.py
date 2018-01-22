@@ -100,8 +100,8 @@ def upload_study_metadata(request):
     data = {}
     response_code = 200
 
-    metadata_folder = os.path.join(process_folder, process_data.METADATA_FOLDER)
-    study_csv_file = os.path.join(metadata_folder, 'study_metadata.csv')
+    metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
+    study_csv_file = os.path.join(metadata_folder, settings.METADATA_GROUP_FILE_NAME)
 
     if request.method == 'GET':
         # Read in our CSV and populate our form field values.
@@ -143,7 +143,7 @@ def upload_sample_metadata(request):
     """ 
     data = {} 
     (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
-    metadata_folder = os.path.join(process_folder, process_data.METADATA_FOLDER)
+    metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
 
     if request.method == 'POST':
         if request.FILES['metadata_file']:
@@ -167,7 +167,11 @@ def upload_sample_metadata(request):
                 data['error'] = 'Metadata validation failed!'
                 data.update(error_context)
             else:
-                metadata_file = os.path.join(metadata_folder, 'sample_metadata.csv')
+                ## Once we've uploaded a sample metadata file successfully let's nuke any
+                ## validation spreadsheets we have left over.
+                process_data.delete_validation_files(upload_folder, logger)
+
+                metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
                 metadata_df.to_csv(metadata_file, index=False)
 
         else:

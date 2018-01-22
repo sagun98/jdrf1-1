@@ -10,6 +10,8 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 
+from django.conf import settings
+
 # Set default email options
 EMAIL_FROM = "jdrfmibc_dev@hutlab-jdrf01.rc.fas.harvard.edu"
 EMAIL_TO = "lauren.j.mciver@gmail.com"
@@ -72,6 +74,16 @@ def get_metadata_file_names(metadata_file):
     return get_metadata_column_by_name(metadata_file, "file")
 
 
+def delete_validation_files(upload_folder, logger):
+    """Upon succesfully uploading a sample metadata file gets rid of any
+    validation files if they exist.
+    """
+    validation_file = os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME)
+
+    if os.path.exists(validation_file):
+        os.remove(validation_file)
+
+
 def errors_to_json(errors, metadata_df):
     """ Takes any JDRF metadata validation errors and converts them into a
         JSON object for consumption on the JDRF MIBC website via jquery 
@@ -96,7 +108,7 @@ def errors_to_excel(metadata_df, output_folder):
         return ['color: white' if isinstance(v, str)
                 and v.startswith('ERROR') else 'black' for v in s]                 
 
-    errors_file = os.path.join(output_folder, 'sample_metadata.errors.xlsx')
+    errors_file = os.path.join(output_folder, settings.METADATA_VALIDATION_FILE_NAME)
     styled_df = metadata_df.style.apply(_highlight_error).apply(_color_error)
     styled_df.to_excel(errors_file, index=False, engine='openpyxl')
 
