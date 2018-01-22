@@ -18,8 +18,14 @@ RUN apt-get update -y && \
 	nginx
 
 # clone the django site and rename folder
+<<<<<<< HEAD
 RUN git clone https://github.com/carze/jdrf1.git && \
     mv jdrf1 /usr/local/src/
+=======
+RUN git clone https://github.com/biobakery/jdrf1.git && \
+    mv jdrf1/* jdrf1/.git* /usr/local/src/ && \
+    rmdir jdrf1
+>>>>>>> upstream/master
 
 # install python dependencies
 RUN pip install --upgrade pip && \
@@ -47,11 +53,20 @@ RUN pip install pandas && \
     pip install Jinja2 && \
     pip install openpyxl
 
-# install java for kneaddata
-RUN apt-get update -y && apt-get install -y openjdk-8-jre
+# install java for kneaddata, numpy for metaphlan2, workflow visualization dependencies, and ldap
+# remove texlive docs to save ~330 MB
+RUN apt-get update -y && \
+    apt-get install -y apt-transport-https openjdk-8-jre python-numpy python-matplotlib python-ldap \
+        python-scipy pandoc texlive software-properties-common \ 
+        python-pandas python-biopython && \
+    apt-get remove -y texlive-fonts-recommended-doc texlive-latex-base-doc \
+        texlive-latex-recommended-doc \
+        texlive-pictures-doc texlive-pstricks-doc
+
+# install python ldap dependencies
+RUN pip install django-auth-ldap
 
 # install metaphlan2 and dependencies
-RUN apt-get install -y python-numpy
 RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.0.tar.gz && \
     tar xzvf metaphlan2-2.6.0.tar.gz && \
     mv biobakery-metaphlan2-c43e40a443ed/*.py /usr/local/bin/ && \
@@ -61,20 +76,13 @@ RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.
     rm metaphlan2-2.6.0.tar.gz && \
     rm -r biobakery-metaphlan2-c43e40a443ed
 
-# install workflow visualizations dependencies
-RUN apt-get install python-matplotlib python-scipy pandoc texlive software-properties-common python-pandas python-biopython -y
-# remove texlive docs to save ~330 MB
-RUN apt-get install texlive -y && \
-    apt-get remove -y texlive-fonts-recommended-doc texlive-latex-base-doc texlive-latex-recommended-doc texlive-pictures-doc texlive-pstricks-doc
-
 # Install the latest R
-RUN apt-get install apt-transport-https
-
-RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/'
-RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9
-RUN gpg -a --export E084DAB9 | apt-key add -
-RUN apt-get -qq update && apt-get install -y r-base
-RUN R -q -e "install.packages('vegan', repos='http://cran.r-project.org')"
+RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/' && \
+    gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 && \
+    gpg -a --export E084DAB9 | apt-key add - && \
+    apt-get update -y && \
+    apt-get install r-base -y && \
+    R -q -e "install.packages('vegan', repos='http://cran.r-project.org')"
 
 # install hclust2
 RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
@@ -83,8 +91,4 @@ RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
     rm -r nsegata-hclust2-3d589ab2cb68/ && \
     rm 3d589ab2cb68.tar.gz
 
-# install ldap dependencies
-RUN apt-get install python-ldap -y
-RUN pip install django-auth-ldap
-
-EXPOSE 80
+EXPOSE :80

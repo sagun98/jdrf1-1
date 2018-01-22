@@ -17,11 +17,9 @@ The JDRF1 site is the data depository. This site hosts raw data and metadata upl
 
 7. Create a container from the image (mapping port 80 to 80), start it, and connect to it
 
-    a. ``$ sudo docker create -it --env-file keys.env -p 80:80 --name jdrf1_mibc_container jdrf1_mibc bash``
+    a. ``$ sudo docker run -itd --env-file keys.env -p 80:80 --name jdrf1_mibc_container jdrf1_mibc bash``
 
-    b. ``$ sudo docker start jdrf1_mibc_container``
-    
-    c. ``$ sudo docker exec -it jdrf1_mibc_container bash``
+    b. ``$ sudo docker exec -it jdrf1_mibc_container bash``
     
 8. From in the container, first run the configuration script to start services running in the container and to setup the environment. Then run gunicorn to start the site.
 

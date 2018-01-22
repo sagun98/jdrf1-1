@@ -56,7 +56,7 @@ ALLOWED_HOSTS = ['0.0.0.0', 'localhost']
 # Set login redirect page
 LOGIN_REDIRECT_URL = "upload"
 
-# Add ldap settings with anonymous search/bind
+# Add ldap settings with search/bind
 # If ldap authentication fails for user, then
 # fall back on django model for authentication
 AUTHENTICATION_BACKENDS = [
@@ -65,19 +65,27 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Replace the LDAP default info with RC info in prod
-# DN and PASSWORD should be left empty for anonymous search
 import ldap
 from django_auth_ldap.config import LDAPSearch
 
-AUTH_LDAP_SERVER_URI = "ldap://ldap.example.com"
-AUTH_LDAP_BIND_DN = ""
-AUTH_LDAP_BIND_PASSWORD = ""
-AUTH_LDAP_USER_SEARCH = LDAPSearch("ou=users,dc=example,dc=com",
+AUTH_LDAP_SERVER_URI = "ldap://DOMAIN:389"
+# Use bind and search with specific account for the bind
+AUTH_LDAP_BIND_DN = "BINDDN"
+AUTH_LDAP_BIND_PASSWORD = "BINDPW"
+
+AUTH_LDAP_USER_SEARCH = LDAPSearch("DOMAIN",
     ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+
+# Without these settings the connection will time out
+AUTH_LDAP_CONNECTION_OPTIONS = {
+    ldap.OPT_DEBUG_LEVEL: 1,
+    ldap.OPT_REFERRALS: 0,
+}
 
 # Set up logger for ldap
 ldap_logger = logging.getLogger('django_auth_ldap')
 ldap_logger.addHandler(logging.StreamHandler())
+
 
 # Application definition
 
