@@ -27,5 +27,5 @@ python manage.py createsuperuser
 python manage.py collectstatic
 
 # start gunicorn
-ssupervisorctl start gunicorn
+supervisorctl start gunicorn
 printf "The environment is now configured and the JDRF1 MIBC website is now running.\n"

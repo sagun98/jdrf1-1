@@ -42,7 +42,6 @@
         $('#panel_sample_metadata .panel-heading').css('opacity', 1)
         $('#panel_sample_metadata .panel-body').show();
         $('#panel_sample_metadata .panel-heading').css('cursor', 'pointer');
-        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
         $('#panel_sample_metadata .panel-heading').on('click', function() {
             $('#panel_sample_metadata .panel-body').slideToggle();
         })
@@ -184,6 +183,7 @@
             // We have a larger structural problem here so don't render 
             // the table and just display the error message.
             $('#datatables_div').hide();
+            $('#error_spreadsheet').addClass('hidden')
             $('#validation_error_single').html("<div class='glyphicon glyphicon-ban-circle'></div>" +
                                                "<div>" + response['error_msg'] + "</div");
             $('#validation_error_single').removeClass('hidden');
@@ -195,6 +195,10 @@
             var errors_table = JSON.parse(response.errors_datatable);
             table.clear();
             table.rows.add(errors_table, false);
+
+            $('#validation_error_single').addClass('hidden');
+            $('#error_spreadsheet').removeClass('hidden')
+            $('#datatables_div').show();
 
             $('#validation').css('width', '100%');
             $('#validation').removeClass('hidden');
