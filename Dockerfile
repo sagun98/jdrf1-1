@@ -18,8 +18,8 @@ RUN apt-get update -y && \
 	nginx
 
 # clone the django site and rename folder
-RUN git clone https://github.com/carze/jdrf1 && \
-    mv jdrf1 /usr/local/src/jdrf
+RUN git clone https://github.com/carze/jdrf1.git && \
+    mv jdrf1 /usr/local/src/
 
 # install python dependencies
 RUN pip install --upgrade pip && \
@@ -35,9 +35,6 @@ ADD etc/supervisor.ini /etc/supervisord.conf
 # replace nginx config to proxy gunicorn
 RUN rm -v /etc/nginx/nginx.conf
 ADD etc/jdrf_nginx.conf /etc/nginx/nginx.conf
-
-# Move over cutplace metadata CID
-ADD opt/validation/ /opt/
 
 # install workflows dependencies
 RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata

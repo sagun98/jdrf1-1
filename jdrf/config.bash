@@ -3,6 +3,9 @@
 supervisord -c /etc/supervisord.conf
 supervisorctl start nginx
 
+# Just to head off any failures during mysql start
+chown -R mysql.mysql /var/lib/mysql /var/run/mysqld
+
 # start mysql if not alerady running
 /etc/init.d/mysql start
 
