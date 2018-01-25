@@ -62,3 +62,51 @@
 .width_75 {
     width: 75%;
 }
+
+th, td { white-space: nowrap; overflow: hidden; }
+
+#optional_fields_msg {
+    padding-bottom: 12px;
+    font-weight: bold;
+}
+
+#panel_study_metadata button {
+    margin-top: 6px;
+}
+
+#panel_sample_metadata .panel-heading {
+    opacity: .5;
+}
+#panel_sample_metadata .panel-body {
+    display: none;
+}
+
+#study_metadata_form .col-xs-5 {
+    padding-left: 0px;
+}
+
+#validation {
+    padding-top: 5px;
+}
+
+.green {
+    color: green;
+}
+
+.red {
+    color: red;
+}
+
+.alert .glyphicon{
+    display:table-cell;
+}
+
+.alert div,
+.alert span{
+    padding-left: 5px;
+    display:table-cell;
+}
+
+.hidden { 
+    display: none; 
+}

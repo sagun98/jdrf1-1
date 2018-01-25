@@ -16,10 +16,12 @@ import logging
 # set the location user will upload files to
 UPLOAD_FOLDER = "/opt/upload_folder/"
 PROCESS_FOLDER = "/opt/process_folder/"
+TEMP_FOLDER = "/opt/temp/"
 
 # set the default metadata file names
 METADATA_FILE_NAME = "metadata.tsv"
-METADATA_GROUP_FILE_NAME = "metadata_group.tsv"
+METADATA_GROUP_FILE_NAME = "metadata_study.tsv"
+METADATA_VALIDATION_FILE_NAME = "sample_metadata.errors.xlsx"
 
 # function to get environment variables
 def get_env(key):
@@ -96,6 +98,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'pages',
+    'widget_tweaks'
 ]
 
 MIDDLEWARE = [

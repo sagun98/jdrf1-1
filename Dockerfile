@@ -26,7 +26,8 @@ RUN git clone https://github.com/biobakery/jdrf1.git && \
 RUN pip install --upgrade pip && \
     pip install setuptools && \
     pip install supervisor && \
-    pip install django==1.11.0 gunicorn==19.7 MySQL-python==1.2.5
+    pip install django==1.11.0 gunicorn==19.7 MySQL-python==1.2.5 && \
+    pip install django-widget-tweaks
 
 # add supervisor conf
 RUN mkdir -pv /var/log/supervisord
@@ -38,6 +39,14 @@ ADD etc/jdrf_nginx.conf /etc/nginx/nginx.conf
 
 # install workflows dependencies
 RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
+
+# install modules needed for validation
+RUN pip install pandas && \
+    pip install pathlib && \
+    pip install typing && \
+    pip install git+https://github.com/carze/PandasSchema.git && \
+    pip install Jinja2 && \
+    pip install openpyxl
 
 # install java for kneaddata, numpy for metaphlan2, workflow visualization dependencies, and ldap
 # remove texlive docs to save ~330 MB

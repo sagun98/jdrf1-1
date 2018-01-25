@@ -5,13 +5,16 @@ import os
 import sys
 import time
 
+import pandas as pd
+
 from django.conf import settings
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, HttpResponse
+from django.core.files.storage import FileSystemStorage
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import requires_csrf_token
@@ -86,6 +89,99 @@ def upload_files(request):
         form = UploadForm()
 
     return render(request,'upload.html', {'form': form})
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def upload_study_metadata(request):
+    """ Validates and saves study metadata provided by the logged in user. """
+    (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
+    data = {}
+    response_code = 200
+
+    metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
+    study_csv_file = os.path.join(metadata_folder, settings.METADATA_GROUP_FILE_NAME)
+
+    if request.method == 'GET':
+        # Read in our CSV and populate our form field values.
+        if os.path.exists(study_csv_file):
+            study_metadata_df = pd.read_csv(study_csv_file, keep_default_na=False)
+
+            data['study_form'] = study_metadata_df.to_dict(orient='records')[0]
+        else:
+            response_code = 500
+            data['error_msg'] = "Could not find study metadata file at path %s" % study_csv_file
+    elif request.method == 'POST':
+        for folder in [upload_folder, metadata_folder]:
+            if not os.path.isdir(folder):
+                try:
+                    os.makedirs(folder)
+                except EnvironmentError:
+                    logger.info("Unable to create folder %s" % folder)
+                    raise
+
+        post_dict = dict(request.POST.iterlists())
+        (is_valid, metadata_df, error_context) = process_data.validate_study_metadata(post_dict, logger)
+        logger.info("Study Metadata validation: %s" % is_valid)
+        if is_valid:
+            metadata_df.to_csv(study_csv_file, index=False)
+        else:
+           response_code = 500
+           data['error_msg'] = "Validation failed!"
+           data.update(error_context)
+
+    return JsonResponse(data, status=response_code)
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def upload_sample_metadata(request):
+    """ Validates the user-provided JDRF metadata file and if valid saves to the users 
+        data storage directory.
+    """ 
+    data = {} 
+    (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
+    metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
+
+    if request.method == 'POST':
+        if request.FILES['metadata_file']:
+            file = request.FILES['metadata_file']
+            file_name = file.name
+
+            # if a folder does not exist for the user, then create
+            for folder in [upload_folder, metadata_folder]:
+                if not os.path.isdir(folder):
+                    try:
+                        os.makedirs(folder)
+                    except EnvironmentError:
+                        logger.info("Unable to create folder %s" % folder)
+                        raise
+
+            # We need to validate this file and if any errors exist prevent 
+            # the user from saving this file.
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
+
+            if not is_valid:
+                data['error'] = 'Metadata validation failed!'
+                data.update(error_context)
+            else:
+                ## Once we've uploaded a sample metadata file successfully let's nuke any
+                ## validation spreadsheets we have left over.
+                process_data.delete_validation_files(upload_folder, logger)
+
+                metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
+                metadata_df.to_csv(metadata_file, index=False)
+
+        else:
+            data['error'] = 'Oops something went wrong here.'                
+
+        return JsonResponse(data)
+    else :
+        form = UploadForm()
+        return render(request, 'upload_metadata.html', {'form': form})
+
 
 def try_read_file(file_name):
     """ Try to read the file if it exists """
@@ -226,7 +322,11 @@ def download_file(request, file_name):
     logger.info("Downloading file for user: %s", user)
 
     # get file path
-    download_file = os.path.join(process_folder,file_name)
+    if file_name == "sample_metadata.errors.xlsx":
+        download_file = os.path.join(upload_folder, file_name)
+    else: 
+        download_file = os.path.join(process_folder,file_name)
+
     logger.info("File to download: %s", download_file)
 
     response = StreamingHttpResponse(open(download_file, 'r'), content_type="text")

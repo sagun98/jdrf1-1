@@ -10,19 +10,28 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 
+from django.conf import settings
+
 # Set default email options
 EMAIL_FROM = "jdrfmibc_dev@hutlab-jdrf01.rc.fas.harvard.edu"
 EMAIL_TO = "lauren.j.mciver@gmail.com"
 EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu.off"
+
+import pandas as pd
+
+from jdrf.metadata_schema import schemas
+
 
 # name the general workflow stdout/stderr files
 WORKFLOW_STDOUT = "workflow.stdout"
 WORKFLOW_STDERR = "workflow.stderr"
 
 # name the files for the process subfolders
+METADATA_FOLDER="metadata"
 WORKFLOW_MD5SUM_FOLDER="md5sum_check"
 WORKFLOW_DATA_PRODUCTS_FOLDER="data_products"
 WORFLOW_VISUALIZATIONS_FOLDER="visualizations"
+
 
 def get_recursive_files_nonempty(folder,include_path=False):
     """ Get all files in all folder and subfolders that are not empty"""
@@ -63,6 +72,89 @@ def get_metadata_file_md5sums(metadata_file):
 def get_metadata_file_names(metadata_file):
     """ Read the metadata file and get a list of all file names """
     return get_metadata_column_by_name(metadata_file, "file")
+
+
+def delete_validation_files(upload_folder, logger):
+    """Upon succesfully uploading a sample metadata file gets rid of any
+    validation files if they exist.
+    """
+    validation_file = os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME)
+
+    if os.path.exists(validation_file):
+        os.remove(validation_file)
+
+
+def errors_to_json(errors, metadata_df):
+    """ Takes any JDRF metadata validation errors and converts them into a
+        JSON object for consumption on the JDRF MIBC website via jquery 
+        DataTables.
+    """
+    def _map_errors_to_df(err):
+        """ Quick little closure to handle mapping our errors to the dataframe """
+        metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
+
+    map(_map_errors_to_df, errors)
+    return (metadata_df, metadata_df.to_json(orient='records'))
+
+
+def errors_to_excel(metadata_df, output_folder):
+    """ Takes any JDRF metadata validation errors and writes them out to an 
+        Excel file with cells containing errors denoted.
+    """    
+    def _highlight_error(s):
+        return ['background-color: red' if isinstance(v, str) 
+                 and v.startswith('ERROR') else '' for v in s]
+    def _color_error(s):
+        return ['color: white' if isinstance(v, str)
+                and v.startswith('ERROR') else 'black' for v in s]                 
+
+    errors_file = os.path.join(output_folder, settings.METADATA_VALIDATION_FILE_NAME)
+    styled_df = metadata_df.style.apply(_highlight_error).apply(_color_error)
+    styled_df.to_excel(errors_file, index=False, engine='openpyxl')
+
+    return errors_file
+    
+
+def validate_study_metadata(metadata_dict, logger):
+    """ Validates the provded JDRF study metadata form and returns any errors
+        present.
+    """
+    metadata_df = pd.DataFrame(metadata_dict)
+    (is_valid, error_context) = _validate_metadata(metadata_df, 'study', logger)
+    return (is_valid, metadata_df, error_context)
+
+
+def validate_sample_metadata(metadata_file, output_folder, logger):
+    """ Validates the provided JDRF sample metadata file and returns any errors
+        presesnt.
+    """
+    metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+    (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger, output_folder)
+    return (is_valid, metadata_df, error_context)
+
+
+def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
+    """ Validates the provided JDRF metadata DataFrame and returns any errors 
+        if they are present.
+    """
+    error_context = {}
+
+    schema = schemas[file_type]
+    errors = schema.validate(metadata_df)
+    
+    is_valid = False if errors else True
+    if errors:
+        if len(errors) == 1:
+            error_context['error_msg'] = str(errors[0])
+        else:
+            (errors_metadata_df, errors_json) = errors_to_json(errors,metadata_df)
+            error_context['errors_datatable'] = errors_json
+
+            if output_folder:
+               error_context['errors_file'] = errors_to_excel(errors_metadata_df, output_folder)
+
+    return (is_valid, error_context)
+
 
 def check_metadata_files_complete(user,folder,metadata_file):
     """ Read the metadata and find all raw files for user.
