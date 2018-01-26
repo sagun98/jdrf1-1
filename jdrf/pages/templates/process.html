@@ -65,17 +65,13 @@
           <ul><li>Check that all raw data files have metadata.</li>
             <li>Check that all files in the metadata have been uploaded.</li>
             <li>Once this verification step is complete the files are ready to be processed.</li>
-            <li>If you see errors about missing files, upload the remaining files on the <a href="/upload">Upload</a> page.</li>  
-            <li>If you see errors about missing metadata, upload a new metadata file on the <a href="/metadata">Metadata</a> page.</li>
+            <li>If you see errors about missing files, upload the remaining files on the <a href="/upload">Upload Raw Data</a> page.</li>  
+            <li>If you see errors about missing metadata, upload a new metadata file on the <a href="/metadata">Upload Metadata</a> page.</li>
             <li>This process only takes a few seconds so you will automatically see the status after clicking the button.</li>  
            </ul>
           <form method="post" action="{% url 'process' %}">
             {% csrf_token %}
-            {% if message1 and message1|first == 0 %}
-                <button class="btn btn-success" type="submit" name="verify" disabled>Verify Data</button>
-            {% elif message2 and message2|first == 1 %}
-                <button class="btn btn-success" type="submit" name="verify" disabled>Verify Data</button>
-            {% elif message2 and message2|first == 0 %}
+            {% if verify_button == 0 %}
                 <button class="btn btn-success" type="submit" name="verify" disabled>Verify Data</button>
             {% else %}
                 <div class="container terminalstyle"><span style="white-space: pre-line">{{ raw_input }}</span></div>
@@ -102,16 +98,16 @@
               <li>JDRF2 will also host a Galaxy server which will allow for processing of the scrubbed data.</li>
               <li>After scrubbing the data will be run through the bioBakery data products workflow.</li>
               <li>Finally it will be run through the bioBakery visualization workflow.</li>
-              <li>NOTE: This process will take a few hours at least. You can continue to refresh this page to see the progress for each of the three workflows.</li> 
+              <li>NOTE: This process will take a few hours at least. You can continue to refresh this page to see the latest workflow output by clicking the "Refresh" button below.</li> 
             </ul>
           <form method="post" action="{% url 'process' %}">
             {% csrf_token %}
-            {% if message1 and message1|first == 0 %}
+            {% if process_button == 1 %}
               <button class="btn btn-success" style="background: #11511b" type="submit" name="process">Process Data</button>
-            {% elif message2 and message2|first == 1 %}
-              <button class="btn btn-success" style="background: #11511b" type="submit" name="process">Process Data</button>
+            {% elif refresh_button == 0 %}
+              <button class="btn btn-success" style="background: #11511b" type="submit" name="process" disabled>Process Data</button>
             {% else %}
-              <button class="btn btn-success" type="submit" name="process" disabled>Process Data</button>
+              <button class="btn btn-success" style="background: #11511b" type="submit" name="refresh">Refresh</button>
             {% endif %}
           </form>
           </p>
@@ -124,7 +120,7 @@
 
           {% if md5sum_stdout %}
             <p><span class="bold_text">MD5SUM Workflow Progress</span></p>
-            {% if "failed" in md5sum_stdout %}
+            {% if "failed" in md5sum_stdout or "ERROR" in md5sum_stdout %}
               <div class="container terminalstylered"><span style="white-space: pre-line">{{ md5sum_stdout }}</span></div>
             {% else %}
               <div class="container terminalstyle"><span style="white-space: pre-line">{{ md5sum_stdout }}</span></div>
@@ -133,7 +129,7 @@
           {% endif %}
           {% if data_products_stdout %}
             <p><span class="bold_text">Data Products Workflow Progress</span></p>
-            {% if "failed" in data_products_stdout %}
+            {% if "failed" in data_products_stdout or "ERROR" in data_products_stdout %}
               <div class="container terminalstylered"><span style="white-space: pre-line">{{ data_products_stdout }}</span></div>
             {% else %}
               <div class="container terminalstyle"><span style="white-space: pre-line">{{ data_products_stdout }}</span></div>
@@ -142,7 +138,7 @@
           {% endif %}
           {% if visualizations_stdout %}
             <p><span class="bold_text">Visualization Workflow Progress</span></p>
-            {% if "failed" in visualizations_stdout %}
+            {% if "failed" in visualizations_stdout or "ERROR" in visualizations_stdout %}
               <div class="container terminalstylered"><span style="white-space: pre-line">{{ visualizations_stdout }}</span></div>
             {% else %}
               <div class="container terminalstyle"><span style="white-space: pre-line">{{ visualizations_stdout }}</span></div>

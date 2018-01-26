@@ -195,22 +195,36 @@ def try_read_file(file_name):
 
     return lines
 
+def read_stdout_stderr(folder):
+    """ Read the stdout and stderr files from a workflow folder """
+
+    stdout_file=process_data.WORKFLOW_STDOUT
+    stderr_file=process_data.WORKFLOW_STDERR
+
+    # if stdout is empty check for stderr
+    stdout = try_read_file(os.path.join(folder,stdout_file))
+    if not stdout:
+        stdout = try_read_file(os.path.join(folder,stderr_file))
+
+    return stdout
+
 @login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
 def process_files(request):
     # get the user, folders, and logger
     logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
- 
+    metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
+   
     # set the default responses
     responses={"message1":[],"message2":[]}
  
     responses["raw_input"]="The following raw files have been uploaded and are ready to verify:\n"
-    responses["raw_input"]+="\n".join(process_data.get_recursive_files_nonempty(upload_folder,include_path=False))+"\n"
+    responses["raw_input"]+="\n".join(process_data.get_recursive_files_nonempty(upload_folder,include_path=False,recursive=False))+"\n"
 
-    if request.method == 'POST':
+    if request.method == 'POST' and not "refresh" in request.POST:
         logger.info("Post from process page received")
-        metadata_file = os.path.join(upload_folder,settings.METADATA_FILE_NAME)
+        metadata_file = os.path.join(metadata_folder,settings.METADATA_FILE_NAME)
         logger.info("Metadata file: %s", metadata_file)
         process_folder = os.path.join(settings.PROCESS_FOLDER,user)
         logger.info("Process folder: %s", process_folder)
@@ -231,15 +245,14 @@ def process_files(request):
     responses["workflow_running"] = process_data.check_workflow_running(user, process_folder)
 
     # get the stdout for the processing workflows
-    stdout_file=process_data.WORKFLOW_STDOUT
-    responses["md5sum_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORKFLOW_MD5SUM_FOLDER,stdout_file))
-    responses["data_products_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORKFLOW_DATA_PRODUCTS_FOLDER,stdout_file))
-    responses["visualizations_stdout"]=try_read_file(os.path.join(process_folder,process_data.WORFLOW_VISUALIZATIONS_FOLDER,stdout_file))
+    responses["md5sum_stdout"]=read_stdout_stderr(os.path.join(process_folder,process_data.WORKFLOW_MD5SUM_FOLDER))
+    responses["data_products_stdout"]=read_stdout_stderr(os.path.join(process_folder,process_data.WORKFLOW_DATA_PRODUCTS_FOLDER))
+    responses["visualizations_stdout"]=read_stdout_stderr(os.path.join(process_folder,process_data.WORFLOW_VISUALIZATIONS_FOLDER))
 
     # if the workflow just started, wait for a refresh before updating status
     if not responses["message2"]:
         if not responses["workflow_running"]:
-            if list(filter(lambda x: "fail" in x, [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])):
+            if list(filter(lambda x: "fail" in x.lower() or "error" in x.lower(), [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])):
                 # one of the workflows had a task that failed
                 responses["message2"]=(1, "ERROR: The workflows have finished running. One of the tasks failed.")
             elif len(list(filter(lambda x: "Finished" in x, [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])))  == 3:
@@ -251,6 +264,20 @@ def process_files(request):
         elif responses["md5sum_stdout"] or responses["data_products_stdout"] or responses["visualizations_stdout"]:
             responses["message2"]=(0, "The processing workflows (md5sum check, data processing, and visualization) are still running.")
 
+    # determine which buttons should be active
+    responses["verify_button"] = 1
+    if ( responses["message1"] and responses["message1"][0] == 0 ) or ( responses["message2"] and responses["message2"][0] in [0,1] ):
+        responses["verify_button"] = 0
+    if responses["verify_button"] == 1:
+        responses["process_button"] = 0
+        responses["refresh_button"] = 0
+    elif ( responses["message1"] and responses["message1"][0] == 0 ) or ( responses["message2"] and responses["message2"][0] == 1 ):
+        responses["process_button"] = 1
+        responses["refresh_button"] = 0
+    else:
+        responses["process_button"] = 0
+        responses["refresh_button"] = 1
+        
     return render(request,'process.html',responses)
 
 def get_file_size(file):
