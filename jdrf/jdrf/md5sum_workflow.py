@@ -29,11 +29,11 @@ def get_metadata_column_by_name(metadata_file, column_name):
     file_names=[]
     with open(metadata_file) as file_handle:
         # read in the header
-        header = file_handle.readline().rstrip().split("\t")
+        header = file_handle.readline().rstrip().split(",")
         # file the column with the file names
         index = filter(lambda x: column_name in x[1].lower(), enumerate(header))[0][0]
         for line in file_handle:
-            data=line.rstrip().split("\t")
+            data=line.rstrip().split(",")
             try:
                 file_names.append(data[index])
             except IndexError:
@@ -43,7 +43,7 @@ def get_metadata_column_by_name(metadata_file, column_name):
 def get_metadata_file_md5sums(metadata_file):
     """ Return the md5sums for all of the files """
 
-    return zip(get_metadata_column_by_name(metadata_file, "file"),get_metadata_column_by_name(metadata_file, "md5sum"))
+    return zip(get_metadata_column_by_name(metadata_file, "filename"),get_metadata_column_by_name(metadata_file, "md5_checksum"))
 
 def verify_checksum(task):
     """ Verify the checksum matches that found in the metadata file """

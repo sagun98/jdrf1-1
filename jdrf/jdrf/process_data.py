@@ -33,7 +33,7 @@ WORKFLOW_DATA_PRODUCTS_FOLDER="data_products"
 WORFLOW_VISUALIZATIONS_FOLDER="visualizations"
 
 
-def get_recursive_files_nonempty(folder,include_path=False):
+def get_recursive_files_nonempty(folder,include_path=False,recursive=True):
     """ Get all files in all folder and subfolders that are not empty"""
 
     nonempty_files=[]
@@ -45,6 +45,8 @@ def get_recursive_files_nonempty(folder,include_path=False):
                     # remove the full path from the file name
                     file = os.path.basename(file)
                 nonempty_files.append(file)
+        if not recursive:
+            break
     return nonempty_files
 
 def get_metadata_column_by_name(metadata_file, column_name):
@@ -53,11 +55,11 @@ def get_metadata_column_by_name(metadata_file, column_name):
     file_names=[]
     with open(metadata_file) as file_handle:
         # read in the header
-        header = file_handle.readline().rstrip().split("\t")
+        header = file_handle.readline().rstrip().split(",")
         # file the column with the file names
         index = filter(lambda x: column_name in x[1].lower(), enumerate(header))[0][0]
         for line in file_handle:
-            data=line.rstrip().split("\t")
+            data=line.rstrip().split(",")
             try:
                 file_names.append(data[index])
             except IndexError:
@@ -67,7 +69,7 @@ def get_metadata_column_by_name(metadata_file, column_name):
 def get_metadata_file_md5sums(metadata_file):
     """ Return the md5sums for all of the files """
 
-    return zip(get_metadata_column_by_name(metadata_file, "file"),get_metadata_column_by_name(metadata_file, "md5sum"))
+    return zip(get_metadata_column_by_name(metadata_file, "filename"),get_metadata_column_by_name(metadata_file, "md5_checksum"))
 
 def get_metadata_file_names(metadata_file):
     """ Read the metadata file and get a list of all file names """
@@ -163,13 +165,10 @@ def check_metadata_files_complete(user,folder,metadata_file):
     """
 
     # get all of the files that have been uploaded
-    all_raw_files = set(get_recursive_files_nonempty(folder))
-
-    # remove the metadata file from the set of raw files
-    raw_files = all_raw_files.difference([os.path.basename(metadata_file)])
+    all_raw_files = set(get_recursive_files_nonempty(folder,recursive=False))
 
     # check if there are not any raw files
-    if len(list(raw_files)) == 0:
+    if len(list(all_raw_files)) == 0:
         return 1, "ERROR: Unable to find any uploaded raw files. Please upload files."
 
     # get the file names from the metadata
@@ -184,8 +183,8 @@ def check_metadata_files_complete(user,folder,metadata_file):
     if len(list(metadata_files)) == 0:
         return 1, "ERROR: Unable to find any file names in the metadata. Please update metadata."
 
-    missing_from_metadata=raw_files.difference(metadata_files)
-    missing_from_raw=metadata_files.difference(raw_files)
+    missing_from_metadata=all_raw_files.difference(metadata_files)
+    missing_from_raw=metadata_files.difference(all_raw_files)
 
     message=""
     if missing_from_metadata:
@@ -315,7 +314,7 @@ def run_workflow(user,upload_folder,process_folder,metadata_file):
 
     # get the input file extensions
     # get all of the files that have been uploaded
-    all_raw_files = set(get_recursive_files_nonempty(upload_folder,include_path=True))
+    all_raw_files = set(get_recursive_files_nonempty(upload_folder,include_path=True,recursive=False))
 
     # remove the metadata file from the set of raw files
     input_files = list(all_raw_files.difference([metadata_file]))
