@@ -69,7 +69,8 @@ RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.
     mv biobakery-metaphlan2-c43e40a443ed/utils /usr/local/bin/ && \
     mv biobakery-metaphlan2-c43e40a443ed/strainphlan_src /usr/local/bin/ && \
     rm metaphlan2-2.6.0.tar.gz && \
-    rm -r biobakery-metaphlan2-c43e40a443ed
+    rm -r biobakery-metaphlan2-c43e40a443ed && \
+    pip install biom-format
 
 # Install the latest R
 RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/' && \
