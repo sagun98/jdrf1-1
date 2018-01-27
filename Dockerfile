@@ -56,7 +56,8 @@ RUN apt-get update -y && \
         python-pandas python-biopython && \
     apt-get remove -y texlive-fonts-recommended-doc texlive-latex-base-doc \
         texlive-latex-recommended-doc \
-        texlive-pictures-doc texlive-pstricks-doc
+        texlive-pictures-doc texlive-pstricks-doc && \
+    pip install matplotlib --upgrade
 
 # install python ldap dependencies
 RUN pip install django-auth-ldap
