@@ -204,7 +204,10 @@ def read_stdout_stderr(folder):
     # if stdout is empty check for stderr
     stdout = try_read_file(os.path.join(folder,stdout_file))
     if not stdout:
-        stdout = try_read_file(os.path.join(folder,stderr_file))
+        stderr = try_read_file(os.path.join(folder,stderr_file))
+        # only include if error messages are present
+        if "error" in stderr.lower() or "fail" in stderr.lower():
+            stdout = stderr
 
     return stdout
 
