@@ -349,9 +349,9 @@ def check_workflow_running(user, process_folder):
     logger=logging.getLogger('jdrf1')
 
     try:
-        ps_output = subprocess.check_output(["ps","aux"])
+        ps_output = subprocess.check_output(["ps","aux"]).split("\n")
     except EnvironmentError:
-        ps_output = ""
+        ps_output = []
 
     logger.info("Checking if workflow is running for user: " + user)
     user_workflow_processes = list(filter(lambda x: process_folder in x and "workflow" in x, ps_output))
