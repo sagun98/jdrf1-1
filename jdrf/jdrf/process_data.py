@@ -13,9 +13,9 @@ from email.mime.text import MIMEText
 from django.conf import settings
 
 # Set default email options
-EMAIL_FROM = "jdrfmibc_dev@hutlab-jdrf01.rc.fas.harvard.edu"
-EMAIL_TO = "lauren.j.mciver@gmail.com"
-EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu.off"
+EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
+EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
+EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
 
 import pandas as pd
 
