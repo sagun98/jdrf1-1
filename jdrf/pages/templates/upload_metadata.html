@@ -52,7 +52,7 @@
         {% if user.is_authenticated %}
           <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
             {% csrf_token %}
-            <button class="btn btnfefefe-success" style="background: #11511b" type="submit">Logout</button>
+            <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
         </form>
         {% endif %}
         </div><!--/.navbar-collapse -->
