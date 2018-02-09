@@ -55,7 +55,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['0.0.0.0', 'localhost']
 
 # Set login redirect page
-LOGIN_REDIRECT_URL = "upload"
+LOGIN_REDIRECT_URL = "upload_metadata"
 
 # Add ldap settings with search/bind
 # If ldap authentication fails for user, then
