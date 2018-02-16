@@ -11,12 +11,12 @@ study_schema = Schema([
                         ~InListValidation([''])]),
     Column('sample_type', [InListValidation(['', 'MGX', 'MTX', '16S'])]),
     Column('geo_loc_name', [InListValidation(['']) | MatchesPatternValidation(r'\w+:\w+:\w+')]),
-    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')])
 ])
 
 sample_schema = Schema([
     Column('animal_vendor', [LeadingWhitespaceValidation()]),
     Column('host_subject_id', [MatchesPatternValidation(r'\w+', message='Host Subject ID may only contain alphanumeric characters.')]),
+    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')])
     Column('host_diet', [LeadingWhitespaceValidation()]),
     Column('source_material_id', [LeadingWhitespaceValidation()]),
     Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')]),
@@ -61,6 +61,8 @@ sample_schema = Schema([
                                            "Nanopore PromethION", "Nanopore SmidgION", "nanopore promethion", "nanopore smidgion",
                                            "454", "Sanger", "sanger"])]),
     Column('read_number', [InRangeValidation(1, message='Read number must be a positive number.')]),
+    Column('is_paired_end', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
+                             InListValidation(['yes', 'no'])]),
     Column('sequencing_facility', [LeadingWhitespaceValidation()])
 ])
 

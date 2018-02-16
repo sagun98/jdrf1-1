@@ -115,6 +115,7 @@
             {data: 'host_diet'},
             {data: 'host_disease'},
             {data: 'host_body_product'},
+            {data: 'host_tissue_sampled'},
             {data: 'host_family_relationship'},
             {data: 'host_genotype'},
             {data: 'host_phenotype'},
@@ -142,6 +143,7 @@
             {data: 'read_number'},
             {data: 'sequencing_facility'},
             {data: 'filename'},
+            {data: 'is_paired_end'},
             {data: 'md5_checksum'}
         ],
         columnDefs: [
