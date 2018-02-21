@@ -8,6 +8,18 @@
                              $("input[name='csrfmiddlewaretoken']").val());
       }});
 
+
+    $('#sample_type').on('change', function() {
+        var value = $(this).val();
+
+        if (value == "other") {
+            $('#analysis_desc_div').removeClass('hidden');
+        } else {
+            $('#analysis_desc').val("");
+            $('#analysis_desc_div').addClass('hidden');
+        }
+    })
+
     // On page load we want to see if a cookie exists to indicate study metadata has been created for this file.
     if (Cookies.get('study_metadata') == '1') {
         // Need to do an AJAX request here to parse the contents of our CSV file and fill in 
@@ -99,8 +111,54 @@
          }
      });
 
+     var editor = new $.fn.DataTable.Editor({
+         ajax: "/metadata/sample",
+         table: "#metadata_file_preview",
+         fields: [
+            { label: 'BioProject Accession', name: 'bioproject_accession' },
+            { label: 'Host Subject ID', name: 'host_subject_id' },
+            { label: 'Host Body Mass Index', name: 'host_body_mass_index' },
+            { label: 'Host Diet', name: 'host_diet' },
+            { label: 'Host Disease', name: 'host_disease' },
+            { label: 'Host Tissue Sampled', name: 'host_tissue_sampled' },
+            { label: 'Host Family Relationship', name: 'host_family_relationship' },
+            { label: 'Host Genotype', name: 'host_genotype' },
+            { label: 'Host Phenotype', name: 'host_phenotype' },
+            { label: 'Gastrointestinal Disorder', name: 'gastrointest_disord' },
+            { label: 'IHMC Medication Code', name: 'ihmc_medication_code' },
+            { label: 'Subject Taxonomy ID', name: 'subject_tax_id' },
+            { label: 'Subject Age', name: 'subject_age' },
+            { label: 'Subject Sex', name: 'subject_sex' },
+            { label: 'Ethnicity', name: 'ethnicity' },
+            { label: 'Sample ID', name: 'sample_id' },
+            { label: 'Collection Date', name: 'collection_date' },
+            { label: 'Sourced Material ID', name: 'source_material_id' },
+            { label: 'Isolation Source', name: 'isolation_source' },
+            { label: 'Sample Material Process', name: 'sample_mat_process' },
+            { label: 'Sample Store Duration', name: 'sample_store_dur' },
+            { label: 'Sample Store Temperature', name: 'sample_store_temp' },
+            { label: 'Sample Volume Mass', name: 'sample_vol_mass' },
+            { label: 'Animal Vendor', name: 'animal_vendor' },
+            { label: 'Variable Region', name: 'variable_region' },
+            { label: 'Organism Count', name: 'organism_count' },
+            { label: 'ENVO Biome', name: 'env_biom' },
+            { label: 'ENVO Feature', name: 'env_feature' },
+            { label: 'ENVO Material', name: 'env_material' },
+            { label: 'Sequencer', name: 'sequencer' },
+            { label: 'Read Nmber', name: 'read_number' },
+            { label: 'Sequencing Facility', name: 'sequencing_facility' },
+            { label: 'Filename', name: 'filename' },
+            { label: 'Paired', name: 'paired' },
+            { label: 'md5_checksum', name: 'md5_checksum' }
+        ]
+     });
+
+
+     $('#metadata_file_preview').on('click', 'tbody td:not(:first-child)', function(e) {
+         editor.inline( this );
+     });
+
      var table = $('#metadata_file_preview').DataTable({
-        //responsive: true,
         pageLength: 12,
         searching: false,
         deferLoading: 0,
@@ -143,7 +201,7 @@
             {data: 'read_number'},
             {data: 'sequencing_facility'},
             {data: 'filename'},
-            {data: 'is_paired_end'},
+            {data: 'paired'},
             {data: 'md5_checksum'}
         ],
         columnDefs: [
@@ -164,6 +222,9 @@
                 }
             }
         ],
+        select : {
+
+        },
         success: function(data) {
             console.log("BAR");
         },
@@ -223,6 +284,10 @@
         Cookies.set('sample_metadata', 1);
 
         $('#upload_success').removeClass('hidden');
+     });
+
+     editor.on('submitComplete', function(e, json, data, action) {
+         console.log("woooo");
      });
 
  });

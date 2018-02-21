@@ -1,3 +1,6 @@
+from collections import defaultdict
+import re
+
 from pandas_schema import Column, Schema
 from pandas_schema.validation import (LeadingWhitespaceValidation, TrailingWhitespaceValidation, 
                                       CanConvertValidation, MatchesPatternValidation, CustomSeriesValidation,
@@ -16,14 +19,18 @@ study_schema = Schema([
 sample_schema = Schema([
     Column('animal_vendor', [LeadingWhitespaceValidation()]),
     Column('host_subject_id', [MatchesPatternValidation(r'\w+', message='Host Subject ID may only contain alphanumeric characters.')]),
-    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')])
+    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')]),
     Column('host_diet', [LeadingWhitespaceValidation()]),
-    Column('source_material_id', [LeadingWhitespaceValidation()]),
-    Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')]),
+    Column('host_body_mass_index', [CanConvertValidation(float)]),
     Column('host_family_relationship', [LeadingWhitespaceValidation()]),
     Column('host_genotype', [MatchesPatternValidation(r'^[http|www]', message='Host Genotype may only be a valid URL to the associated DbGap project.')]),
+    Column('host_disease', [MatchesPatternValidation(r'DOID:\d+', message='Must provide a valid Disease Ontology ID in format \'DOID:<NUMBERS>\'')]),
+    Column('host_body_product', [MatchesPatternValidation(r'GENEPIO_\d+', message='Must provide a valid Genetic epidemiology ontology ID in format \'GENEPIO_<NUMBERS>\'')]),
+
+    Column('host_phenotype', [CanConvertValidation(int)]),
+    Column('source_material_id', [LeadingWhitespaceValidation()]),
+    Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')]),
     Column('isolation_source', [LeadingWhitespaceValidation()]),
-    Column('samp_mat_process', [LeadingWhitespaceValidation()]),
     Column('bioproject_accession', [InListValidation(['']) |
                                     MatchesPatternValidation(r'PRJNA\d+', message='BioProject accession must be in format \'PRJNA<NUMBERS>\'')]),
     Column('env_biom', [MatchesPatternValidation(r'ENVO:\d+')]),
@@ -31,7 +38,10 @@ sample_schema = Schema([
     Column('env_material', [MatchesPatternValidation(r'ENVO:\d+')]),
     Column('filename', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the filename column.'),
                         MatchesPatternValidation(r'\w+.[fastq|fasta|fq](.gz)?', message='Filename must be a valid fasta/fastq file with the following supported extensions: .fasta.gz, .fastq.gz, fq.gz')]),
+    Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.'),
+                            MatchesPatternValidation(r'[a-zA-Z0-9]{32}', message='MD5 Checksum may only contain 32 alphanumeric characters.')]),
     Column('sample_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_id column.')]),
+    Column('samp_mat_process', [LeadingWhitespaceValidation()]),
     Column('collection_date', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the collection_date column.'),
                                DateFormatValidation('%Y-%m-%d', message='Collection date must be in YYYY-MM-DD date format.')]),
     Column('subject_tax_id', [MatchesPatternValidation(r'\d+')]),
@@ -39,15 +49,9 @@ sample_schema = Schema([
                            InRangeValidation(0, 120)]),
     Column('subject_sex', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_sex column.'),
                            InListValidation(['M', 'm', 'F', 'f'])]),
-    Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.'),
-                            MatchesPatternValidation(r'[a-zA-Z0-9]{32}', message='MD5 Checksum may only contain 32 alphanumeric characters.')]),
-    Column('host_body_mass_index', [CanConvertValidation(float)]),
-    Column('host_disease', [MatchesPatternValidation(r'DOID:\d+', message='Must provide a valid Disease Ontology ID in format \'DOID:<NUMBERS>\'')]),
     Column('variable_region', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
                                MatchesPatternValidation(r'(V[1-9],?)+', message='Variable region must be a valid 16S hypervariable region.')]),
     Column('gastrointest_disord', [CanConvertValidation(int)]),
-    Column('host_body_product', [MatchesPatternValidation(r'GENEPIO_\d+', message='Must provide a valid Genetic epidemiology ontology ID in format \'GENEPIO_<NUMBERS>\'')]),
-    Column('host_phenotype', [CanConvertValidation(int)]),
     Column('ihmc_medication_code', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
                                     MatchesPatternValidation(r'(\d+,?)+]', message='IHMC medication code must be a number.')]),
     Column('organism_count', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
@@ -61,9 +65,34 @@ sample_schema = Schema([
                                            "Nanopore PromethION", "Nanopore SmidgION", "nanopore promethion", "nanopore smidgion",
                                            "454", "Sanger", "sanger"])]),
     Column('read_number', [InRangeValidation(1, message='Read number must be a positive number.')]),
-    Column('is_paired_end', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
-                             InListValidation(['yes', 'no'])]),
+    Column('paired', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
+                      InListValidation(['Yes', 'yes', 'No', 'no'])]),
     Column('sequencing_facility', [LeadingWhitespaceValidation()])
 ])
 
 schemas = {'sample': sample_schema, 'study': study_schema}
+
+# Credit to https://stackoverflow.com/a/14323887
+#
+# Parses our weird PHP-format querystrings that DataTables Editor sends to a 
+# normal python looking dictionary.
+def split(string, brackets_on_first_result = False):
+    matches = re.split("[\[\]]+", string)
+    matches.remove('')
+    return matches
+
+
+def mr_parse(params):
+    results = {}
+    for key in params:
+        if '[' in key:
+            key_list = split(key)
+            d = results
+            for partial_key in key_list[:-1]:
+                if partial_key not in d:
+                    d[partial_key] = dict()
+                d = d[partial_key]
+            d[key_list[-1]] = params[key]
+        else:
+            results[key] = params[key]
+    return results

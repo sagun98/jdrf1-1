@@ -5,6 +5,7 @@ import threading
 import logging
 import subprocess
 import time
+import json
 
 import smtplib
 import socket
@@ -19,8 +20,8 @@ EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
 
 import pandas as pd
 
-from jdrf.metadata_schema import schemas
-
+from jdrf.metadata import schemas
+from jdrf.metadata import mr_parse
 
 # name the general workflow stdout/stderr files
 WORKFLOW_STDOUT = "workflow.stdout"
@@ -94,8 +95,13 @@ def errors_to_json(errors, metadata_df):
     def _map_errors_to_df(err):
         """ Quick little closure to handle mapping our errors to the dataframe """
         metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
-
+    
     map(_map_errors_to_df, errors)
+
+    # For DataTable Editor to work properly we need to add a column that identifies
+    # each row uniquely.
+    metadata_df['DT_RowId'] = map(lambda x: "row_" + str(x+1), metadata_df.index)
+
     return (metadata_df, metadata_df.to_json(orient='records'))
 
 
@@ -130,7 +136,13 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
-    metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+    if metadata_file.endswith('.csv'):
+        metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+    elif metadata_file.endswith('.tsv'):
+        metadata_df = pd.read_table(metadata_file, keep_default_na=False)
+    elif metadata_file.endswith('.xlsx'):
+        metadata_df = pd.read_excel(metadata_file, keep_default_na=False)
+
     (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger, output_folder)
     return (is_valid, metadata_df, error_context)
 
@@ -153,9 +165,42 @@ def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
             error_context['errors_datatable'] = errors_json
 
             if output_folder:
-               error_context['errors_file'] = errors_to_excel(errors_metadata_df, output_folder)
+                error_context['errors_file'] = errors_to_excel(errors_metadata_df, output_folder)
+
+                # Kinda hacky but in order to do in-line editing we need a copy of the error'd 
+                # CSV in a temporary location.
+                metadata_df.to_csv(os.path.join(output_folder, 'metadata.error.csv'), index=False)
 
     return (is_valid, error_context)
+
+
+def update_metadata_file(field_updates, upload_folder, logger):
+    """ Updates a row + column in our metadata file and returns the complete 
+    updated row plus the modified file.
+    """
+    # Keep track of all the rows we update here
+    updated_rows = []
+
+    metadata_file = os.path.join(upload_folder, 'metadata.error.csv')
+    updated_metadata_file = metadata_file.replace('.csv', '_updated.csv')
+    metadata_df = pd.read_csv(metadata_file)
+
+    # Currently we are going to be working with just one update at a time but 
+    # we can support multiple updates at a given time.
+    updates_dict = mr_parse(dict(field_updates.dict()))
+
+    for (row, fields) in updates_dict['data'].iteritems():
+        row_idx = int(row.replace('row_', '')) - 1
+        updated_rows.append(row_idx)
+        logger.info(row_idx)
+
+        for col in fields:
+            logger.info(fields[col])
+            metadata_df.loc[row_idx, col] = fields[col]
+
+    metadata_df.to_csv(updated_metadata_file, index=False)        
+
+    return (updated_metadata_file, updated_rows)
 
 
 def check_metadata_files_complete(user,folder,metadata_file):

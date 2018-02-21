@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import os
 import sys
 import time
+import json
 
 import pandas as pd
 
@@ -146,7 +147,7 @@ def upload_sample_metadata(request):
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
 
     if request.method == 'POST':
-        if request.FILES['metadata_file']:
+        if request.FILES and request.FILES['metadata_file']:
             file = request.FILES['metadata_file']
             file_name = file.name
 
@@ -174,10 +175,28 @@ def upload_sample_metadata(request):
                 metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
                 metadata_df.to_csv(metadata_file, index=False)
 
+            return JsonResponse(data)
+
+        # If we get a POST request and it contains the editor parameter we know that 
+        # we are attempting to modify an existing metadata file in place.
+        elif request.POST.get('action') == "edit":
+            field_updates = request.POST.copy()
+            del field_updates['action']
+
+            (updated_metadata_file, updated_rows) = process_data.update_metadata_file(field_updates, upload_folder, logger)
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(updated_metadata_file, upload_folder, logger)
+            logger.info(is_valid)
+            # For the time being we are only updating one field at a time so we can do this...
+            updated_row = metadata_df.loc[updated_rows[0],]
+            data['data'] = [metadata_df.loc[updated_rows[0],].to_dict()]
+
+            if not is_valid:
+                pass
+                #data['error'] = "Metadata update failed."
+
+            return HttpResponse(json.dumps(data), content_type="application/json")
         else:
             data['error'] = 'Oops something went wrong here.'                
-
-        return JsonResponse(data)
     else :
         form = UploadForm()
         return render(request, 'upload_metadata.html', {'form': form})
