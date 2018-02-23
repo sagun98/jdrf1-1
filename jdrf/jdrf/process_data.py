@@ -255,8 +255,9 @@ def subprocess_capture_stdout_stderr(command,output_folder):
     stderr_file = os.path.join(output_folder, WORKFLOW_STDERR)
 
     try:
-        with open(stdout_file,"w") as stdout:
-            with open(stderr_file,"w") as stderr:
+        # use line buffering to write stdout/stderr
+        with open(stdout_file,"wt",buffering=1) as stdout:
+            with open(stderr_file,"wt",buffering=1) as stderr:
                 subprocess.check_call(command,stderr=stderr,stdout=stdout)
     except (EnvironmentError, subprocess.CalledProcessError):
         logger.error("Unable to run subprocess command: " + " ".join(command))
