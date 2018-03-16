@@ -11,6 +11,7 @@ study_schema = Schema([
                         ~InListValidation([''])]),
     Column('sample_type', [InListValidation(['', 'MGX', 'MTX', '16S'])]),
     Column('geo_loc_name', [InListValidation(['']) | MatchesPatternValidation(r'\w+:\w+:\w+')]),
+    Column('analysis_desc', [InListValidation([''])])
 ])
 
 sample_schema = Schema([
@@ -61,8 +62,8 @@ sample_schema = Schema([
                                            "Nanopore PromethION", "Nanopore SmidgION", "nanopore promethion", "nanopore smidgion",
                                            "454", "Sanger", "sanger"])]),
     Column('read_number', [InRangeValidation(1, message='Read number must be a positive number.')]),
-    Column('is_paired_end', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
-                             InListValidation(['yes', 'no'])]),
+    Column('paired', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
+                      InListValidation(['yes', 'no'])]),
     Column('sequencing_facility', [LeadingWhitespaceValidation()])
 ])
 

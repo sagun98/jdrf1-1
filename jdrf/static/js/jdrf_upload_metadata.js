@@ -8,6 +8,17 @@
                              $("input[name='csrfmiddlewaretoken']").val());
       }});
 
+    $('#sample_type').on('change', function() {
+        var value = $(this).val();
+
+        if (value == "other") {
+            $('#analysis_desc_div').removeClass('hidden');
+        } else {
+            $('#analysis_desc').val("");
+            $('#analysis_desc_div').addClass('hidden');
+        }
+    })
+
     // On page load we want to see if a cookie exists to indicate study metadata has been created for this file.
     if (Cookies.get('study_metadata') == '1') {
         // Need to do an AJAX request here to parse the contents of our CSV file and fill in 
@@ -143,7 +154,7 @@
             {data: 'read_number'},
             {data: 'sequencing_facility'},
             {data: 'filename'},
-            {data: 'is_paired_end'},
+            {data: 'paired'},
             {data: 'md5_checksum'}
         ],
         columnDefs: [
