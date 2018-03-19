@@ -159,10 +159,18 @@ def upload_sample_metadata(request):
                         logger.info("Unable to create folder %s" % folder)
                         raise
 
+            # When we receive a sample metadata file where the study has been tagged as the 
+            # "Other" data type we need to forego any validation checks (for the time being)
+            is_other_datatype = request.POST['other_data_type']
+
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
-            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
-
+            if not is_other_datatype:
+                (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
+            else:
+                is_valid = True
+                metadata_df = pd.read_csv(file, keep_default_na=False)
+                                
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'
                 data.update(error_context)

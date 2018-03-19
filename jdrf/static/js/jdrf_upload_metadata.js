@@ -8,14 +8,17 @@
                              $("input[name='csrfmiddlewaretoken']").val());
       }});
 
+    var is_other_data_type = false;
     $('#sample_type').on('change', function() {
         var value = $(this).val();
 
         if (value == "other") {
             $('#analysis_desc_div').removeClass('hidden');
+            is_other_data_type = true;
         } else {
             $('#analysis_desc').val("");
             $('#analysis_desc_div').addClass('hidden');
+            is_other_data_type = false;
         }
     })
 
@@ -105,8 +108,11 @@
          layoutTemplates: {progress: ''},
          uploadUrl: '/metadata/sample',
          msgPlaceholder: 'Select metadata file to upload...',
-         uploadExtraData: { 
-             'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+         uploadExtraData: function() { 
+            return {
+                'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+                'other_data_type': is_other_data_type,
+            }
          }
      });
 
