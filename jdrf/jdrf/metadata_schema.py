@@ -17,7 +17,7 @@ study_schema = Schema([
 sample_schema = Schema([
     Column('animal_vendor', [LeadingWhitespaceValidation()]),
     Column('host_subject_id', [MatchesPatternValidation(r'\w+', message='Host Subject ID may only contain alphanumeric characters.')]),
-    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')])
+    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')]),
     Column('host_diet', [LeadingWhitespaceValidation()]),
     Column('source_material_id', [LeadingWhitespaceValidation()]),
     Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')]),
