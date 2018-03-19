@@ -37,6 +37,9 @@
                 $.each(form_elts, function(key, val) {
                     $('#panel_study_metadata #' + key).val(val);
                 });
+
+                $('#analysis_desc_div').removeClass('hidden');
+                is_other_data_type = true;
             },
             error: function(data) {
                 // Something clearly went wrong here so let's remove our cookie
