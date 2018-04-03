@@ -8,6 +8,20 @@
                              $("input[name='csrfmiddlewaretoken']").val());
       }});
 
+    var is_other_data_type = false;
+    $('#sample_type').on('change', function() {
+        var value = $(this).val();
+
+        if (value == "other") {
+            $('#analysis_desc_div').removeClass('hidden');
+            is_other_data_type = true;
+        } else {
+            $('#analysis_desc').val("");
+            $('#analysis_desc_div').addClass('hidden');
+            is_other_data_type = false;
+        }
+    })
+
     // On page load we want to see if a cookie exists to indicate study metadata has been created for this file.
     if (Cookies.get('study_metadata') == '1') {
         // Need to do an AJAX request here to parse the contents of our CSV file and fill in 
@@ -23,6 +37,9 @@
                 $.each(form_elts, function(key, val) {
                     $('#panel_study_metadata #' + key).val(val);
                 });
+
+                $('#analysis_desc_div').removeClass('hidden');
+                is_other_data_type = true;
             },
             error: function(data) {
                 // Something clearly went wrong here so let's remove our cookie
@@ -94,8 +111,11 @@
          layoutTemplates: {progress: ''},
          uploadUrl: '/metadata/sample',
          msgPlaceholder: 'Select metadata file to upload...',
-         uploadExtraData: { 
-             'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+         uploadExtraData: function() { 
+            return {
+                'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+                'other_data_type': is_other_data_type,
+            }
          }
      });
 
@@ -115,6 +135,7 @@
             {data: 'host_diet'},
             {data: 'host_disease'},
             {data: 'host_body_product'},
+            {data: 'host_tissue_sampled'},
             {data: 'host_family_relationship'},
             {data: 'host_genotype'},
             {data: 'host_phenotype'},
@@ -142,6 +163,7 @@
             {data: 'read_number'},
             {data: 'sequencing_facility'},
             {data: 'filename'},
+            {data: 'paired'},
             {data: 'md5_checksum'}
         ],
         columnDefs: [

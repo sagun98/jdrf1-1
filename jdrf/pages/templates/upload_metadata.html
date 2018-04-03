@@ -65,58 +65,81 @@
       </div>
     </div>
 
+    <!-- This is a hidden modal pop-up containing some information about the analysis description textarea -->
+    <div class="modal fade" id="analysis_desc_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="modal_label">Help: Analysis Description</h4>
+          </div>
+          <div class="modal-body">
+          <p>Please provide a detailed description the analysis performed to generate this file, including software version numbers. 
+              Metadata for individual samples included in this analysis will be added on the next page.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="container">
         <h2>Upload Metadata</h2>
         <p>Using the application on this page, upload study and sample metadata to deposit it with the JDRF MIBC for processing.</p>
         <div class="alert alert-warning"><div class="glyphicon glyphicon-exclamation-sign"></div><div>Only one complete dataset (study and sample metadata + corresponding sequence files) may be processed at a time.</div></div>
 
         <div id="panel_study_metadata" class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Study Metadata</h3>
-            </div>
-            <div class="panel-body">
-                <form id="study_metadata_form" method="post" action="{% url 'upload_study_metadata' %}" data-toggle="validator">
-                    <div class="form-group has-feedback">
-                        <label for="study_id" class="control-label">Study ID</label>
-                        <input type="text" pattern="^[a-zA-Z0-9]+" class="form-control" id="study_id" name="study_id", placeholder="" required>
-                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                    </div>
-                    <div class="form-group has-feedback">
-                        <label for="pi_name" class="control-label">PI Name</label>
-                        <input type="text" pattern="^[A-Za-z]+" class="form-control" id="pi_name", name="pi_name", placeholder="" data-error="Please provide a valid PI name." required>
-                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                        <div class="help-block with-errors"></div>
-                    </div>
-                    <div id="optional_fields_msg">The following fields are OPTIONAL and can be overridden in sample metadata.</div>
-                    <div class="form-group has-feedback">
-                        <label for="host_tissue_sampled" class="control-label">Host Tissue Sampled</label>
-                        <input type="text" pattern="^BTO_[0-9]+" class="form-control" id="host_tissue_sampled", name="host_tissue_sampled", data-error="Please provide a valid BRENDA ontology ID." placeholder="BTO_99999">
-                        <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                        <div class="help-block with-errors"></div>
-                    </div>
-                    <div class="form-group has-feedback">
-                        <label for="geo_loc_name" class="control-label">Geo Location Name</label>
-                        <input type="text" pattern="[a-zA-Z]+:[a-zA-Z]+:[a-zA-Z]+" class="form-control" id="geo_loc_name", name="geo_loc_name", data-error="Please provide a geolocation name in format Country:State:City" placeholder="US:Massachusetts:Boston">
-                        <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                        <div class="help-block with-errors"></div>
-                    </div>
-                    <div class="col-xs-5">
-                      <div class="form-group">
-                        <label for="sample_type" class="control-label">Sample Type</label>
-                        <select id="sample_type", name="sample_type" class="form-control" data-width="50%">
-                          <option value="">Please choose a sample type...</option>
-                          <option value="MGX">Metagenomics</option>
-                          <option value="MTX">Metatranscriptomics</option>
-                          <option value="16S">16S</option>
-                        </select>
-                      </div>
-                      <button id="submit_study_metadata" type="submit" class="btn btn-primary">
-                          Submit <span class="glyphicon glyphicon-send" aria-hidden="true"></span>
-                      </button>
-                    </div>
-                </form>
-            </div>
+          <div class="panel-heading">
+            <h3 class="panel-title">Study Metadata</h3>
           </div>
+          <div class="panel-body">
+              <form id="study_metadata_form" method="post" action="{% url 'upload_study_metadata' %}" data-toggle="validator">
+                  <div class="form-group has-feedback">
+                      <label for="study_id" class="control-label">Study ID</label>
+                      <input type="text" pattern="^[a-zA-Z0-9]+" class="form-control" id="study_id" name="study_id", placeholder="" required>
+                      <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                  </div>
+                  <div class="form-group has-feedback">
+                      <label for="pi_name" class="control-label">PI Name</label>
+                      <input type="text" pattern="^[A-Za-z]+" class="form-control" id="pi_name", name="pi_name", placeholder="" data-error="Please provide a valid PI name." required>
+                      <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                      <div class="help-block with-errors"></div>
+                  </div>
+                  <div id="optional_fields_msg">The following fields are OPTIONAL and can be overridden in sample metadata.</div>
+                  <div class="form-group has-feedback">
+                      <label for="geo_loc_name" class="control-label">Geo Location Name</label>
+                      <input type="text" pattern="[a-zA-Z]+:[a-zA-Z]+:[a-zA-Z]+" class="form-control" id="geo_loc_name", name="geo_loc_name", data-error="Please provide a geolocation name in format Country:State:City" placeholder="US:Massachusetts:Boston">
+                      <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
+                      <div class="help-block with-errors"></div>
+                  </div>
+                  <div class="col-xs-5">
+                    <div class="form-group">
+                      <label for="sample_type" class="control-label">Sample Type</label>
+                      <select id="sample_type", name="sample_type" class="form-control" data-width="50%">
+                        <option value="">Please choose a sample type...</option>
+                        <option value="MGX">Metagenomics</option>
+                        <option value="MTX">Metatranscriptomics</option>
+                        <option value="16S">16S</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="clearfix"></div>
+                  <div id="analysis_desc_div" class="col-md-8 hidden nopadding">
+                    <div class="form-group">
+                      <label for="analysis_desc">Analysis Description</label>
+                      <span class="glyphicon glyphicon-question-sign" data-toggle="modal" data-target="#analysis_desc_modal" aria-labelledby="myModalLabel"></span>
+                      <textarea class="form-control" id="analysis_desc" name="analysis_desc" rows="3"></textarea>
+                    </div>
+                  </div>
+                  <div class="clearfix"></div>
+                  <button id="submit_study_metadata" type="submit" class="btn btn-primary">
+                      Submit <span class="glyphicon glyphicon-send" aria-hidden="true"></span>
+                  </button>
+              </form>
+          </div>
+        </div>
         
         <div id="panel_sample_metadata" class="panel panel-default">
           <div class="panel-heading">
@@ -154,6 +177,7 @@
                           <th>Host Diet</th>
                           <th>Host Disease</th>
                           <th>Host Body Product</th>
+                          <th>Host Tissue Sampled</th>
                           <th>Host Family Relationship</th>
                           <th>Host Genotype</th>
                           <th>Host Phenotype</th>
@@ -181,6 +205,7 @@
                           <th>Read Number</th>
                           <th>Sequencing Facility</th>
                           <th>File Name</th>
+                          <th>Paired</th>
                           <th>MD5 Checksum</th>
                       </tr>
                   </thead>
