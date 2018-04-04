@@ -50,6 +50,7 @@ RUN pip install pandas && \
 
 # install java for kneaddata, numpy for metaphlan2, workflow visualization dependencies, and ldap
 # remove texlive docs to save ~330 MB
+# install matplotlib version that is compatible with hclust and biobakery workflows (latest version is not)
 RUN apt-get update -y && \
     apt-get install -y apt-transport-https openjdk-8-jre python-numpy python-matplotlib \
         python-ldap libsasl2-dev libldap2-dev libssl-dev \
@@ -58,7 +59,7 @@ RUN apt-get update -y && \
     apt-get remove -y texlive-fonts-recommended-doc texlive-latex-base-doc \
         texlive-latex-recommended-doc \
         texlive-pictures-doc texlive-pstricks-doc && \
-    pip install matplotlib --upgrade
+    pip install matplotlib==2.0.0
 
 # install python ldap dependencies
 RUN pip install django-auth-ldap
