@@ -236,6 +236,7 @@ def process_files(request):
     if request.method == 'POST' and not "refresh" in request.POST:
         logger.info("Post from process page received")
         metadata_file = os.path.join(metadata_folder,settings.METADATA_FILE_NAME)
+        study_file = os.path.join(metadata_folder,settings.METADATA_GROUP_FILE_NAME)
         logger.info("Metadata file: %s", metadata_file)
         process_folder = os.path.join(settings.PROCESS_FOLDER,user)
         logger.info("Process folder: %s", process_folder)
@@ -244,7 +245,7 @@ def process_files(request):
             # check the metadata matches the raw uploads
             responses["message1"] = process_data.check_metadata_files_complete(user,upload_folder,metadata_file)
         elif "process" in request.POST:
-            responses["message2"] = process_data.check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file)
+            responses["message2"] = process_data.check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file,study_file)
 
     # log messages
     for message_name, message in responses.items():

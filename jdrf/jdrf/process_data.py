@@ -239,11 +239,11 @@ def send_email_update(subject,message):
 
     # send the message
     try:
-        s = smtplib.SMTP(EMAIL_SERVER)
+        s = smtplib.SMTP(EMAIL_SERVER,timeout=3)
         s.sendmail(msg['From'], msg['To'], msg.as_string())
         s.quit()
         logger.info("Email sent successfully")
-    except (smtplib.SMTPRecipientsRefused, socket.gaierror):
+    except (smtplib.SMTPRecipientsRefused, socket.gaierror, socket.timeout):
         logger.error("Unable to send email")
 
 def subprocess_capture_stdout_stderr(command,output_folder):
@@ -298,8 +298,19 @@ def email_workflow_status(user,command,output_folder,workflow):
         send_email_update("Ended with error "+subject,error_message)
         raise
 
-def run_workflow(user,upload_folder,process_folder,metadata_file):
+def get_study_type(study_file):
+    """ Ready the metadata study file to determine the sequencing type """
+
+    if "16S" in "\n".join(open(study_file).readlines()):
+        return "16S"
+    else:
+        return "wmgx"
+
+def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     """ First run the md5sum steps then run the remainder of the workflow """
+
+    # get the logger instance
+    logger=logging.getLogger('jdrf1')
 
     # get the location of the workflow file
     folder = os.path.dirname(os.path.realpath(__file__))
@@ -331,17 +342,33 @@ def run_workflow(user,upload_folder,process_folder,metadata_file):
         metadata_file,"--input-extension",extension]
     email_workflow_status(user,command,md5sum_check,"md5sum")
 
-    # run the wmgx workflow
-    command=["biobakery_workflows","wmgx","--input",
-        upload_folder,"--output",data_products,"--input-extension",
-        extension,"--remove-intermediate-output","--bypass-strain-profiling"]
-    email_workflow_status(user,command,data_products,"wmgx")
+    # get the study type
+    study_type = get_study_type(study_file)
+    logger.info("Starting workflow for study type: " + study_type)
 
-    # run the vis workflow
-    command=["biobakery_workflows","wmgx_vis",
-        "--input",data_products,"--output",visualizations,"--project-name",
-        "JDRF MIBC Generated"]
-    email_workflow_status(user,command,visualizations,"visualization")
+    # run the wmgx workflow
+    if study_type == "16S":
+        command=["biobakery_workflows","16s","--input",
+            upload_folder,"--output",data_products,"--input-extension",
+            extension]
+        email_workflow_status(user,command,data_products,"16s")
+
+        # run the vis workflow
+        command=["biobakery_workflows","16s_vis",
+            "--input",data_products,"--output",visualizations,"--project-name",
+            "JDRF MIBC Generated"]
+        email_workflow_status(user,command,visualizations,"visualization")
+    else:
+        command=["biobakery_workflows","wmgx","--input",
+            upload_folder,"--output",data_products,"--input-extension",
+            extension,"--remove-intermediate-output","--bypass-strain-profiling"]
+        email_workflow_status(user,command,data_products,"wmgx")
+
+        # run the vis workflow
+        command=["biobakery_workflows","wmgx_vis",
+            "--input",data_products,"--output",visualizations,"--project-name",
+            "JDRF MIBC Generated"]
+        email_workflow_status(user,command,visualizations,"visualization")
 
 def check_workflow_running(user, process_folder):
     """ Check if any of the process workflows are running for a user """
@@ -364,12 +391,12 @@ def check_workflow_running(user, process_folder):
         logger.info("No workflows running for user")
         return False
 
-def check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file):
+def check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file,study_file):
     """ Run the files through the md5sum check, biobakery workflow (data and vis) """
 
     # run the workflows
     try:
-        thread = threading.Thread(target=run_workflow, args=[user,upload_folder,process_folder,metadata_file])
+        thread = threading.Thread(target=run_workflow, args=[user,upload_folder,process_folder,metadata_file,study_file])
         thread.daemon = True
         thread.start()
     except threading.ThreadError:
