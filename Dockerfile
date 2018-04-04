@@ -51,7 +51,8 @@ RUN pip install pandas && \
 # install java for kneaddata, numpy for metaphlan2, workflow visualization dependencies, and ldap
 # remove texlive docs to save ~330 MB
 RUN apt-get update -y && \
-    apt-get install -y apt-transport-https openjdk-8-jre python-numpy python-matplotlib python-ldap \
+    apt-get install -y apt-transport-https openjdk-8-jre python-numpy python-matplotlib \
+        python-ldap libsasl2-dev libldap2-dev libssl-dev \
         python-scipy pandoc texlive software-properties-common \ 
         python-pandas python-biopython && \
     apt-get remove -y texlive-fonts-recommended-doc texlive-latex-base-doc \
@@ -87,5 +88,17 @@ RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
     mv nsegata-hclust2-3d589ab2cb68/hclust2.py /usr/local/bin/ && \
     rm -r nsegata-hclust2-3d589ab2cb68/ && \
     rm 3d589ab2cb68.tar.gz
+
+# install biobakery 16s dependencies (biom, clustalo, ea-utils, and picrust)
+RUN apt-get update -y && \
+    apt-get install -y clustalo ea-utils && \
+    pip install biom-format h5py==2.7.0 cogent==1.5.3 && \
+    wget https://github.com/picrust/picrust/releases/download/v1.1.3/picrust-1.1.3.tar.gz && \
+    tar -xzf picrust-1.1.3.tar.gz && \
+    cd picrust-1.1.3 && \
+    pip install . && \
+    cd ../ && \
+    rm -r picrust-1.1.3* && \
+    download_picrust_files.py
 
 EXPOSE :80
