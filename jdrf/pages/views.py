@@ -85,6 +85,7 @@ def upload_files(request):
             if chunks == 0 or chunk == chunks -1:
                 os.rename(upload_file, os.path.join(upload_folder,file_name))
                 logger.info("Finished uploading file")
+                process_data.send_email_update("File uploaded","The user "+user+" has successfully uploaded the file " + file_name)
     else:
         form = UploadForm()
 
