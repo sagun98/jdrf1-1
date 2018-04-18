@@ -301,8 +301,11 @@ def email_workflow_status(user,command,output_folder,workflow):
 def get_study_type(study_file):
     """ Ready the metadata study file to determine the sequencing type """
 
-    if "16S" in "\n".join(open(study_file).readlines()):
+    study_info="\n".join(open(study_file).readlines())
+    if "16S" in study_info:
         return "16S"
+    elif "other" in study_info:
+        return "other"
     else:
         return "wmgx"
 

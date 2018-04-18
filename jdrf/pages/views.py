@@ -145,6 +145,7 @@ def upload_sample_metadata(request):
     data = {} 
     (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
+    study_file = os.path.join(metadata_folder,settings.METADATA_GROUP_FILE_NAME)
 
     if request.method == 'POST':
         if request.FILES['metadata_file']:
@@ -162,7 +163,7 @@ def upload_sample_metadata(request):
 
             # When we receive a sample metadata file where the study has been tagged as the 
             # "Other" data type we need to forego any validation checks (for the time being)
-            is_other_datatype = request.POST['other_data_type']
+            is_other_datatype = True if process_data.get_study_type(study_file) == "other" else False
 
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
@@ -171,6 +172,7 @@ def upload_sample_metadata(request):
             else:
                 is_valid = True
                 metadata_df = pd.read_csv(file, keep_default_na=False)
+                process_data.send_email_update("NEEDS REVIEW: Metadata","The user "+user+" has uploaded a metadata file of type OTHER. Please manually review.") 
                                 
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'
