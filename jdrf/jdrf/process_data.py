@@ -135,6 +135,16 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
     return (is_valid, metadata_df, error_context)
 
 
+def _get_mismatched_columns(metadata_df, schema):
+    """Compares the list of columns supplied in the metadata spreadsheet with the list 
+    of valid columns in the corresponding metadata schema.
+    """
+    valid_columns = set([c.name for c in schema.columns])
+    metadata_columns = set(metadata_df.columns.tolist())
+
+    return list(valid_columns.symmetric_difference(metadata_columns))
+
+
 def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
@@ -148,6 +158,11 @@ def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
     if errors:
         if len(errors) == 1:
             error_context['error_msg'] = str(errors[0])
+
+            ## Adding a check here if we have a mismatch in the number of columns
+            ## in the supplied metadata we will want to list which columns mismatch
+            if "Invalid number of columns" in str(errors[0]):
+                error_context['mismatch_cols'] = _get_mismatched_columns(metadata_df, schema)
         else:
             (errors_metadata_df, errors_json) = errors_to_json(errors,metadata_df)
             error_context['errors_datatable'] = errors_json

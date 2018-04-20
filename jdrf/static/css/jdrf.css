@@ -116,3 +116,7 @@ th, td { white-space: nowrap; overflow: hidden; }
     padding-left: 0 !important;
     margin: 0 !important;
  }
+
+ #mismatch_cols {
+     padding-left: 10px;
+ }

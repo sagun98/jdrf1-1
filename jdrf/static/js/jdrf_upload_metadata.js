@@ -209,8 +209,27 @@
             // the table and just display the error message.
             $('#datatables_div').hide();
             $('#error_spreadsheet').addClass('hidden')
-            $('#validation_error_single').html("<div class='glyphicon glyphicon-ban-circle'></div>" +
-                                               "<div>" + response['error_msg'] + "</div");
+            
+            // If we have a mismatch in the columns supplied in our metadata vs what is expected
+            // in the schema we can list out all the 
+            var error_single_html = "";
+            if ("mismatch_cols" in response) {
+                error_single_html += "<div class='glyphicon glyphicon-ban-circle'></div>" +
+                                     "<div>" + response['error_msg'] + ":" + "</div><br />" +
+                                     "<div id='mismatch_cols'><ul>";
+
+                for (var col in response['mismatch_cols']) {
+                    error_single_html += "<li><b>" + response['mismatch_cols'][col] + "</b></li>";
+                }
+
+                error_single_html += "</ul></div>";
+
+                $('#validation_error_single').html(erorr_single_html);
+            } else {
+                $('#validation_error_single').html("<div class='glyphicon glyphicon-ban-circle'></div>" +
+                                                   "<div>" + response['error_msg'] + "</div>");
+            }
+
             $('#validation_error_single').removeClass('hidden');
             $('#validation').removeClass('hidden');
         } else {
