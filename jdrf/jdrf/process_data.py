@@ -17,6 +17,12 @@ EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
 EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
 EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
 
+# Set default workflow config options
+WMGX_PROCESSES="6"
+WMGX_THREADS="8"
+SixteenS_PROCESSES="1"
+SixteenS_THREADS="30"
+
 import pandas as pd
 
 from jdrf.metadata_schema import schemas
@@ -353,7 +359,7 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     if study_type == "16S":
         command=["biobakery_workflows","16s","--input",
             upload_folder,"--output",data_products,"--input-extension",
-            extension]
+            extension,"--local-jobs",SixteenS_PROCESSES,"--threads",SixteenS_THREADS]
         email_workflow_status(user,command,data_products,"16s")
 
         # run the vis workflow
@@ -364,7 +370,8 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     else:
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
-            extension,"--remove-intermediate-output","--bypass-strain-profiling"]
+            extension,"--remove-intermediate-output","--bypass-strain-profiling",
+            "--local-jobs",WMGX_PROCESSES,"--threads",WMGX_THREADS]
         email_workflow_status(user,command,data_products,"wmgx")
 
         # run the vis workflow
