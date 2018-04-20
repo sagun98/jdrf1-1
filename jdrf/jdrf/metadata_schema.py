@@ -11,13 +11,19 @@ study_schema = Schema([
                         ~InListValidation([''])]),
     Column('sample_type', [InListValidation(['', 'MGX', 'MTX', '16S', 'other'])]),
     Column('geo_loc_name', [InListValidation(['']) | MatchesPatternValidation(r'\w+:\w+:\w+')]),
-    Column('analysis_desc', [InListValidation(['']) | CanConvertValidation(str)])
+    Column('analysis_desc', [InListValidation(['']) | CanConvertValidation(str)]),
+    Column('sequencing_facility', [LeadingWhitespaceValidation()]),
+    Column('env_biom', [MatchesPatternValidation(r'ENVO:\d+')]),
+    Column('env_feature', [MatchesPatternValidation(r'ENVO:\d+')]),
+    Column('env_material', [MatchesPatternValidation(r'ENVO:\d+')]),
+    Column('paired', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
+                      InListValidation(['yes', 'no'])]),
+    Column('animal_vendor', [LeadingWhitespaceValidation()]),
+    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')])
 ])
 
 sample_schema = Schema([
-    Column('animal_vendor', [LeadingWhitespaceValidation()]),
     Column('host_subject_id', [MatchesPatternValidation(r'\w+', message='Host Subject ID may only contain alphanumeric characters.')]),
-    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')]),
     Column('host_diet', [LeadingWhitespaceValidation()]),
     Column('source_material_id', [LeadingWhitespaceValidation()]),
     Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')]),
@@ -25,11 +31,6 @@ sample_schema = Schema([
     Column('host_genotype', [MatchesPatternValidation(r'^[http|www]', message='Host Genotype may only be a valid URL to the associated DbGap project.')]),
     Column('isolation_source', [LeadingWhitespaceValidation()]),
     Column('samp_mat_process', [LeadingWhitespaceValidation()]),
-    Column('bioproject_accession', [InListValidation(['']) |
-                                    MatchesPatternValidation(r'PRJNA\d+', message='BioProject accession must be in format \'PRJNA<NUMBERS>\'')]),
-    Column('env_biom', [MatchesPatternValidation(r'ENVO:\d+')]),
-    Column('env_feature', [MatchesPatternValidation(r'ENVO:\d+')]),
-    Column('env_material', [MatchesPatternValidation(r'ENVO:\d+')]),
     Column('filename', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the filename column.'),
                         MatchesPatternValidation(r'\w+.[fastq|fasta|fq](.gz)?', message='Filename must be a valid fasta/fastq file with the following supported extensions: .fasta.gz, .fastq.gz, fq.gz')]),
     Column('sample_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_id column.')]),
@@ -61,10 +62,7 @@ sample_schema = Schema([
                                            "PacBio Sequel", "Nanopore MinION", "pacbio sequel", "nanopore minion",
                                            "Nanopore PromethION", "Nanopore SmidgION", "nanopore promethion", "nanopore smidgion",
                                            "454", "Sanger", "sanger"])]),
-    Column('read_number', [InRangeValidation(1, message='Read number must be a positive number.')]),
-    Column('paired', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
-                      InListValidation(['yes', 'no'])]),
-    Column('sequencing_facility', [LeadingWhitespaceValidation()])
+    Column('read_number', [InRangeValidation(1, message='Read number must be a positive number.')])
 ])
 
 schemas = {'sample': sample_schema, 'study': study_schema}

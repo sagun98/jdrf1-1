@@ -71,7 +71,7 @@ th, td { white-space: nowrap; overflow: hidden; }
 }
 
 #panel_study_metadata button {
-    margin-top: 6px;
+    margin-top: 12px;
 }
 
 #panel_sample_metadata .panel-heading {
@@ -120,3 +120,20 @@ th, td { white-space: nowrap; overflow: hidden; }
  #mismatch_cols {
      padding-left: 10px;
  }
+
+/* Rotating glyphicon when expanding/collapsing */
+.collapse-optional-fields .glyphicon {
+    transition: .3s transform ease-in-out;
+}
+
+.collapse-optional-fields .collapsed .glyphicon {
+    transform: rotate(-90deg);
+}
+
+.collapse-optional-fields a:hover, a:visited, a:link, a:active {
+    text-decoration: none;
+}
+
+.collapse-optional-fields .collapse {
+    margin-top: 10px;
+}
