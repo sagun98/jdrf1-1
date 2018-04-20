@@ -164,11 +164,28 @@ def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
     return (is_valid, error_context)
 
 
-def check_metadata_files_complete(user,folder,metadata_file):
+def check_metadata_files_complete(user,folder,metadata_file,study_file):
     """ Read the metadata and find all raw files for user.
         Then check that all files have metadata.
         Finally check that all files in the metadata exist. 
     """
+
+    # get the study type
+    study_type = get_study_type(study_file)
+
+    # if study type is other, bypass verify
+    if study_type == "other":
+        message="BYPASS VERIFICATION: The study type is OTHER so verification is not required.\n"
+        message+="NEXT STEP: The files are now ready to be processed.\n"
+        error_code = 0
+
+        # email status of verify
+        subject="data verify run by user "+user
+        send_email_update(subject,message)
+
+        # return the error code and message
+        return error_code, message
+
 
     # get all of the files that have been uploaded
     all_raw_files = set(get_recursive_files_nonempty(folder,recursive=False))
@@ -345,15 +362,16 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     else:
         extension = input_files[0].split(".")[-1]
 
+    # get the study type
+    study_type = get_study_type(study_file)
+    logger.info("Starting workflow for study type: " + study_type)
+
     # run the checksums
     command=["python",os.path.join(folder,"md5sum_workflow.py"),
         "--input",upload_folder,"--output",md5sum_check,"--input-metadata",
         metadata_file,"--input-extension",extension]
-    email_workflow_status(user,command,md5sum_check,"md5sum")
-
-    # get the study type
-    study_type = get_study_type(study_file)
-    logger.info("Starting workflow for study type: " + study_type)
+    if study_type != "other":
+        email_workflow_status(user,command,md5sum_check,"md5sum")
 
     # run the wmgx workflow
     if study_type == "16S":
@@ -367,7 +385,7 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
         email_workflow_status(user,command,visualizations,"visualization")
-    else:
+    elif study_type != "other":
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
             extension,"--remove-intermediate-output","--bypass-strain-profiling",
@@ -378,6 +396,7 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
         command=["biobakery_workflows","wmgx_vis",
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
+    if study_type != "other":
         email_workflow_status(user,command,visualizations,"visualization")
 
 def check_workflow_running(user, process_folder):
