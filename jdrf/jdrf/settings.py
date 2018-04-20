@@ -16,6 +16,7 @@ import logging
 # set the location user will upload files to
 UPLOAD_FOLDER = "/opt/upload_folder/"
 PROCESS_FOLDER = "/opt/process_folder/"
+ARCHIVE_FOLDER = "/opt/archive_folder/"
 TEMP_FOLDER = "/opt/temp/"
 
 # set the default metadata file names
