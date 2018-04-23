@@ -319,19 +319,14 @@ def get_mtime(file):
 
     return time.ctime(os.path.getmtime(file))
 
-@login_required(login_url='/login/')
-def download_files(request):
-    """ List all of the processed files available for the user to download """
-
-    # get the user, folders, and logger
-    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
-    logger.info("Listing files for user: %s", user)
+def list_file_in_folder(folder,exclude_files=[".anadama"]):
+    """ Get a list of all of the files in the folder, formatted for page, exclude some folders """
 
     # get all of the files in the user process folder, with directories
     list_files = []
-    for path, directories, files in os.walk(process_folder):  
+    for path, directories, files in os.walk(folder):
         # remove the base process folder form the path
-        reduced_path = path.replace(process_folder,"")
+        reduced_path = path.replace(folder,"")
         # remove path sep if first character
         if reduced_path.startswith(os.sep):
             reduced_path = reduced_path[1:]
@@ -340,19 +335,45 @@ def download_files(request):
             file_path = os.path.join(path,file)
             # check that this is a file with an extension
             if os.path.isfile(file_path) and "." in file:
-                current_set.append((os.path.join(reduced_path,file), get_file_size(file_path), get_mtime(file_path)))
+                current_set.append((os.path.join(reduced_path,file), os.path.join(path,file), get_file_size(file_path), get_mtime(file_path)))
         # add the files sorted
         if current_set:
             list_files+=sorted(current_set, key=lambda x: x[0])
 
-    # remove any of the anadama db files
-    list_files = list(filter(lambda x: not ".anadama" in x[0], list_files))
+    # remove any of the files/folder to exclude
+    list_files_reduced = []
+    for file_info in list_files:
+        include = True
+        for exclude in exclude_files:
+            if exclude in file_info[0]:
+                include = False
+                break
+        if include:
+            list_files_reduced.append(file_info)
+
+    return list_files_reduced
+
+@login_required(login_url='/login/')
+def download_files(request):
+    """ List all of the processed files available for the user to download """
+
+    # get the user, folders, and logger
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Listing files for user: %s", user)
+
+    # get all of the upload and archive files/folders
+    archive_folder = os.path.join(settings.ARCHIVE_FOLDER, user)
+    response={}
+    response["uploaded_files"] = list_file_in_folder(upload_folder,exclude_files=["metadata"])
+    response["archived_files"] = list_file_in_folder(archive_folder,exclude_files=[".anadama","workflow.stderr","workflow.stdout","anadama.log"])
+
+    # get all of the files in the user process folder, with directories
+    list_files = list_file_in_folder(process_folder)
 
     # organize the files into the three workflow folders
-    response={}
-    response["md5sum_files"] = [(file.replace(process_data.WORKFLOW_MD5SUM_FOLDER+os.sep,""), file, size, mtime) for file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_MD5SUM_FOLDER), list_files))]
-    response["data_product_files"] = [(file.replace(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER+os.sep,""), file, size, mtime) for file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER), list_files))]
-    response["visualization_files"] = [(file.replace(process_data.WORFLOW_VISUALIZATIONS_FOLDER+os.sep,""), file, size, mtime) for file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORFLOW_VISUALIZATIONS_FOLDER), list_files))]
+    response["md5sum_files"] = [(file.replace(process_data.WORKFLOW_MD5SUM_FOLDER+os.sep,""), full_path_file, size, mtime) for file, full_path_file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_MD5SUM_FOLDER), list_files))]
+    response["data_product_files"] = [(file.replace(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER+os.sep,""), full_path_file, size, mtime) for file, full_path_file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER), list_files))]
+    response["visualization_files"] = [(file.replace(process_data.WORFLOW_VISUALIZATIONS_FOLDER+os.sep,""), full_path_file, size, mtime) for file, full_path_file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORFLOW_VISUALIZATIONS_FOLDER), list_files))]
 
     return render(request,'download.html',response)
 
@@ -366,8 +387,10 @@ def download_file(request, file_name):
     # get file path
     if file_name == "sample_metadata.errors.xlsx":
         download_file = os.path.join(upload_folder, file_name)
-    else: 
+    elif file_name[0] != os.sep:
         download_file = os.path.join(process_folder,file_name)
+    else:
+        download_file = file_name
 
     logger.info("File to download: %s", download_file)
 
