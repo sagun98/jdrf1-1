@@ -40,7 +40,7 @@ task2=workflow.add_task(
 
 # transfer the processed files to a named study folder on remote machine
 task3=workflow.add_task(
-    "rsync --recursive -e 'ssh -i [args[0]]' [args[1]] [args[2]]:[args[3]]",
+    "rsync --exclude '*.fastq' --recursive -e 'ssh -i [args[0]]' [args[1]] [args[2]]:[args[3]]",
     depends=task2,
     args=[args.key, process_archive, args.remote, args.output_transfer])
 
