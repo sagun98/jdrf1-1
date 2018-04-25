@@ -5,6 +5,7 @@ import threading
 import logging
 import subprocess
 import time
+import re
 
 import smtplib
 import socket
@@ -16,6 +17,12 @@ from django.conf import settings
 EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
 EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
 EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
+
+# Set default workflow config options
+WMGX_PROCESSES="6"
+WMGX_THREADS="8"
+SixteenS_PROCESSES="1"
+SixteenS_THREADS="30"
 
 import pandas as pd
 
@@ -173,11 +180,28 @@ def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
     return (is_valid, error_context)
 
 
-def check_metadata_files_complete(user,folder,metadata_file):
+def check_metadata_files_complete(user,folder,metadata_file,study_file):
     """ Read the metadata and find all raw files for user.
         Then check that all files have metadata.
         Finally check that all files in the metadata exist. 
     """
+
+    # get the study type
+    study_type = get_study_type(study_file)
+
+    # if study type is other, bypass verify
+    if study_type == "other":
+        message="BYPASS VERIFICATION: The study type is OTHER so verification is not required.\n"
+        message+="NEXT STEP: The files are now ready to be processed.\n"
+        error_code = 0
+
+        # email status of verify
+        subject="data verify run by user "+user
+        send_email_update(subject,message)
+
+        # return the error code and message
+        return error_code, message
+
 
     # get all of the files that have been uploaded
     all_raw_files = set(get_recursive_files_nonempty(folder,recursive=False))
@@ -286,7 +310,7 @@ def subprocess_capture_stdout_stderr(command,output_folder):
         logger.error("Unable to read stderr file")
         stderr_output = ""
 
-    if "ERROR" in stderr_output:
+    if "ERROR" in stderr_output or "Failed" in stderr_output:
         logger.error("Error found in subprocess command stderr: " + " ".join(command))
         raise EnvironmentError
 
@@ -305,13 +329,16 @@ def email_workflow_status(user,command,output_folder,workflow):
     error_message = "Workflow error.\n\n"+message+\
         "\n\nPlease review the workflow logs to determine the error."
 
+    error = False
     try:
         send_email_update("Starting "+subject,start_message) 
         subprocess_capture_stdout_stderr(command,output_folder)
         send_email_update("Completed without error "+subject,end_message)
     except (EnvironmentError, subprocess.CalledProcessError):
         send_email_update("Ended with error "+subject,error_message)
-        raise
+        error = True
+
+    return error
 
 def get_study_type(study_file):
     """ Ready the metadata study file to determine the sequencing type """
@@ -323,6 +350,11 @@ def get_study_type(study_file):
         return "other"
     else:
         return "wmgx"
+
+def get_study_name(study_file):
+    """ Return the name of the study (alpha numeric only) """
+
+    return re.sub(r'\W+','',open(study_file).readlines()[-1].split(",")[-1])
 
 def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     """ First run the md5sum steps then run the remainder of the workflow """
@@ -354,39 +386,58 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     else:
         extension = input_files[0].split(".")[-1]
 
+    # get the study type
+    study_type = get_study_type(study_file)
+    logger.info("Starting workflow for study type: " + study_type)
+
     # run the checksums
     command=["python",os.path.join(folder,"md5sum_workflow.py"),
         "--input",upload_folder,"--output",md5sum_check,"--input-metadata",
         metadata_file,"--input-extension",extension]
-    email_workflow_status(user,command,md5sum_check,"md5sum")
-
-    # get the study type
-    study_type = get_study_type(study_file)
-    logger.info("Starting workflow for study type: " + study_type)
+    error_state = False
+    if study_type != "other":
+        error_state = email_workflow_status(user,command,md5sum_check,"md5sum")
 
     # run the wmgx workflow
     if study_type == "16S":
         command=["biobakery_workflows","16s","--input",
             upload_folder,"--output",data_products,"--input-extension",
-            extension]
-        email_workflow_status(user,command,data_products,"16s")
+            extension,"--local-jobs",SixteenS_PROCESSES,"--threads",SixteenS_THREADS]
+        if not error_state:
+            error_state = email_workflow_status(user,command,data_products,"16s")
 
         # run the vis workflow
         command=["biobakery_workflows","16s_vis",
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
-        email_workflow_status(user,command,visualizations,"visualization")
-    else:
+        if not error_state:
+            error_state = email_workflow_status(user,command,visualizations,"visualization")
+    elif study_type != "other":
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
-            extension,"--remove-intermediate-output","--bypass-strain-profiling"]
-        email_workflow_status(user,command,data_products,"wmgx")
+            extension,"--remove-intermediate-output","--bypass-strain-profiling",
+            "--local-jobs",WMGX_PROCESSES,"--threads",WMGX_THREADS]
+        if not error_state:
+            error_state = email_workflow_status(user,command,data_products,"wmgx")
 
         # run the vis workflow
         command=["biobakery_workflows","wmgx_vis",
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
-        email_workflow_status(user,command,visualizations,"visualization")
+        if not error_state:
+            error_state = email_workflow_status(user,command,visualizations,"visualization")
+
+    # run the archive and transfer workflow
+    archive_folder = os.path.join(settings.ARCHIVE_FOLDER,user)
+    create_folder(archive_folder)
+    study_name = get_study_name(study_file)
+    command=["python",os.path.join(folder,"archive_workflow.py"),
+        "--input-upload",upload_folder,"--input-processed",process_folder,
+        "--key",settings.SSH_KEY,"--remote",settings.REMOTE_TRANSFER_SERVER,
+        "--study",study_name,"--output",archive_folder,"--output-transfer",
+        os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/"]
+    if not error_state:
+        email_workflow_status(user,command,archive_folder,"archive and transfer")
 
 def check_workflow_running(user, process_folder):
     """ Check if any of the process workflows are running for a user """

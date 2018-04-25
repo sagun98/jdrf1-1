@@ -16,7 +16,11 @@ import logging
 # set the location user will upload files to
 UPLOAD_FOLDER = "/opt/upload_folder/"
 PROCESS_FOLDER = "/opt/process_folder/"
+ARCHIVE_FOLDER = "/opt/archive_folder/"
 TEMP_FOLDER = "/opt/temp/"
+SSH_KEY = "/opt/SSH/jdrf_transfer.pub"
+REMOTE_TRANSFER_SERVER = "jdrf2.rc.fas.harvard.edu"
+REMOTE_TRANSFER_FOLDER = "/data/"
 
 # set the default metadata file names
 METADATA_FILE_NAME = "metadata.tsv"
