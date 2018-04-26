@@ -129,41 +129,33 @@
         scrollX: '400px',
         scrollCollapse: false,
         columns: [
-            {data: 'bioproject_accession'},
+            {data: 'sample_id'},
             {data: 'host_subject_id'},
+            {data: 'subject_age'},
+            {data: 'subject_sex'},
+            {data: 'ethnicity'},
+            {data: 'collection_date'},
             {data: 'host_body_mass_index'},
             {data: 'host_diet'},
             {data: 'host_disease'},
             {data: 'host_body_product'},
-            {data: 'host_tissue_sampled'},
             {data: 'host_family_relationship'},
             {data: 'host_genotype'},
             {data: 'host_phenotype'},
             {data: 'gastrointest_disord'},
             {data: 'ihmc_medication_code'},
             {data: 'subject_tax_id'},
-            {data: 'subject_age'},
-            {data: 'subject_sex'},
-            {data: 'ethnicity'},
-            {data: 'sample_id'},
-            {data: 'collection_date'},
             {data: 'source_material_id'},
             {data: 'isolation_source'},
             {data: 'samp_mat_process'},
             {data: 'samp_store_dur'},
             {data: 'samp_store_temp'},
             {data: 'samp_vol_mass'},
-            {data: 'animal_vendor'},
             {data: 'variable_region'},
             {data: 'organism_count'},
-            {data: 'env_biom'},
-            {data: 'env_feature'},
-            {data: 'env_material'},
             {data: 'sequencer'},
             {data: 'read_number'},
-            {data: 'sequencing_facility'},
             {data: 'filename'},
-            {data: 'paired'},
             {data: 'md5_checksum'}
         ],
         columnDefs: [
@@ -209,8 +201,27 @@
             // the table and just display the error message.
             $('#datatables_div').hide();
             $('#error_spreadsheet').addClass('hidden')
-            $('#validation_error_single').html("<div class='glyphicon glyphicon-ban-circle'></div>" +
-                                               "<div>" + response['error_msg'] + "</div");
+            
+            // If we have a mismatch in the columns supplied in our metadata vs what is expected
+            // in the schema we can list out all the 
+            var error_single_html = "";
+            if ("mismatch_cols" in response) {
+                error_single_html += "<div class='glyphicon glyphicon-ban-circle'></div>" +
+                                     "<div>" + response['error_msg'] + ":" + "</div><br />" +
+                                     "<div id='mismatch_cols'><ul>";
+
+                for (var col in response['mismatch_cols']) {
+                    error_single_html += "<li><b>" + response['mismatch_cols'][col] + "</b></li>";
+                }
+
+                error_single_html += "</ul></div>";
+
+                $('#validation_error_single').html(erorr_single_html);
+            } else {
+                $('#validation_error_single').html("<div class='glyphicon glyphicon-ban-circle'></div>" +
+                                                   "<div>" + response['error_msg'] + "</div>");
+            }
+
             $('#validation_error_single').removeClass('hidden');
             $('#validation').removeClass('hidden');
         } else {
