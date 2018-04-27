@@ -216,7 +216,7 @@
 
                 error_single_html += "</ul></div>";
 
-                $('#validation_error_single').html(erorr_single_html);
+                $('#validation_error_single').html(error_single_html);
             } else {
                 $('#validation_error_single').html("<div class='glyphicon glyphicon-ban-circle'></div>" +
                                                    "<div>" + response['error_msg'] + "</div>");
