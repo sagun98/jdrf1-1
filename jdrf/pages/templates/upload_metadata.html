@@ -126,6 +126,12 @@
                     </a>
                     <div class="collapse" id="collapseFilter">
                       <div class="form-group has-feedback">
+                          <label for="bioproject_accession" class="control-label">Bioproject Accession</label>
+                          <input type="text" pattern="PRJNA\d+" class="form-control" id="bioproject_accession", name="bioproject_accession", data-error="Please provide a bioproject accession in the format PRJNAxxxxxx" placeholder="PRJEB22283">
+                          <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
+                          <div class="help-block with-errors"></div>
+                      </div>
+                      <div class="form-group has-feedback">
                           <label for="geo_loc_name" class="control-label">Geo Location Name</label>
                           <input type="text" pattern="[a-zA-Z]+:[a-zA-Z]+:[a-zA-Z]+" class="form-control" id="geo_loc_name", name="geo_loc_name", data-error="Please provide a geolocation name in format Country:State:City" placeholder="US:Massachusetts:Boston">
                           <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
