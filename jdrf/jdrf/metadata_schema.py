@@ -13,13 +13,12 @@ study_schema = Schema([
     Column('geo_loc_name', [InListValidation(['']) | MatchesPatternValidation(r'\w+:\w+:\w+')]),
     Column('analysis_desc', [InListValidation(['']) | CanConvertValidation(str)]),
     Column('sequencing_facility', [LeadingWhitespaceValidation()]),
-    Column('env_biom', [MatchesPatternValidation(r'ENVO:\d+')]),
-    Column('env_feature', [MatchesPatternValidation(r'ENVO:\d+')]),
-    Column('env_material', [MatchesPatternValidation(r'ENVO:\d+')]),
+    Column('env_biom', [MatchesPatternValidation(r'ENVO:\d+') | InListValidation([''])]),
+    Column('env_feature', [MatchesPatternValidation(r'ENVO:\d+') | InListValidation([''])]),
+    Column('env_material', [MatchesPatternValidation(r'ENVO:\d+') | InListValidation([''])]),
     Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO:\d+')]),
     Column('animal_vendor', [LeadingWhitespaceValidation()]),
-    Column('paired', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the is_paired_end column.'),
-                      InListValidation(['yes', 'no'])])
+    Column('paired', [InListValidation(['yes', 'no',''])])
 ])
 
 sample_schema = Schema([
