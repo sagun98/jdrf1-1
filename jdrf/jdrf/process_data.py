@@ -142,7 +142,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
     metadata_df = None
 
     try:
-       metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+       metadata_df = pd.read_csv(metadata_file, keep_default_na=False, parse_dates=['collection_date'])
        (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger, output_folder)
     except pd.errors.ParserError as pe:
         if "Error tokenizing data" in pe.message:
