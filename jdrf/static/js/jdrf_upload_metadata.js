@@ -206,12 +206,31 @@
             // in the schema we can list out all the 
             var error_single_html = "";
             if ("mismatch_cols" in response) {
+                // We should get back two lists of columns here. One contains extra columns 
+                // while the other will contain any missing columns.
+                extra_cols = response['mismatch_cols'][0]
+                missing_cols = response['mismatch_cols'][1]
+
                 error_single_html += "<div class='glyphicon glyphicon-ban-circle'></div>" +
                                      "<div>" + response['error_msg'] + ":" + "</div><br />" +
-                                     "<div id='mismatch_cols'><ul>";
+                                     "<div id='mismatch_cols'>";
 
-                for (var col in response['mismatch_cols']) {
-                    error_single_html += "<li><b>" + response['mismatch_cols'][col] + "</b></li>";
+                if (missing_cols.length > 0) {
+                    error_single_html += "<b>Missing Columns:</b><br /><ul>";
+
+                    for (var col in missing_cols) {
+                        error_single_html += "<li><b>" + missing_cols[col] + "</b></li>";
+                    }
+
+                    error_single_html += "</ul><br />";
+                }
+
+                if (extra_cols.length > 0) {
+                    error_single_html += "<b>Extra Columns:</b><br /><ul>";
+
+                    for (var col in extra_cols) {
+                        error_single_html += "<li><b>" + extra_cols[col] + "</b></li>";
+                    }
                 }
 
                 error_single_html += "</ul></div>";

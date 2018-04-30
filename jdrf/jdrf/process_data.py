@@ -169,7 +169,10 @@ def _get_mismatched_columns(metadata_df, schema):
     valid_columns = set([c.name for c in schema.columns])
     metadata_columns = set(metadata_df.columns.tolist())
 
-    return list(valid_columns.symmetric_difference(metadata_columns))
+    extra_cols = list(metadata_columns.difference(valid_columns))
+    missing_cols = list(valid_columns.difference(metadata_columns))
+
+    return [extra_cols, missing_cols]
 
 
 def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
