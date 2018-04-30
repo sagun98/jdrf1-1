@@ -137,8 +137,28 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
-    metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
-    (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger, output_folder)
+    is_valid = False
+    error_context = {}
+    metadata_df = None
+
+    try:
+       metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
+       (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger, output_folder)
+    except pd.errors.ParserError as pe:
+        if "Error tokenizing data" in pe.message:
+            line_elts = pe.message.split()
+            line_number = int(line_elts[-3].replace(',', '')) - 1
+            expected_fields = line_elts[-1]
+            observed_fields = line_elts[-7]
+
+            error_context['error_msg'] = "Line %s contained %s columns, expected %s columns" % (line_number, observed_fields, expected_fields)
+        else:
+            raise
+    except:
+        # If we have an error here we don't want to leave the user hanging
+        error_context['error_msg'] = ("An unexpected error occurred. This error has been logged;" 
+                                      "please contant JDRF support for help with your metadata upload")
+
     return (is_valid, metadata_df, error_context)
 
 
