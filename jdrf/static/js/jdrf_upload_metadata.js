@@ -64,6 +64,7 @@
         })
         
         $('#metadata_complete').removeClass('hidden');
+        $('#date_format_audit').removeClass('hidden');
     }
 
     if (Cookies.get('sample_metadata') == '1') {
@@ -265,6 +266,7 @@
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata</h3>');
         $('#validation').addClass('hidden');
         $('#upload_success').addClass('hidden');
+        $('#date_format_audit').addClasss('hidden')
      });
      
      $('#metadata_file_upload').on('filebatchuploadsuccess', function(event, files, extra) {
@@ -273,6 +275,7 @@
         Cookies.set('sample_metadata', 1);
 
         $('#upload_success').removeClass('hidden');
+        $('#date_format_audit').removeClass('hidden');
      });
 
  });
