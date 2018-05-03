@@ -24,14 +24,15 @@ study_schema = Schema([
 
 sample_schema = Schema([
     Column('host_subject_id', [MatchesPatternValidation(r'\w+', message='Host Subject ID may only contain alphanumeric characters.')]),
-    Column('host_diet', [LeadingWhitespaceValidation()]),
-    Column('source_material_id', [LeadingWhitespaceValidation()]),
-    Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')]),
-    Column('host_family_relationship', [LeadingWhitespaceValidation()]),
+    Column('host_diet', [LeadingWhitespaceValidation()], allow_empty=True),
+    Column('source_material_id', [LeadingWhitespaceValidation()], allow_empty=True),
+    Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')], allow_empty=True),
+    Column('host_family_relationship', [LeadingWhitespaceValidation()], allow_empty=True),
     Column('host_genotype', [LeadingWhitespaceValidation() |
-                             MatchesPatternValidation(r'^[http|www]', message='Host Genotype may only be a valid URL to the associated DbGap project.')]),
-    Column('isolation_source', [LeadingWhitespaceValidation()]),
-    Column('samp_mat_process', [LeadingWhitespaceValidation()]),
+                             MatchesPatternValidation(r'^[http|www]', message='Host Genotype may only be a valid URL to the associated DbGap project.')],
+           allow_empty=True),
+    Column('isolation_source', [LeadingWhitespaceValidation()], allow_empty=True), 
+    Column('samp_mat_process', [LeadingWhitespaceValidation()], allow_empty=True),
     Column('filename', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the filename column.'),
                         MatchesPatternValidation(r'\w+.[fastq|fasta|fq](.gz)?', message='Filename must be a valid fasta/fastq file with the following supported extensions: .fasta.gz, .fastq.gz, fq.gz')]),
     Column('sample_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_id column.')]),
@@ -44,32 +45,36 @@ sample_schema = Schema([
                            InListValidation(['M', 'm', 'F', 'f'])]),
     Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.'),
                             MatchesPatternValidation(r'[a-zA-Z0-9]{32}', message='MD5 Checksum may only contain 32 alphanumeric characters.')]),
-    Column('host_body_mass_index', [LeadingWhitespaceValidation() | CanConvertValidation(float)]),
+    Column('host_body_mass_index', [LeadingWhitespaceValidation() | CanConvertValidation(float)], allow_empty=True),
     Column('host_disease', [LeadingWhitespaceValidation() | 
-                            MatchesPatternValidation(r'DOID:\d+', message='Must provide a valid Disease Ontology ID in format \'DOID:<NUMBERS>\'')]),
+                            MatchesPatternValidation(r'DOID:\d+', message='Must provide a valid Disease Ontology ID in format \'DOID:<NUMBERS>\'')],
+           allow_empty=True),
     Column('variable_region', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
-                               MatchesPatternValidation(r'(V[1-9],?)+', message='Variable region must be a valid 16S hypervariable region.')]),
-    Column('gastrointest_disord', [LeadingWhitespaceValidation() | CanConvertValidation(int)]),
+                               MatchesPatternValidation(r'(V[1-9],?)+', message='Variable region must be a valid 16S hypervariable region.')],
+           allow_empty=True),
+    Column('gastrointest_disord', [LeadingWhitespaceValidation() | CanConvertValidation(int)], allow_empty=True),
     Column('host_body_product', [LeadingWhitespaceValidation() |
-                                 MatchesPatternValidation(r'GENEPIO_\d+', message='Must provide a valid Genetic epidemiology ontology ID in format \'GENEPIO_<NUMBERS>\'')]),
-    Column('host_phenotype', [LeadingWhitespaceValidation() | CanConvertValidation(int)]),
+                                 MatchesPatternValidation(r'GENEPIO_\d+', message='Must provide a valid Genetic epidemiology ontology ID in format \'GENEPIO_<NUMBERS>\'')],
+           allow_empty=True),
+    Column('host_phenotype', [LeadingWhitespaceValidation() | CanConvertValidation(int)], allow_empty=True),
     Column('ihmc_medication_code', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
-                                    MatchesPatternValidation(r'(\d+,?)+]', message='IHMC medication code must be a number.')]),
+                                    MatchesPatternValidation(r'(\d+,?)+]', message='IHMC medication code must be a number.')], allow_empty=True),
     Column('organism_count', [CustomSeriesValidation(lambda x: ~x.isnull(), '') |
-                              InRangeValidation(1, message='Organism count must be a positive number.')]),
+                              InRangeValidation(1, message='Organism count must be a positive number.')], allow_empty=True),
     Column('samp_store_dur', [LeadingWhitespaceValidation() | 
-                              InRangeValidation(1, message='Sample storage duration must be a positive number.')]),
+                              InRangeValidation(1, message='Sample storage duration must be a positive number.')], allow_empty=True),
     Column('samp_store_temp', [LeadingWhitespaceValidation() | 
-                               CanConvertValidation(int, message='Sample storage temperature must be a valid temperature number.')]),
+                               CanConvertValidation(int, message='Sample storage temperature must be a valid temperature number.')], allow_empty=True),
     Column('samp_vol_mass', [LeadingWhitespaceValidation() |
-                             MatchesPatternValidation(r'\d+[.]?\d*(g|ml)', message='Sample volume mass must be in format <NUMBER>g or <NUMBER>ml')]),
+                             MatchesPatternValidation(r'\d+[.]?\d*(g|ml)', message='Sample volume mass must be in format <NUMBER>g or <NUMBER>ml')], 
+           allow_empty=True),
     Column('sequencer', [InListValidation(["Illumina MiSeq", "Illumina NextSeq", "illumina miseq", "illumina nextseq",
                                            "Illumina HiSeq", "Illumina HiSeq X", "illumina hiseq", "illumina hiseq x",
                                            "PacBio Sequel", "Nanopore MinION", "pacbio sequel", "nanopore minion",
                                            "Nanopore PromethION", "Nanopore SmidgION", "nanopore promethion", "nanopore smidgion",
                                            "454", "Sanger", "sanger"])]),
     Column('read_number', [LeadingWhitespaceValidation() |
-                           InRangeValidation(1, message='Read number must be a positive number.')])
+                           InRangeValidation(1, message='Read number must be a positive number.')], allow_empty=True)
 ])
 
 schemas = {'sample': sample_schema, 'study': study_schema}
