@@ -18,9 +18,10 @@ UPLOAD_FOLDER = "/opt/upload_folder/"
 PROCESS_FOLDER = "/opt/process_folder/"
 ARCHIVE_FOLDER = "/opt/archive_folder/"
 TEMP_FOLDER = "/opt/temp/"
-SSH_KEY = "/opt/SSH/jdrf_transfer.pub"
+SSH_KEY = "/opt/SSH/jdrf_transfer_key"
 REMOTE_TRANSFER_SERVER = "jdrf2.rc.fas.harvard.edu"
-REMOTE_TRANSFER_FOLDER = "/data/"
+REMOTE_TRANSFER_FOLDER = "/data/processed_data/"
+REMOTE_TRANSFER_USER = "ljmciver"
 
 # set the default metadata file names
 METADATA_FILE_NAME = "metadata.tsv"
