@@ -70,7 +70,8 @@
     if (Cookies.get('sample_metadata') == '1') {
         $('#panel_sample_metadata .panel-body').hide();
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
-        $('#upload_success').removeClass('hidden')
+        $('#upload_success').removeClass('hidden');
+        $('#date_format_audit').removeClass('hidden');
     }
 
     $('#study_metadata_form').validator().on('submit', function(e) {
@@ -246,6 +247,7 @@
             $('#validation').removeClass('hidden');
         } else {
             $('#upload_success').addClass('hidden');
+            $('#date_format_audit').addClass('hidden');
             Cookies.remove('sample_metadata');
 
             var errors_table = JSON.parse(response.errors_datatable);
