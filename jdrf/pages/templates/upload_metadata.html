@@ -87,7 +87,6 @@
     <div class="container">
         <h2>Upload Metadata</h2>
         <p>Using the application on this page, upload study and sample metadata to deposit it with the JDRF MIBC for processing.</p>
-        <div class="alert alert-warning"><div class="glyphicon glyphicon-exclamation-sign"></div><div>Only one complete dataset (study and sample metadata + corresponding sequence files) may be processed at a time.</div></div>
 
         <div id="panel_study_metadata" class="panel panel-default">
           <div class="panel-heading">
@@ -269,6 +268,7 @@
           </div>
         </div>
         <div id="upload_success" class="alert alert-success hidden" role="alert"><div class="glyphicon glyphicon-ok-sign"></div><div>Metadata successfully uploaded. Please proceed to the <a class="alert-link" href="{% url 'upload' %}">Upload Data</a> page to continue.</div></div>
+        <div id="date_format_audit" class="alert alert-warning hidden" role="alert"><div class="glyphicon glyphicon-exclamation-sign"></div><div>Please note that all dates found in the metadata have been auto-converted to <b>YYYY-MM-DD</b> (i.e. <b>2018-04-18</b>) format for consistency.</div></div>
     </div> <!-- /container -->
   </body>
 </html>

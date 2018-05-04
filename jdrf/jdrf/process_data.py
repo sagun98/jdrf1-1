@@ -26,7 +26,7 @@ SixteenS_THREADS="30"
 
 import pandas as pd
 
-from jdrf.metadata_schema import schemas
+from jdrf.metadata_schema import schemas, sample_optional_cols
 
 
 # name the general workflow stdout/stderr files
@@ -129,7 +129,9 @@ def validate_study_metadata(metadata_dict, logger):
         present.
     """
     metadata_df = pd.DataFrame(metadata_dict)
-    (is_valid, error_context) = _validate_metadata(metadata_df, 'study', logger)
+    schema = schemas['study']
+
+    (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger)
     return (is_valid, metadata_df, error_context)
 
 
@@ -137,8 +139,42 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
-    metadata_df = pd.read_csv(metadata_file, keep_default_na=False)
-    (is_valid, error_context) = _validate_metadata(metadata_df, 'sample', logger, output_folder)
+    logger=logging.getLogger('jdrf1')
+
+    is_valid = False
+    error_context = {}
+    metadata_df = None
+
+    try:
+        metadata_df = pd.read_csv(metadata_file, keep_default_na=False, parse_dates=['collection_date'])
+
+        ## Before we get to validation we need to be able to handle "slim" metadata spreadsheets that 
+        ## include just the required fields.
+        metadata_cols = set(metadata_df.columns.tolist())
+
+        missing_cols = sample_optional_cols - metadata_cols
+        logger.debug(missing_cols)
+        for col in missing_cols:
+            metadata_df[col] = ""
+
+        schema = schemas['sample']
+        (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder)
+    except pd.errors.ParserError as pe:
+        if "Error tokenizing data" in pe.message:
+            line_elts = pe.message.split()
+            line_number = int(line_elts[-3].replace(',', '')) - 1
+            expected_fields = line_elts[-1]
+            observed_fields = line_elts[-7]
+
+            error_context['error_msg'] = "Line %s contained %s columns, expected %s columns" % (line_number, observed_fields, expected_fields)
+        else:
+            raise
+    except Exception as e:
+        # If we have an error here we don't want to leave the user hanging
+        error_context['error_msg'] = ("An unexpected error occurred. This error has been logged;" 
+                                      "please contant JDRF support for help with your metadata upload")
+        raise
+
     return (is_valid, metadata_df, error_context)
 
 
@@ -149,16 +185,19 @@ def _get_mismatched_columns(metadata_df, schema):
     valid_columns = set([c.name for c in schema.columns])
     metadata_columns = set(metadata_df.columns.tolist())
 
-    return list(valid_columns.symmetric_difference(metadata_columns))
+    extra_cols = list(metadata_columns.difference(valid_columns))
+    missing_cols = list(valid_columns.difference(metadata_columns))
+
+    return [extra_cols, missing_cols]
 
 
-def _validate_metadata(metadata_df, file_type, logger, output_folder=None):
+def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
     """
-    error_context = {}
+    logger=logging.getLogger('jdrf1')
 
-    schema = schemas[file_type]
+    error_context = {}
     errors = schema.validate(metadata_df)
     
     is_valid = False if errors else True

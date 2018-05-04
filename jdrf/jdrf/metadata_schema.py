@@ -30,7 +30,7 @@ sample_schema = Schema([
     Column('host_family_relationship', [LeadingWhitespaceValidation()]),
     Column('host_genotype', [LeadingWhitespaceValidation() |
                              MatchesPatternValidation(r'^[http|www]', message='Host Genotype may only be a valid URL to the associated DbGap project.')]),
-    Column('isolation_source', [LeadingWhitespaceValidation()]),
+    Column('isolation_source', [LeadingWhitespaceValidation()]), 
     Column('samp_mat_process', [LeadingWhitespaceValidation()]),
     Column('filename', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the filename column.'),
                         MatchesPatternValidation(r'\w+.[fastq|fasta|fq](.gz)?', message='Filename must be a valid fasta/fastq file with the following supported extensions: .fasta.gz, .fastq.gz, fq.gz')]),
@@ -71,5 +71,10 @@ sample_schema = Schema([
     Column('read_number', [LeadingWhitespaceValidation() |
                            InRangeValidation(1, message='Read number must be a positive number.')])
 ])
+
+sample_optional_cols = set(['read_number','host_body_mass_index','host_diet','host_disease','source_material_id',
+                            'variable_region','ethnicity','gastrointest_disord','host_body_product','host_family_relationship',
+                            'host_genotype','host_phenotype','ihmc_medication_code','isolation_source','organism_count',
+                            'samp_mat_process','samp_store_dur','samp_store_temp','samp_vol_mass'])
 
 schemas = {'sample': sample_schema, 'study': study_schema}
