@@ -12,6 +12,7 @@ workflow = Workflow(remove_options=["input"])
 workflow.add_argument("input-upload", desc="the folder of raw uploaded data", required=True)
 workflow.add_argument("input-processed", desc="the folder of processed data", required=True)
 workflow.add_argument("key", desc="the key file to use for the transfer", required=True)
+workflow.add_argument("user", desc="the user id for the transfer", required=True)
 workflow.add_argument("remote", desc="the remote host name for the transfer", required=True)
 workflow.add_argument("study", desc="the name of the study", required=True)
 workflow.add_argument("output-transfer", desc="the folder to transfer the data", required=True)
@@ -40,9 +41,9 @@ task2=workflow.add_task(
 
 # transfer the processed files to a named study folder on remote machine
 task3=workflow.add_task(
-    "rsync --exclude '*.fastq' --recursive -e 'ssh -i [args[0]]' [args[1]] [args[2]]:[args[3]]",
+    "rsync --exclude '*.fastq' --recursive -e 'ssh -i [args[0]] -l [args[1]]' [args[2]] [args[3]]:[args[4]]",
     depends=task2,
-    args=[args.key, process_archive, args.remote, args.output_transfer])
+    args=[args.key, args.user, process_archive, args.remote, args.output_transfer])
 
 workflow.go()
 

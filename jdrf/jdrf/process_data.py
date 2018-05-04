@@ -473,6 +473,7 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     command=["python",os.path.join(folder,"archive_workflow.py"),
         "--input-upload",upload_folder,"--input-processed",process_folder,
         "--key",settings.SSH_KEY,"--remote",settings.REMOTE_TRANSFER_SERVER,
+        "--user",settings.REMOTE_TRANSFER_USER,
         "--study",study_name,"--output",archive_folder,"--output-transfer",
         os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/"]
     if not error_state:
