@@ -64,6 +64,7 @@
         })
         
         $('#metadata_complete').removeClass('hidden');
+        $('#date_format_audit').removeClass('hidden');
     }
 
     if (Cookies.get('sample_metadata') == '1') {
@@ -246,7 +247,7 @@
             $('#validation').removeClass('hidden');
         } else {
             $('#upload_success').addClass('hidden');
-            $('#date_format_audit').addClass('hidden');
+            $('#date_format_audit').addClass('hidden')
             Cookies.remove('sample_metadata');
 
             var errors_table = JSON.parse(response.errors_datatable);
@@ -267,7 +268,7 @@
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata</h3>');
         $('#validation').addClass('hidden');
         $('#upload_success').addClass('hidden');
-        $('#date_format_audit').addClasss('hidden')
+        $('#date_format_audit').addClass('hidden');
      });
      
      $('#metadata_file_upload').on('filebatchuploadsuccess', function(event, files, extra) {
