@@ -64,7 +64,6 @@
         })
         
         $('#metadata_complete').removeClass('hidden');
-        $('#date_format_audit').removeClass('hidden');
     }
 
     if (Cookies.get('sample_metadata') == '1') {

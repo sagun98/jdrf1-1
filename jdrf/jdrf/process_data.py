@@ -26,7 +26,7 @@ SixteenS_THREADS="30"
 
 import pandas as pd
 
-from jdrf.metadata_schema import schemas
+from jdrf.metadata_schema import schemas, sample_optional_cols
 
 
 # name the general workflow stdout/stderr files
@@ -150,16 +150,14 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
 
         ## Before we get to validation we need to be able to handle "slim" metadata spreadsheets that 
         ## include just the required fields.
-        schema = schemas['sample']
-        optional_cols = set([c.name for c in schema.columns if c.allow_empty])
         metadata_cols = set(metadata_df.columns.tolist())
 
-        ## There's probably a better way to do this than looping over all these cols. 
-        missing_cols = optional_cols - metadata_cols
+        missing_cols = sample_optional_cols - metadata_cols
         logger.debug(missing_cols)
         for col in missing_cols:
             metadata_df[col] = ""
 
+        schema = schemas['sample']
         (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder)
     except pd.errors.ParserError as pe:
         if "Error tokenizing data" in pe.message:
@@ -197,6 +195,8 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
     """
+    logger=logging.getLogger('jdrf1')
+
     error_context = {}
     errors = schema.validate(metadata_df)
     
@@ -208,7 +208,6 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
             ## Adding a check here if we have a mismatch in the number of columns
             ## in the supplied metadata we will want to list which columns mismatch
             if "Invalid number of columns" in str(errors[0]):
-                 
                 error_context['mismatch_cols'] = _get_mismatched_columns(metadata_df, schema)
         else:
             (errors_metadata_df, errors_json) = errors_to_json(errors,metadata_df)
