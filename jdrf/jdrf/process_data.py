@@ -324,7 +324,7 @@ def send_email_update(subject,message):
     except (smtplib.SMTPRecipientsRefused, socket.gaierror, socket.timeout):
         logger.error("Unable to send email")
 
-def subprocess_capture_stdout_stderr(command,output_folder):
+def subprocess_capture_stdout_stderr(command,output_folder,shell=False):
     """ Run the command and capture stdout and stderr to files """
     # get the logger instance
     logger=logging.getLogger('jdrf1')
@@ -336,7 +336,7 @@ def subprocess_capture_stdout_stderr(command,output_folder):
         # use line buffering to write stdout/stderr
         with open(stdout_file,"wt",buffering=1) as stdout:
             with open(stderr_file,"wt",buffering=1) as stderr:
-                subprocess.check_call(command,stderr=stderr,stdout=stdout)
+                subprocess.check_call(command,stderr=stderr,stdout=stdout,shell=shell)
     except (EnvironmentError, subprocess.CalledProcessError):
         logger.error("Unable to run subprocess command: " + " ".join(command))
 
@@ -408,10 +408,15 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     md5sum_check = os.path.join(process_folder,WORKFLOW_MD5SUM_FOLDER)
     data_products = os.path.join(process_folder,WORKFLOW_DATA_PRODUCTS_FOLDER)
     visualizations = os.path.join(process_folder,WORFLOW_VISUALIZATIONS_FOLDER)
- 
-    create_folder(md5sum_check)
-    create_folder(data_products)
-    create_folder(visualizations) 
+    
+    # get the study type
+    study_type = get_study_type(study_file)
+    logger.info("Starting workflow for study type: " + study_type)
+
+    if study_type != "other": 
+        create_folder(md5sum_check)
+        create_folder(data_products)
+        create_folder(visualizations) 
 
     # get the input file extensions
     # get all of the files that have been uploaded
@@ -424,10 +429,6 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
         extension = ".".join(input_files[0].split(".")[-2:])
     else:
         extension = input_files[0].split(".")[-1]
-
-    # get the study type
-    study_type = get_study_type(study_file)
-    logger.info("Starting workflow for study type: " + study_type)
 
     # run the checksums
     command=["python",os.path.join(folder,"md5sum_workflow.py"),
@@ -465,6 +466,11 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
             "JDRF MIBC Generated"]
         if not error_state:
             error_state = email_workflow_status(user,command,visualizations,"visualization")
+    else:
+        # if study type is other, then just copy uploaded files to processed folder
+        # since the uploaded files have already been processed
+        command=["cp",upload_folder+"/*.*",process_folder+"/"]
+        subprocess_capture_stdout_stderr(" ".join(command),process_folder,shell=True)
 
     # run the archive and transfer workflow
     archive_folder = os.path.join(settings.ARCHIVE_FOLDER,user)
