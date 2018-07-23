@@ -27,15 +27,19 @@ from .forms import UploadForm
 
 import logging
 
-def get_user_and_folders_plus_logger(request):
+def get_user_and_folders_plus_logger(request, full_user_info=False):
     """ Get the user and all of the user folders """
 
     # get the default logger
     logger=logging.getLogger('jdrf1')
 
     # get the list of raw files to process
-    user = str(request.user)
+    user = request.user.username
     logger.info("Current user: %s", user)
+    user_full_name = request.user.first_name+" "+request.user.last_name
+    logger.info("User full name: %s", user_full_name)
+    user_email = request.user.email
+    logger.info("User email: %s", user_email)
     # get the location of the upload file for the user
     upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
     logger.info("Upload folder: %s", upload_folder)
@@ -43,7 +47,10 @@ def get_user_and_folders_plus_logger(request):
     process_folder = os.path.join(settings.PROCESS_FOLDER,user)
     logger.info("Process folder: %s", process_folder)
 
-    return logger, user, upload_folder, process_folder
+    if full_user_info:
+        return logger, user, user_full_name, user_email, upload_folder, process_folder
+    else:
+        return logger, user, upload_folder, process_folder
 
 
 @login_required(login_url='/login/')
@@ -227,7 +234,7 @@ def read_stdout_stderr(folder):
 @requires_csrf_token
 def process_files(request):
     # get the user, folders, and logger
-    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger, user, user_full_name, user_email, upload_folder, process_folder = get_user_and_folders_plus_logger(request, full_user_info=True)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
    
     # set the default responses
@@ -248,7 +255,7 @@ def process_files(request):
             # check the metadata matches the raw uploads
             responses["message1"] = process_data.check_metadata_files_complete(user,upload_folder,metadata_file,study_file)
         elif "process" in request.POST:
-            responses["message2"] = process_data.check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file,study_file)
+            responses["message2"] = process_data.check_md5sum_and_process_data(user,user_full_name,user_email,upload_folder,process_folder,metadata_file,study_file)
 
     # log messages
     for message_name, message in responses.items():

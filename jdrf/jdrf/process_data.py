@@ -16,6 +16,7 @@ from django.conf import settings
 # Set default email options
 EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
 EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
+
 EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
 
 # Set default workflow config options
@@ -300,16 +301,23 @@ def create_folder(folder):
             logger.info("Unable to create folder: " + folder)
             raise
 
-def send_email_update(subject,message):
+def send_email_update(subject,message,to=None):
     """ Send an email to update the status of workflows """
     # get the logger instance
     logger=logging.getLogger('jdrf1')
 
     # create email message
     msg = MIMEText(message)
-    msg['Subject'] = "JDRF1 MIBC Status Update: " + subject
     msg['From'] = EMAIL_FROM
-    msg['To'] = EMAIL_TO
+    if to:
+        msg['To'] = to
+        msg['Cc'] = EMAIL_TO
+        msg['Subject'] = "JDRF1 MIBC USER: " + subject
+        mail_to = [to, EMAIL_TO]
+    else:
+        msg['To'] = EMAIL_TO
+        msg['Subject'] = "JDRF1 MIBC DEVELOPER: " + subject
+        mail_to = EMAIL_TO
 
     logger.info("Sending email")
     logger.info("Email subject: " + subject)
@@ -318,7 +326,7 @@ def send_email_update(subject,message):
     # send the message
     try:
         s = smtplib.SMTP(EMAIL_SERVER,timeout=3)
-        s.sendmail(msg['From'], msg['To'], msg.as_string())
+        s.sendmail(msg['From'], mail_to, msg.as_string())
         s.quit()
         logger.info("Email sent successfully")
     except (smtplib.SMTPRecipientsRefused, socket.gaierror, socket.timeout):
@@ -355,7 +363,7 @@ def subprocess_capture_stdout_stderr(command,output_folder,shell=False):
 
     logger.info("Subprocess command terminated")
 
-def email_workflow_status(user,command,output_folder,workflow):
+def email_workflow_status(user,command,output_folder,workflow,user_name=None,user_email=None):
     """ Run the subprocess and send status emails """
 
     # start the subprocess
@@ -363,19 +371,51 @@ def email_workflow_status(user,command,output_folder,workflow):
     message="The following subprocess was run to execute "+\
         "workflow "+workflow+" for user "+user+".\n\n"+" ".join(command)
 
+    if user_name and user_email:
+        user_message = "Hello "+user_name+",\n\n"
+        user_end = "\n\nThank you for using JDRF1,\nThe JDRF MIBC Development Team\n"+\
+            "\nPlease do not respond to this email as it was sent from an automated source.\n"+\
+            "If you have questions, please email the JDRF MIBC Development Team."
+        user_start_message = user_message+"Your workflow "+workflow+" has started running. "+\
+            "You will be sent another email when the workflow has finished running. "+user_end
+        user_end_message = user_message+"Your workflow "+workflow+" has finished running. "+user_end
+        user_end_error_message =  user_message+"Your workflow "+workflow+" has finished running. "+\
+            "However, it ended with an error. The development team has been sent additional information about this error. "+\
+            "They will reach out to you to help. If you do not hear from them shortly, "+\
+            "please feel free to email them directly."+user_end
+
     start_message = "Workflow started.\n\n"+message
-    end_message = "Workflow finished without error.\n\n"+message
+    end_message = "Workflow finished running.\n\n"+message
     error_message = "Workflow error.\n\n"+message+\
-        "\n\nPlease review the workflow logs to determine the error."
+        "\n\nPlease review the workflow logs to determine the error."+\
+        "\n\nThe workflow stdout with error messages, if avaliable, is included "+\
+        "at the end of this message for debugging.\n\n"
 
     error = False
     try:
         send_email_update("Starting "+subject,start_message) 
+        if user_name and user_email:
+            send_email_update("Starting workflow "+workflow,user_start_message,user_email)
         subprocess_capture_stdout_stderr(command,output_folder)
-        send_email_update("Completed without error "+subject,end_message)
+        send_email_update("Completed "+subject,end_message)
+        if user_name and user_email:
+            send_email_update("Completed workflow "+workflow,user_end_message,user_email)
     except (EnvironmentError, subprocess.CalledProcessError):
-        send_email_update("Ended with error "+subject,error_message)
         error = True
+
+    if error:
+        # try to read the workflow stdout file to send data with the error
+        stdout_file = os.path.join(output_folder, WORKFLOW_STDOUT)
+        try:
+            with open(stdout_file) as file_handle:
+                workflow_stdout = "".join(file_handle.readlines())
+        except EnvironmentError:
+            workflow_stdout = ""
+        # send the error messages
+        send_email_update("Ended with error "+subject,error_message+workflow_stdout)
+        if user_name and user_email:
+            send_email_update("Ended with error workflow "+workflow,user_end_error_message,user_email)
+
 
     return error
 
@@ -395,7 +435,7 @@ def get_study_name(study_file):
 
     return re.sub(r'\W+','',open(study_file).readlines()[-1].split(",")[-1])
 
-def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
+def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata_file,study_file):
     """ First run the md5sum steps then run the remainder of the workflow """
 
     # get the logger instance
@@ -408,15 +448,15 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
     md5sum_check = os.path.join(process_folder,WORKFLOW_MD5SUM_FOLDER)
     data_products = os.path.join(process_folder,WORKFLOW_DATA_PRODUCTS_FOLDER)
     visualizations = os.path.join(process_folder,WORFLOW_VISUALIZATIONS_FOLDER)
-    
+ 
     # get the study type
     study_type = get_study_type(study_file)
     logger.info("Starting workflow for study type: " + study_type)
 
-    if study_type != "other": 
+    if study_type != "other":
         create_folder(md5sum_check)
-        create_folder(data_products)
         create_folder(visualizations) 
+        create_folder(data_products)
 
     # get the input file extensions
     # get all of the files that have been uploaded
@@ -436,7 +476,7 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
         metadata_file,"--input-extension",extension]
     error_state = False
     if study_type != "other":
-        error_state = email_workflow_status(user,command,md5sum_check,"md5sum")
+        error_state = email_workflow_status(user,command,md5sum_check,"md5sum",user_name,user_email)
 
     # run the wmgx workflow
     if study_type == "16S":
@@ -444,28 +484,28 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
             upload_folder,"--output",data_products,"--input-extension",
             extension,"--local-jobs",SixteenS_PROCESSES,"--threads",SixteenS_THREADS]
         if not error_state:
-            error_state = email_workflow_status(user,command,data_products,"16s")
+            error_state = email_workflow_status(user,command,data_products,"16s",user_name,user_email)
 
         # run the vis workflow
         command=["biobakery_workflows","16s_vis",
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
         if not error_state:
-            error_state = email_workflow_status(user,command,visualizations,"visualization")
+            error_state = email_workflow_status(user,command,visualizations,"visualization",user_name,user_email)
     elif study_type != "other":
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
             extension,"--remove-intermediate-output","--bypass-strain-profiling",
             "--local-jobs",WMGX_PROCESSES,"--threads",WMGX_THREADS]
         if not error_state:
-            error_state = email_workflow_status(user,command,data_products,"wmgx")
+            error_state = email_workflow_status(user,command,data_products,"wmgx",user_name,user_email)
 
         # run the vis workflow
         command=["biobakery_workflows","wmgx_vis",
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
         if not error_state:
-            error_state = email_workflow_status(user,command,visualizations,"visualization")
+            error_state = email_workflow_status(user,command,visualizations,"visualization",user_name,user_email)
     else:
         # if study type is other, then just copy uploaded files to processed folder
         # since the uploaded files have already been processed
@@ -483,7 +523,7 @@ def run_workflow(user,upload_folder,process_folder,metadata_file,study_file):
         "--study",study_name,"--output",archive_folder,"--output-transfer",
         os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/"]
     if not error_state:
-        email_workflow_status(user,command,archive_folder,"archive and transfer")
+        email_workflow_status(user,command,archive_folder,"archive and transfer",user_name,user_email)
 
 def check_workflow_running(user, process_folder):
     """ Check if any of the process workflows are running for a user """
@@ -506,16 +546,16 @@ def check_workflow_running(user, process_folder):
         logger.info("No workflows running for user")
         return False
 
-def check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file,study_file):
+def check_md5sum_and_process_data(user,user_name,user_email,upload_folder,process_folder,metadata_file,study_file):
     """ Run the files through the md5sum check, biobakery workflow (data and vis) """
 
     # run the workflows
     try:
-        thread = threading.Thread(target=run_workflow, args=[user,upload_folder,process_folder,metadata_file,study_file])
+        thread = threading.Thread(target=run_workflow, args=[user,user_name,user_email,upload_folder,process_folder,metadata_file,study_file])
         thread.daemon = True
         thread.start()
     except threading.ThreadError:
         return 1, "ERROR: Unable to run workflow"
     
-    return 0, "Success! The first workflow is running. It will take at least a few hours to run through all processing steps. The progress for each of the workflows will be shown below. Refresh this page to get the latest progress."
+    return 0, "Success! The first workflow is running. It will take at least a few hours to run through all processing steps. The progress for each of the workflows will be shown below. Refresh this page to get the latest progress or check your inbox for status emails."
 

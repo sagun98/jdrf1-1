@@ -98,7 +98,7 @@
               <li>JDRF2 will also host a Galaxy server which will allow for processing of the scrubbed data.</li>
               <li>After scrubbing the data will be run through the bioBakery data products workflow.</li>
               <li>Finally it will be run through the bioBakery visualization workflow.</li>
-              <li>NOTE: This process will take a few hours at least. You can continue to refresh this page to see the latest workflow output by clicking the "Refresh" button below.</li> 
+              <li>NOTE: This process will take a few hours at least. You can continue to refresh this page to see the latest workflow output by clicking the "Refresh" button below. Alternatively, check your inbox to track the status of your data processing. You will receive an email when each workflow starts and finishes. When the final workflow that archives and transfers the scrubbed data is finished your data products will be available to download from JDRF2. All data files (including input files and data products will always be available for download from this site).</li> 
             </ul>
           <form method="post" action="{% url 'process' %}">
             {% csrf_token %}
