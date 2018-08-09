@@ -1,3 +1,4 @@
+
 {% load staticfiles %}
 <!DOCTYPE html>
 <html lang="en">
@@ -59,10 +60,29 @@
 
     <div class="container">
           <h2>Download</h2>
-          <p>The files generated from running the raw files uploaded through the workflows are shown on this page. Click on a file to download.</p>
+          <p>The files uploaded, archived, and generated from the workflows are shown on this page. Click on a file to download.</p>
 
     <div class="container">
-        <p><span class="bold_text">MD5SUM Workflow Output</span></p>
+        <h3>Uploaded Files</h3>
+          <table class="table_bold">
+            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+            {% for name, file, size, mtime in uploaded_files %}
+              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+            {% endfor %}
+          </table>
+        </p>
+        <hr>
+        <h3>Archived Files</h3>
+          <table class="table_bold">
+            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+            {% for name, file, size, mtime in archived_files %}
+              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+            {% endfor %}
+          </table>
+        </p>
+        <hr>
+        <h3>Current Workflow Output Files</h3>
+        <h4>MD5SUM Workflow Output</h4>
           <table class="table_bold">
             <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
             {% for name, file, size, mtime in md5sum_files %}
@@ -70,7 +90,7 @@
             {% endfor %}
           </table>
         </p>
-        <p><span class="bold_text">Data Products Workflow Output</span></p>
+        <h4>Data Products Workflow Output</h4>
           <table class="table_bold">
             <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
             {% for name, file, size, mtime in data_product_files %}
@@ -78,7 +98,7 @@
             {% endfor %}
           </table>
         </p>
-        <p><span class="bold_text">Visualization Workflow Output</span></p>
+        <h4>Visualization Workflow Output</h4>
           <table class="table_bold">
             <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
             {% for name, file, size, mtime in visualization_files %}

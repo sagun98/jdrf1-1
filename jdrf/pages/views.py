@@ -28,15 +28,19 @@ from .forms import UploadForm
 
 import logging
 
-def get_user_and_folders_plus_logger(request):
+def get_user_and_folders_plus_logger(request, full_user_info=False):
     """ Get the user and all of the user folders """
 
     # get the default logger
     logger=logging.getLogger('jdrf1')
 
     # get the list of raw files to process
-    user = str(request.user)
+    user = request.user.username
     logger.info("Current user: %s", user)
+    user_full_name = request.user.first_name+" "+request.user.last_name
+    logger.info("User full name: %s", user_full_name)
+    user_email = request.user.email
+    logger.info("User email: %s", user_email)
     # get the location of the upload file for the user
     upload_folder = os.path.join(settings.UPLOAD_FOLDER,user)
     logger.info("Upload folder: %s", upload_folder)
@@ -44,7 +48,10 @@ def get_user_and_folders_plus_logger(request):
     process_folder = os.path.join(settings.PROCESS_FOLDER,user)
     logger.info("Process folder: %s", process_folder)
 
-    return logger, user, upload_folder, process_folder
+    if full_user_info:
+        return logger, user, user_full_name, user_email, upload_folder, process_folder
+    else:
+        return logger, user, upload_folder, process_folder
 
 
 @login_required(login_url='/login/')
@@ -86,6 +93,7 @@ def upload_files(request):
             if chunks == 0 or chunk == chunks -1:
                 os.rename(upload_file, os.path.join(upload_folder,file_name))
                 logger.info("Finished uploading file")
+                process_data.send_email_update("File uploaded","The user "+user+" has successfully uploaded the file " + file_name)
     else:
         form = UploadForm()
 
@@ -145,6 +153,7 @@ def upload_sample_metadata(request):
     data = {} 
     (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
+    study_file = os.path.join(metadata_folder,settings.METADATA_GROUP_FILE_NAME)
 
     if request.method == 'POST':
         if request.FILES and request.FILES['metadata_file']:
@@ -160,10 +169,19 @@ def upload_sample_metadata(request):
                         logger.info("Unable to create folder %s" % folder)
                         raise
 
+            # When we receive a sample metadata file where the study has been tagged as the 
+            # "Other" data type we need to forego any validation checks (for the time being)
+            is_other_datatype = True if process_data.get_study_type(study_file) == "other" else False
+
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
-            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
-
+            if not is_other_datatype:
+                (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
+            else:
+                is_valid = True
+                metadata_df = pd.read_csv(file, keep_default_na=False)
+                process_data.send_email_update("NEEDS REVIEW: Metadata","The user "+user+" has uploaded a metadata file of type OTHER. Please manually review.") 
+                                
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'
                 data.update(error_context)
@@ -235,7 +253,7 @@ def read_stdout_stderr(folder):
 @requires_csrf_token
 def process_files(request):
     # get the user, folders, and logger
-    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger, user, user_full_name, user_email, upload_folder, process_folder = get_user_and_folders_plus_logger(request, full_user_info=True)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
    
     # set the default responses
@@ -247,15 +265,16 @@ def process_files(request):
     if request.method == 'POST' and not "refresh" in request.POST:
         logger.info("Post from process page received")
         metadata_file = os.path.join(metadata_folder,settings.METADATA_FILE_NAME)
+        study_file = os.path.join(metadata_folder,settings.METADATA_GROUP_FILE_NAME)
         logger.info("Metadata file: %s", metadata_file)
         process_folder = os.path.join(settings.PROCESS_FOLDER,user)
         logger.info("Process folder: %s", process_folder)
 
         if "verify" in request.POST:
             # check the metadata matches the raw uploads
-            responses["message1"] = process_data.check_metadata_files_complete(user,upload_folder,metadata_file)
+            responses["message1"] = process_data.check_metadata_files_complete(user,upload_folder,metadata_file,study_file)
         elif "process" in request.POST:
-            responses["message2"] = process_data.check_md5sum_and_process_data(user,upload_folder,process_folder,metadata_file)
+            responses["message2"] = process_data.check_md5sum_and_process_data(user,user_full_name,user_email,upload_folder,process_folder,metadata_file,study_file)
 
     # log messages
     for message_name, message in responses.items():
@@ -326,19 +345,14 @@ def get_mtime(file):
 
     return time.ctime(os.path.getmtime(file))
 
-@login_required(login_url='/login/')
-def download_files(request):
-    """ List all of the processed files available for the user to download """
-
-    # get the user, folders, and logger
-    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
-    logger.info("Listing files for user: %s", user)
+def list_file_in_folder(folder,exclude_files=[".anadama"]):
+    """ Get a list of all of the files in the folder, formatted for page, exclude some folders """
 
     # get all of the files in the user process folder, with directories
     list_files = []
-    for path, directories, files in os.walk(process_folder):  
+    for path, directories, files in os.walk(folder):
         # remove the base process folder form the path
-        reduced_path = path.replace(process_folder,"")
+        reduced_path = path.replace(folder,"")
         # remove path sep if first character
         if reduced_path.startswith(os.sep):
             reduced_path = reduced_path[1:]
@@ -347,19 +361,45 @@ def download_files(request):
             file_path = os.path.join(path,file)
             # check that this is a file with an extension
             if os.path.isfile(file_path) and "." in file:
-                current_set.append((os.path.join(reduced_path,file), get_file_size(file_path), get_mtime(file_path)))
+                current_set.append((os.path.join(reduced_path,file), os.path.join(path,file), get_file_size(file_path), get_mtime(file_path)))
         # add the files sorted
         if current_set:
             list_files+=sorted(current_set, key=lambda x: x[0])
 
-    # remove any of the anadama db files
-    list_files = list(filter(lambda x: not ".anadama" in x[0], list_files))
+    # remove any of the files/folder to exclude
+    list_files_reduced = []
+    for file_info in list_files:
+        include = True
+        for exclude in exclude_files:
+            if exclude in file_info[0]:
+                include = False
+                break
+        if include:
+            list_files_reduced.append(file_info)
+
+    return list_files_reduced
+
+@login_required(login_url='/login/')
+def download_files(request):
+    """ List all of the processed files available for the user to download """
+
+    # get the user, folders, and logger
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Listing files for user: %s", user)
+
+    # get all of the upload and archive files/folders
+    archive_folder = os.path.join(settings.ARCHIVE_FOLDER, user)
+    response={}
+    response["uploaded_files"] = list_file_in_folder(upload_folder,exclude_files=["metadata"])
+    response["archived_files"] = list_file_in_folder(archive_folder,exclude_files=[".anadama","workflow.stderr","workflow.stdout","anadama.log"])
+
+    # get all of the files in the user process folder, with directories
+    list_files = list_file_in_folder(process_folder)
 
     # organize the files into the three workflow folders
-    response={}
-    response["md5sum_files"] = [(file.replace(process_data.WORKFLOW_MD5SUM_FOLDER+os.sep,""), file, size, mtime) for file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_MD5SUM_FOLDER), list_files))]
-    response["data_product_files"] = [(file.replace(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER+os.sep,""), file, size, mtime) for file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER), list_files))]
-    response["visualization_files"] = [(file.replace(process_data.WORFLOW_VISUALIZATIONS_FOLDER+os.sep,""), file, size, mtime) for file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORFLOW_VISUALIZATIONS_FOLDER), list_files))]
+    response["md5sum_files"] = [(file.replace(process_data.WORKFLOW_MD5SUM_FOLDER+os.sep,""), full_path_file, size, mtime) for file, full_path_file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_MD5SUM_FOLDER), list_files))]
+    response["data_product_files"] = [(file.replace(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER+os.sep,""), full_path_file, size, mtime) for file, full_path_file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORKFLOW_DATA_PRODUCTS_FOLDER), list_files))]
+    response["visualization_files"] = [(file.replace(process_data.WORFLOW_VISUALIZATIONS_FOLDER+os.sep,""), full_path_file, size, mtime) for file, full_path_file, size, mtime in list(filter(lambda x: x[0].startswith(process_data.WORFLOW_VISUALIZATIONS_FOLDER), list_files))]
 
     return render(request,'download.html',response)
 
@@ -373,8 +413,10 @@ def download_file(request, file_name):
     # get file path
     if file_name == "sample_metadata.errors.xlsx":
         download_file = os.path.join(upload_folder, file_name)
-    else: 
+    elif file_name[0] != os.sep:
         download_file = os.path.join(process_folder,file_name)
+    else:
+        download_file = file_name
 
     logger.info("File to download: %s", download_file)
 
