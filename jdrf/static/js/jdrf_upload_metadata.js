@@ -125,41 +125,34 @@
          ajax: "/metadata/sample",
          table: "#metadata_file_preview",
          fields: [
-            { label: 'BioProject Accession', name: 'bioproject_accession' },
+            { label: 'Sample ID', name: 'sample_id' },
             { label: 'Host Subject ID', name: 'host_subject_id' },
+            { label: 'Subject Age', name: 'subject_age' },
+            { label: 'Subject Sex', name: 'subject_sex' },
+            { label: 'Ethnicity', name: 'ethnicity' },
+            { label: 'Collection Date', name: 'collection_date' },
             { label: 'Host Body Mass Index', name: 'host_body_mass_index' },
             { label: 'Host Diet', name: 'host_diet' },
             { label: 'Host Disease', name: 'host_disease' },
-            { label: 'Host Tissue Sampled', name: 'host_tissue_sampled' },
+            { label: 'Host Body Product', name: 'host_body_product' },
             { label: 'Host Family Relationship', name: 'host_family_relationship' },
             { label: 'Host Genotype', name: 'host_genotype' },
             { label: 'Host Phenotype', name: 'host_phenotype' },
             { label: 'Gastrointestinal Disorder', name: 'gastrointest_disord' },
             { label: 'IHMC Medication Code', name: 'ihmc_medication_code' },
             { label: 'Subject Taxonomy ID', name: 'subject_tax_id' },
-            { label: 'Subject Age', name: 'subject_age' },
-            { label: 'Subject Sex', name: 'subject_sex' },
-            { label: 'Ethnicity', name: 'ethnicity' },
-            { label: 'Sample ID', name: 'sample_id' },
-            { label: 'Collection Date', name: 'collection_date' },
             { label: 'Sourced Material ID', name: 'source_material_id' },
             { label: 'Isolation Source', name: 'isolation_source' },
             { label: 'Sample Material Process', name: 'sample_mat_process' },
             { label: 'Sample Store Duration', name: 'sample_store_dur' },
             { label: 'Sample Store Temperature', name: 'sample_store_temp' },
             { label: 'Sample Volume Mass', name: 'sample_vol_mass' },
-            { label: 'Animal Vendor', name: 'animal_vendor' },
             { label: 'Variable Region', name: 'variable_region' },
             { label: 'Organism Count', name: 'organism_count' },
-            { label: 'ENVO Biome', name: 'env_biom' },
-            { label: 'ENVO Feature', name: 'env_feature' },
-            { label: 'ENVO Material', name: 'env_material' },
             { label: 'Sequencer', name: 'sequencer' },
-            { label: 'Read Nmber', name: 'read_number' },
-            { label: 'Sequencing Facility', name: 'sequencing_facility' },
+            { label: 'Number of Reads', name: 'read_number' },
             { label: 'Filename', name: 'filename' },
-            { label: 'Paired', name: 'paired' },
-            { label: 'md5_checksum', name: 'md5_checksum' }
+            { label: 'MD5 Checksum', name: 'md5_checksum' }
         ]
      });
 
@@ -187,7 +180,6 @@
             {data: 'host_diet'},
             {data: 'host_disease'},
             {data: 'host_body_product'},
-            {data: 'host_tissue_sampled'},
             {data: 'host_family_relationship'},
             {data: 'host_genotype'},
             {data: 'host_phenotype'},
@@ -205,7 +197,6 @@
             {data: 'sequencer'},
             {data: 'read_number'},
             {data: 'filename'},
-            {data: 'paired'},
             {data: 'md5_checksum'}
         ],
         columnDefs: [
@@ -226,9 +217,6 @@
                 }
             }
         ],
-        select : {
-
-        },
         success: function(data) {
             console.log("BAR");
         },

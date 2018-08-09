@@ -27,7 +27,6 @@ study_schema = Schema([
 
 sample_schema = Schema([
     Column('host_subject_id', [MatchesPatternValidation(r'\w+', message='Host Subject ID may only contain alphanumeric characters.')]),
-    Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO_\d+')]),
     Column('host_diet', [LeadingWhitespaceValidation()]),
     Column('host_body_mass_index', [CanConvertValidation(float)]),
     Column('host_family_relationship', [LeadingWhitespaceValidation()]),
@@ -37,10 +36,7 @@ sample_schema = Schema([
     Column('samp_mat_process', [LeadingWhitespaceValidation()]),
     Column('filename', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the filename column.'),
                         MatchesPatternValidation(r'\w+.[fastq|fasta|fq](.gz)?', message='Filename must be a valid fasta/fastq file with the following supported extensions: .fasta.gz, .fastq.gz, fq.gz')]),
-    Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.'),
-                            MatchesPatternValidation(r'[a-zA-Z0-9]{32}', message='MD5 Checksum may only contain 32 alphanumeric characters.')]),
     Column('sample_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_id column.')]),
-    Column('samp_mat_process', [LeadingWhitespaceValidation()]),
     Column('collection_date', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the collection_date column.'),
                                DateFormatValidation('%Y-%m-%d', message='Collection date must be in YYYY-MM-DD date format.')]),
     Column('subject_tax_id', [MatchesPatternValidation(r'\d+')]),
@@ -48,7 +44,7 @@ sample_schema = Schema([
                            InRangeValidation(0, 120)]),
     Column('subject_sex', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_sex column.'),
                            InListValidation(['M', 'm', 'F', 'f'])]),
-    Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.'),
+    Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the md5_checksum column.'),
                             MatchesPatternValidation(r'[a-zA-Z0-9]{32}', message='MD5 Checksum may only contain 32 alphanumeric characters.')]),
     Column('host_body_mass_index', [LeadingWhitespaceValidation() | CanConvertValidation(float)]),
     Column('host_disease', [LeadingWhitespaceValidation() | 
