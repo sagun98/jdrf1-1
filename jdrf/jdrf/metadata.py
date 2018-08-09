@@ -28,7 +28,8 @@ study_schema = Schema([
 sample_schema = Schema([
     Column('host_subject_id', [MatchesPatternValidation(r'\w+', message='Host Subject ID may only contain alphanumeric characters.')]),
     Column('host_diet', [LeadingWhitespaceValidation()]),
-    Column('host_body_mass_index', [CanConvertValidation(float)]),
+    Column('source_material_id', [LeadingWhitespaceValidation()]),
+    Column('ethnicity', [CanConvertValidation(str, message='Ethnicity may only contain alphanumeric characters.')]),
     Column('host_family_relationship', [LeadingWhitespaceValidation()]),
     Column('host_genotype', [LeadingWhitespaceValidation() |
                              MatchesPatternValidation(r'^[http|www]', message='Host Genotype may only be a valid URL to the associated DbGap project.')]),
