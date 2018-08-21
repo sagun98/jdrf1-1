@@ -137,3 +137,7 @@ th, td { white-space: nowrap; overflow: hidden; }
 .collapse-optional-fields .collapse {
     margin-top: 10px;
 }
+
+#edit_buttons .dt-buttons {
+    float: right !important;
+}

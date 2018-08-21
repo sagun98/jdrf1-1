@@ -101,7 +101,9 @@ def errors_to_json(errors, metadata_df):
     """
     def _map_errors_to_df(err):
         """ Quick little closure to handle mapping our errors to the dataframe """
-        metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
+        metadata_df.loc[err.row, err.column] = err.value
+        metadata_df.loc[err.row, err.column + "_error"] = True
+        metadata_df.loc[err.row, err.column + "_validation_msg"] = err.message
     
     map(_map_errors_to_df, errors)
 
@@ -112,20 +114,24 @@ def errors_to_json(errors, metadata_df):
     return (metadata_df, metadata_df.to_json(orient='records'))
 
 
-def errors_to_excel(metadata_df, output_folder):
+def errors_to_excel(errors, metadata_df, output_folder):
     """ Takes any JDRF metadata validation errors and writes them out to an 
         Excel file with cells containing errors denoted.
     """    
     def _highlight_error(s):
-        return ['background-color: red' if isinstance(v, str) 
-                 and v.startswith('ERROR') else '' for v in s]
+        return ['background-color: red']
     def _color_error(s):
-        return ['color: white' if isinstance(v, str)
-                and v.startswith('ERROR') else 'black' for v in s]                 
+        return ['color: white' if v.startswith('ERROR') else 'black' for v in s]
+
+    def _map_errors_to_df(err):
+        """ Quick little closure to handle mapping our errors to the dataframe """
+        metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
+    
+    map(_map_errors_to_df, errors)
 
     errors_file = os.path.join(output_folder, settings.METADATA_VALIDATION_FILE_NAME)
-    styled_df = metadata_df.style.apply(_highlight_error).apply(_color_error)
-    styled_df.to_excel(errors_file, index=False, engine='openpyxl')
+    metadata_df.style.apply(_highlight_error)
+    metadata_df.to_excel(errors_file, index=False, engine='openpyxl')
 
     return errors_file
     
@@ -216,11 +222,11 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
             if "Invalid number of columns" in str(errors[0]):
                 error_context['mismatch_cols'] = _get_mismatched_columns(metadata_df, schema)
         else:
-            (errors_metadata_df, errors_json) = errors_to_json(errors,metadata_df)
+            (errors_metadata_df, errors_json) = errors_to_json(errors, metadata_df.copy(deep=True))
             error_context['errors_datatable'] = errors_json
 
             if output_folder:
-                error_context['errors_file'] = errors_to_excel(errors_metadata_df, output_folder)
+                error_context['errors_file'] = errors_to_excel(errors, metadata_df.copy(deep=True), output_folder)
 
                 # Kinda hacky but in order to do in-line editing we need a copy of the error'd 
                 # CSV in a temporary location.

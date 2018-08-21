@@ -8,6 +8,48 @@
                              $("input[name='csrfmiddlewaretoken']").val());
       }});
 
+    var editor_opts = {
+        table: "#metadata_file_preview",
+        fields: [
+            { label: 'Sample ID', name: 'sample_id' },
+            { label: 'Host Subject ID', name: 'host_subject_id' },
+            { label: 'Subject Age', name: 'subject_age' },
+            { label: 'Subject Sex', name: 'subject_sex' },
+            { label: 'Ethnicity', name: 'ethnicity' },
+            { label: 'Collection Date', name: 'collection_date' },
+            { label: 'Host Body Mass Index', name: 'host_body_mass_index' },
+            { label: 'Host Diet', name: 'host_diet' },
+            { label: 'Host Disease', name: 'host_disease' },
+            { label: 'Host Body Product', name: 'host_body_product' },
+            { label: 'Host Family Relationship', name: 'host_family_relationship' },
+            { label: 'Host Genotype', name: 'host_genotype' },
+            { label: 'Host Phenotype', name: 'host_phenotype' },
+            { label: 'Gastrointestinal Disorder', name: 'gastrointest_disord' },
+            { label: 'IHMC Medication Code', name: 'ihmc_medication_code' },
+            { label: 'Subject Taxonomy ID', name: 'subject_tax_id' },
+            { label: 'Sourced Material ID', name: 'source_material_id' },
+            { label: 'Isolation Source', name: 'isolation_source' },
+            { label: 'Sample Material Process', name: 'sample_mat_process' },
+            { label: 'Sample Store Duration', name: 'sample_store_dur' },
+            { label: 'Sample Store Temperature', name: 'sample_store_temp' },
+            { label: 'Sample Volume Mass', name: 'sample_vol_mass' },
+            { label: 'Variable Region', name: 'variable_region' },
+            { label: 'Organism Count', name: 'organism_count' },
+            { label: 'Sequencer', name: 'sequencer' },
+            { label: 'Number of Reads', name: 'read_number' },
+            { label: 'Filename', name: 'filename' },
+            { label: 'MD5 Checksum', name: 'md5_checksum' }
+        ]
+    };
+
+    var local_editor = new $.fn.dataTable.Editor(editor_opts);
+    
+    var ajax_editor = new $.fn.dataTable.Editor(
+        $.extend(true, {
+            ajax: "/metadata/sample",
+        }, editor_opts)
+    );
+
     var is_other_data_type = false;
     $('#sample_type').on('change', function() {
         var value = $(this).val();
@@ -107,123 +149,139 @@
         }
     })
 
-     $('#metadata_file_upload').fileinput({
-         showPreview: false,
-         uploadAsync: false,
-         layoutTemplates: {progress: ''},
-         uploadUrl: '/metadata/sample',
-         msgPlaceholder: 'Select metadata file to upload...',
-         uploadExtraData: function() { 
-            return {
-                'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
-                'other_data_type': is_other_data_type,
-            }
-         }
-     });
-
-     var editor = new $.fn.DataTable.Editor({
-         ajax: "/metadata/sample",
-         table: "#metadata_file_preview",
-         fields: [
-            { label: 'Sample ID', name: 'sample_id' },
-            { label: 'Host Subject ID', name: 'host_subject_id' },
-            { label: 'Subject Age', name: 'subject_age' },
-            { label: 'Subject Sex', name: 'subject_sex' },
-            { label: 'Ethnicity', name: 'ethnicity' },
-            { label: 'Collection Date', name: 'collection_date' },
-            { label: 'Host Body Mass Index', name: 'host_body_mass_index' },
-            { label: 'Host Diet', name: 'host_diet' },
-            { label: 'Host Disease', name: 'host_disease' },
-            { label: 'Host Body Product', name: 'host_body_product' },
-            { label: 'Host Family Relationship', name: 'host_family_relationship' },
-            { label: 'Host Genotype', name: 'host_genotype' },
-            { label: 'Host Phenotype', name: 'host_phenotype' },
-            { label: 'Gastrointestinal Disorder', name: 'gastrointest_disord' },
-            { label: 'IHMC Medication Code', name: 'ihmc_medication_code' },
-            { label: 'Subject Taxonomy ID', name: 'subject_tax_id' },
-            { label: 'Sourced Material ID', name: 'source_material_id' },
-            { label: 'Isolation Source', name: 'isolation_source' },
-            { label: 'Sample Material Process', name: 'sample_mat_process' },
-            { label: 'Sample Store Duration', name: 'sample_store_dur' },
-            { label: 'Sample Store Temperature', name: 'sample_store_temp' },
-            { label: 'Sample Volume Mass', name: 'sample_vol_mass' },
-            { label: 'Variable Region', name: 'variable_region' },
-            { label: 'Organism Count', name: 'organism_count' },
-            { label: 'Sequencer', name: 'sequencer' },
-            { label: 'Number of Reads', name: 'read_number' },
-            { label: 'Filename', name: 'filename' },
-            { label: 'MD5 Checksum', name: 'md5_checksum' }
-        ]
-     });
-
-
-     $('#metadata_file_preview').on('click', 'tbody td:not(:first-child)', function(e) {
-         editor.inline( this );
-     });
-
-     var table = $('#metadata_file_preview').DataTable({
-        pageLength: 12,
-        searching: false,
-        deferLoading: 0,
-        lengthChange: false,
-        scrollY: '425px',
-        scrollX: '400px',
-        scrollCollapse: false,
-        columns: [
-            {data: 'sample_id'},
-            {data: 'host_subject_id'},
-            {data: 'subject_age'},
-            {data: 'subject_sex'},
-            {data: 'ethnicity'},
-            {data: 'collection_date'},
-            {data: 'host_body_mass_index'},
-            {data: 'host_diet'},
-            {data: 'host_disease'},
-            {data: 'host_body_product'},
-            {data: 'host_family_relationship'},
-            {data: 'host_genotype'},
-            {data: 'host_phenotype'},
-            {data: 'gastrointest_disord'},
-            {data: 'ihmc_medication_code'},
-            {data: 'subject_tax_id'},
-            {data: 'source_material_id'},
-            {data: 'isolation_source'},
-            {data: 'samp_mat_process'},
-            {data: 'samp_store_dur'},
-            {data: 'samp_store_temp'},
-            {data: 'samp_vol_mass'},
-            {data: 'variable_region'},
-            {data: 'organism_count'},
-            {data: 'sequencer'},
-            {data: 'read_number'},
-            {data: 'filename'},
-            {data: 'md5_checksum'}
-        ],
-        columnDefs: [
-            {
-                targets: '_all',
-                createdCell: function(td, cellData, rowData, row, col) {
-                    if (typeof(cellData) == "string") {
-                        var validation_elts = cellData.split(';');
-                        if (validation_elts[0] == "ERROR") {
-                            $(td).css('color', 'white');
-                            $(td).css('font-weight', 'bold');
-                            $(td).css('background-color', 'red');
-
-                            $(td).attr('data-toggle', 'tooltip').attr('title', validation_elts[2]);
-                            $(td).html(validation_elts[1]);
-                        }
-                    }
-                }
-            }
-        ],
-        success: function(data) {
-            console.log("BAR");
-        },
-        error: function(data) {
-            console.log("FOO");
+    $('#metadata_file_upload').fileinput({
+        showPreview: false,
+        uploadAsync: false,
+        layoutTemplates: {progress: ''},
+        uploadUrl: '/metadata/sample',
+        msgPlaceholder: 'Select metadata file to upload...',
+        uploadExtraData: function() { 
+           return {
+               'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+               'other_data_type': is_other_data_type,
+           }
         }
-     });
+    });
+
+    var prev_val = "";
+    var row_update = false;
+    $('#metadata_file_preview').on('click', 'tbody td:not(:first-child):not(.DTE)', function(e) {
+        prev_val = $(this).html();
+        local_editor.inline( this );
+    });
+
+
+    var table = $('#metadata_file_preview').DataTable({
+       dom: "<'row'<'#edit_buttons.col-md-3 col-md-offset-9'B>>" +
+            "<'row'<'col-sm-6'l><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+       pageLength: 12,
+       searching: false,
+       deferLoading: 0,
+       lengthChange: false,
+       scrollY: '425px',
+       scrollX: '400px',
+       scrollCollapse: false,
+       columns: [
+           {data: 'sample_id'},
+           {data: 'host_subject_id'},
+           {data: 'subject_age'},
+           {data: 'subject_sex'},
+           {data: 'ethnicity'},
+           {data: 'collection_date'},
+           {data: 'host_body_mass_index'},
+           {data: 'host_diet'},
+           {data: 'host_disease'},
+           {data: 'host_body_product'},
+           {data: 'host_family_relationship'},
+           {data: 'host_genotype'},
+           {data: 'host_phenotype'},
+           {data: 'gastrointest_disord'},
+           {data: 'ihmc_medication_code'},
+           {data: 'subject_tax_id'},
+           {data: 'source_material_id'},
+           {data: 'isolation_source'},
+           {data: 'samp_mat_process'},
+           {data: 'samp_store_dur'},
+           {data: 'samp_store_temp'},
+           {data: 'samp_vol_mass'},
+           {data: 'variable_region'},
+           {data: 'organism_count'},
+           {data: 'sequencer'},
+           {data: 'read_number'},
+           {data: 'filename'},
+           {data: 'md5_checksum'}
+       ],
+       columnDefs: [
+           {
+               targets: '_all',
+               createdCell: function(td, cellData, rowData, row, col) {
+                   var col_name = table.column(col).dataSrc();
+                   if (rowData[col_name + "_error"] == true) {
+                           $(td).css('color', 'white');
+                           $(td).css('font-weight', 'bold');
+                           $(td).css('background-color', 'red');
+                           $(td).attr('data-toggle', 'tooltip').attr('title', rowData[col_name + "_validation_msg"]);
+                           $(td).html(cellData);
+                   }
+               }
+           }
+       ],
+       buttons: [
+           {
+               text: 'Save changes',
+               init: function() {
+                   this.disable();
+               },
+               action: function() {
+                   console.log("IN HERE");
+               }
+           },
+           {
+               text: 'Discard changes',
+               init: function() {
+                   this.disable();
+               },
+               action: function() {
+                   console.log("IN HERE!");
+               }
+           }
+       ],
+       success: function(data) {
+           console.log("BAR");
+       },
+       error: function(data) {
+           console.log("FOO");
+       }
+    });
+
+    var changedRows = [];
+    
+    $('#metadata_file_preview').on('blur', 'tbody td:not(:first-child):not(div)', function(e) {
+        if (open_vals !== JSON.stringify( local_editor.get() )) {
+            $(this).css('color', 'black');
+            $(this).css('background-color', 'yellow');
+            row_update = true;
+        } else {
+            row_update = false;
+        }
+    });
+
+    local_editor.on('open', function() {
+        open_vals = JSON.stringify( local_editor.get() );
+    });
+
+    local_editor.on('postEdit', function (e, json, data) {
+        if (row_update == true) {
+            // Store the row id so it can be submitted with the Ajax editor in future
+            changedRows.push( '#'+data.DT_RowId );
+        
+            // Enable the save / discard buttons
+            $("#edit_buttons").show();
+            table.buttons([0,1]).enable();
+        }
+    });
 
     $('#metadata_file_preview').on('draw.dt', function () {
         $('[data-toggle="tooltip"]').tooltip({
@@ -300,6 +358,7 @@
             $('#validation').css('width', '100%');
             $('#validation').removeClass('hidden');
             $('#metadata_file_preview').dataTable().fnAdjustColumnSizing()
+            $("#edit_buttons").hide();
         }
      });
 
