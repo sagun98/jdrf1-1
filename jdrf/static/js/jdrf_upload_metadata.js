@@ -163,11 +163,11 @@
         }
     });
 
-    var prev_val = "";
     var row_update = false;
     $('#metadata_file_preview').on('click', 'tbody td:not(:first-child):not(.DTE)', function(e) {
-        prev_val = $(this).html();
-        local_editor.inline( this );
+        local_editor.inline( this, {
+            onBlur: 'submit'
+        } );
     });
 
 
@@ -244,7 +244,12 @@
                    this.disable();
                },
                action: function() {
-                   console.log("IN HERE!");
+                table.clear();
+                table.rows.add(tables_json, false).draw();
+
+                changed_rows.length = 0;
+                table.buttons([0,1]).disable();
+                $("#edit_buttons").hide();
                }
            }
        ],
@@ -256,8 +261,10 @@
        }
     });
 
-    var changedRows = [];
-    
+    var changed_rows = [];
+    var open_vals = "";
+    var table_json = "";
+
     $('#metadata_file_preview').on('blur', 'tbody td:not(:first-child):not(div)', function(e) {
         if (open_vals !== JSON.stringify( local_editor.get() )) {
             $(this).css('color', 'black');
@@ -275,8 +282,8 @@
     local_editor.on('postEdit', function (e, json, data) {
         if (row_update == true) {
             // Store the row id so it can be submitted with the Ajax editor in future
-            changedRows.push( '#'+data.DT_RowId );
-        
+            changed_rows.push( '#'+data.DT_RowId );
+
             // Enable the save / discard buttons
             $("#edit_buttons").show();
             table.buttons([0,1]).enable();
@@ -347,9 +354,9 @@
             $('#date_format_audit').addClass('hidden')
             Cookies.remove('sample_metadata');
 
-            var errors_table = JSON.parse(response.errors_datatable);
+            tables_json = JSON.parse(response.errors_datatable);
             table.clear();
-            table.rows.add(errors_table, false);
+            table.rows.add(tables_json, false);
 
             $('#validation_error_single').addClass('hidden');
             $('#error_spreadsheet').removeClass('hidden')
