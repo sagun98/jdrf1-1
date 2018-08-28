@@ -201,16 +201,19 @@ def upload_sample_metadata(request):
             field_updates = request.POST.copy()
             del field_updates['action']
 
-            (updated_metadata_file, updated_rows) = process_data.update_metadata_file(field_updates, upload_folder, logger)
+            updated_metadata_file = process_data.update_metadata_file(field_updates, upload_folder, logger)
             (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(updated_metadata_file, upload_folder, logger)
+            
             logger.info(is_valid)
-            # For the time being we are only updating one field at a time so we can do this...
-            updated_row = metadata_df.loc[updated_rows[0],]
-            data['data'] = [metadata_df.loc[updated_rows[0],].to_dict()]
 
             if not is_valid:
-                pass
-                #data['error'] = "Metadata update failed."
+                data['error'] = 'Metadata validation failed!'
+                data.update(error_context)
+            else: 
+                process_data.delete_validation_files(upload_folder, logger)
+
+                metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
+                metadata_df.to_csv(metadata_file, index=False)
 
             return HttpResponse(json.dumps(data), content_type="application/json")
         else:

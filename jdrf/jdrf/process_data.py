@@ -27,7 +27,7 @@ SixteenS_THREADS="30"
 
 import pandas as pd
 
-from jdrf.metadata_schema import schemas, sample_optional_cols
+from jdrf.metadata_schema import schemas, sample_optional_cols, mr_parse
 
 
 # name the general workflow stdout/stderr files
@@ -111,7 +111,7 @@ def errors_to_json(errors, metadata_df):
     # each row uniquely.
     metadata_df['DT_RowId'] = map(lambda x: "row_" + str(x+1), metadata_df.index)
 
-    return (metadata_df, metadata_df.to_json(orient='records'))
+    return (metadata_df, metadata_df.to_json(orient='records', date_format='iso'))
 
 
 def errors_to_excel(errors, metadata_df, output_folder):
@@ -223,6 +223,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
                 error_context['mismatch_cols'] = _get_mismatched_columns(metadata_df, schema)
         else:
             (errors_metadata_df, errors_json) = errors_to_json(errors, metadata_df.copy(deep=True))
+            logger.debug(errors_json)
             error_context['errors_datatable'] = errors_json
 
             if output_folder:
@@ -233,6 +234,30 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
                 metadata_df.to_csv(os.path.join(output_folder, 'metadata.error.csv'), index=False)
 
     return (is_valid, error_context)
+
+
+def update_metadata_file(field_updates_raw, upload_folder, logger):
+    """ Receives any inline edits done to a metadata file by the user via the DataTable Editor
+    on the upload metadta page.
+    """
+    logger = logging.getLogger('jdrf1')
+
+    updated_metadata_file = os.path.join(upload_folder, 'metadata.updated.csv')
+    metadata_error_df = pd.read_csv(os.path.join(upload_folder, 'metadata.error.csv'), parse_dates=['collection_date'])
+
+    field_updates = mr_parse(field_updates_raw)
+
+    for (row_num, row_data) in field_updates.get('data').items():
+
+        row_num = int(row_num.replace('row_', '')) - 1
+        test_df = pd.Series(row_data)
+        logger.debug(row_num)
+        logger.debug(test_df['collection_date'])
+        metadata_error_df.loc[row_num] = test_df
+
+    metadata_error_df.to_csv(updated_metadata_file, index=False)
+
+    return updated_metadata_file
 
 
 def check_metadata_files_complete(user,folder,metadata_file,study_file):

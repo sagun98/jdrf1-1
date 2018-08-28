@@ -16,7 +16,7 @@
             { label: 'Subject Age', name: 'subject_age' },
             { label: 'Subject Sex', name: 'subject_sex' },
             { label: 'Ethnicity', name: 'ethnicity' },
-            { label: 'Collection Date', name: 'collection_date' },
+            { label: 'Collection Date', name: 'collection_date', type: 'datetime', format: 'YYYY-MM-DD'},
             { label: 'Host Body Mass Index', name: 'host_body_mass_index' },
             { label: 'Host Diet', name: 'host_diet' },
             { label: 'Host Disease', name: 'host_disease' },
@@ -189,7 +189,7 @@
            {data: 'subject_age'},
            {data: 'subject_sex'},
            {data: 'ethnicity'},
-           {data: 'collection_date'},
+           {data: 'collection_date', type: 'date'},
            {data: 'host_body_mass_index'},
            {data: 'host_diet'},
            {data: 'host_disease'},
@@ -232,10 +232,14 @@
            {
                text: 'Save changes',
                init: function() {
-                   this.disable();
+                    this.disable();
                },
                action: function() {
-                   console.log("IN HERE");
+                    ajax_editor.edit(changed_rows, false).submit();
+
+                    changed_rows.length = 0;
+                    table.buttons([0,1]).disable();
+                    $("#edit_buttons").hide();
                }
            },
            {
@@ -244,21 +248,15 @@
                    this.disable();
                },
                action: function() {
-                table.clear();
-                table.rows.add(tables_json, false).draw();
+                    table.clear();
+                    table.rows.add(tables_json, false).draw();
 
-                changed_rows.length = 0;
-                table.buttons([0,1]).disable();
-                $("#edit_buttons").hide();
+                    changed_rows.length = 0;
+                    table.buttons([0,1]).disable();
+                    $("#edit_buttons").hide();
                }
            }
-       ],
-       success: function(data) {
-           console.log("BAR");
-       },
-       error: function(data) {
-           console.log("FOO");
-       }
+       ]
     });
 
     var changed_rows = [];
@@ -287,6 +285,22 @@
             // Enable the save / discard buttons
             $("#edit_buttons").show();
             table.buttons([0,1]).enable();
+        }
+    });
+
+    ajax_editor.on('postSubmit', function (e, json, data, action, xhr) {
+        if (json.error) {
+            console.log("More errors!");
+        } else {
+            $('#datatables_div').hide();
+            $('#error_spreadsheet').addClass('hidden')
+
+            $('#panel_sample_metadata .panel-body').slideUp();
+            $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
+            Cookies.set('sample_metadata', 1);
+
+            $('#upload_success').removeClass('hidden');
+            $('#date_format_audit').removeClass('hidden');
         }
     });
 
