@@ -202,7 +202,7 @@ def upload_sample_metadata(request):
             del field_updates['action']
 
             updated_metadata_file = process_data.update_metadata_file(field_updates, upload_folder, logger)
-            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(updated_metadata_file, upload_folder, logger)
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(updated_metadata_file, upload_folder, logger, inline=True)
             
             logger.info(is_valid)
 

@@ -291,16 +291,23 @@
     ajax_editor.on('postSubmit', function (e, json, data, action, xhr) {
         if (json.error) {
             console.log("More errors!");
+            Cookies.remove('sample_metadata');
+
+            tables_json = JSON.parse(json.errors_datatable);
+            table.clear()
+            table.rows.add(tables_json, false).draw();
+
+            $('#metadata_file_preview').dataTable().fnAdjustColumnSizing()
         } else {
             $('#datatables_div').hide();
             $('#error_spreadsheet').addClass('hidden')
 
-            $('#panel_sample_metadata .panel-body').slideUp();
-            $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
-            Cookies.set('sample_metadata', 1);
+        $('#panel_sample_metadata .panel-body').slideUp();
+        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
+        Cookies.set('sample_metadata', 1);
 
-            $('#upload_success').removeClass('hidden');
-            $('#date_format_audit').removeClass('hidden');
+        $('#upload_success').removeClass('hidden');
+        $('#date_format_audit').removeClass('hidden');
         }
     });
 

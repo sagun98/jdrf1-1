@@ -147,7 +147,7 @@ def validate_study_metadata(metadata_dict, logger):
     return (is_valid, metadata_df, error_context)
 
 
-def validate_sample_metadata(metadata_file, output_folder, logger):
+def validate_sample_metadata(metadata_file, output_folder, logger, inline=False):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
@@ -170,7 +170,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
             metadata_df[col] = ""
 
         schema = schemas['sample']
-        (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder)
+        (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder, inline)
     except pd.errors.ParserError as pe:
         if "Error tokenizing data" in pe.message:
             line_elts = pe.message.split()
@@ -203,7 +203,7 @@ def _get_mismatched_columns(metadata_df, schema):
     return [extra_cols, missing_cols]
 
 
-def _validate_metadata(metadata_df, schema, logger, output_folder=None):
+def _validate_metadata(metadata_df, schema, logger, output_folder=None, inline=False):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
     """
@@ -214,7 +214,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     
     is_valid = False if errors else True
     if errors:
-        if len(errors) == 1:
+        if len(errors) == 1 and not inline:
             error_context['error_msg'] = str(errors[0])
 
             ## Adding a check here if we have a mismatch in the number of columns
@@ -237,7 +237,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
 
 
 def update_metadata_file(field_updates_raw, upload_folder, logger):
-    """ Receives any inline edits done to a metadata file by the user via the DataTable Editor
+    """Receives any inline edits done to a metadata file by the user via the DataTable Editor
     on the upload metadta page.
     """
     logger = logging.getLogger('jdrf1')
@@ -248,7 +248,6 @@ def update_metadata_file(field_updates_raw, upload_folder, logger):
     field_updates = mr_parse(field_updates_raw)
 
     for (row_num, row_data) in field_updates.get('data').items():
-
         row_num = int(row_num.replace('row_', '')) - 1
         test_df = pd.Series(row_data)
         logger.debug(row_num)
