@@ -89,9 +89,12 @@ def delete_validation_files(upload_folder, logger):
     validation files if they exist.
     """
     validation_file = os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME)
+    update_file = os.path.join(upload_folder, settings.METADATA_EDIT_FILE_NAME)
+    errors_csv = os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME_CSV)
 
-    if os.path.exists(validation_file):
-        os.remove(validation_file)
+    for metadata_file in [validation_file, update_file, errors_csv]:
+        if os.path.exists(metadata_file):
+            os.remove(metadata_file)
 
 
 def errors_to_json(errors, metadata_df):
@@ -231,7 +234,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None, inline=F
 
                 # Kinda hacky but in order to do in-line editing we need a copy of the error'd 
                 # CSV in a temporary location.
-                metadata_df.to_csv(os.path.join(output_folder, 'metadata.error.csv'), index=False)
+                metadata_df.to_csv(os.path.join(output_folder, settings.METADATA_VALIDATION_FILE_NAME_CSV), index=False)
 
     return (is_valid, error_context)
 
@@ -242,8 +245,8 @@ def update_metadata_file(field_updates_raw, upload_folder, logger):
     """
     logger = logging.getLogger('jdrf1')
 
-    updated_metadata_file = os.path.join(upload_folder, 'metadata.updated.csv')
-    metadata_error_df = pd.read_csv(os.path.join(upload_folder, 'metadata.error.csv'), parse_dates=['collection_date'])
+    updated_metadata_file = os.path.join(upload_folder, settings.METADATA_EDIT_FILE_NAME)
+    metadata_error_df = pd.read_csv(os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME_CSV), parse_dates=['collection_date'])
 
     field_updates = mr_parse(field_updates_raw)
 

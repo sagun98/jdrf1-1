@@ -27,6 +27,8 @@ REMOTE_TRANSFER_USER = "ljmciver"
 METADATA_FILE_NAME = "metadata.tsv"
 METADATA_GROUP_FILE_NAME = "metadata_study.tsv"
 METADATA_VALIDATION_FILE_NAME = "sample_metadata.errors.xlsx"
+METADATA_VALIDATION_FILE_NAME_CSV = "metadata.error.csv"
+METADATA_EDIT_FILE_NAME = "metadata.update.csv"
 
 # function to get environment variables
 def get_env(key):

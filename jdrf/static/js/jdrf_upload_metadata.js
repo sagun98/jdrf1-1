@@ -16,7 +16,7 @@
             { label: 'Subject Age', name: 'subject_age' },
             { label: 'Subject Sex', name: 'subject_sex' },
             { label: 'Ethnicity', name: 'ethnicity' },
-            { label: 'Collection Date', name: 'collection_date', type: 'datetime', format: 'YYYY-MM-DD'},
+            { label: 'Collection Date', name: 'collection_date'},
             { label: 'Host Body Mass Index', name: 'host_body_mass_index' },
             { label: 'Host Diet', name: 'host_diet' },
             { label: 'Host Disease', name: 'host_disease' },
@@ -189,7 +189,7 @@
            {data: 'subject_age'},
            {data: 'subject_sex'},
            {data: 'ethnicity'},
-           {data: 'collection_date', type: 'date'},
+           {data: 'collection_date'},
            {data: 'host_body_mass_index'},
            {data: 'host_diet'},
            {data: 'host_disease'},
@@ -225,6 +225,12 @@
                            $(td).attr('data-toggle', 'tooltip').attr('title', rowData[col_name + "_validation_msg"]);
                            $(td).html(cellData);
                    }
+               }
+           },
+           {
+               targets: 5,
+               render: function(data) {
+                   return moment(data).format('YYYY-MM-DD');
                }
            }
        ],
@@ -302,12 +308,13 @@
             $('#datatables_div').hide();
             $('#error_spreadsheet').addClass('hidden')
 
-        $('#panel_sample_metadata .panel-body').slideUp();
-        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
-        Cookies.set('sample_metadata', 1);
+            $('#panel_sample_metadata .panel-body').slideUp();
+            $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
+            Cookies.set('sample_metadata', 1);
 
-        $('#upload_success').removeClass('hidden');
-        $('#date_format_audit').removeClass('hidden');
+            $('#upload_success').removeClass('hidden');
+            $('#validation').addClass('hidden');
+            $('#date_format_audit').removeClass('hidden');
         }
     });
 
