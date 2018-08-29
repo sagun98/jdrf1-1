@@ -165,14 +165,12 @@
 
     var row_update = false;
     $('#metadata_file_preview').on('click', 'tbody td:not(:first-child):not(.DTE)', function(e) {
-        local_editor.inline( this, {
-            onBlur: 'submit'
-        } );
+        local_editor.inline( this, { onBlur: 'submit' } );
     });
 
 
     var table = $('#metadata_file_preview').DataTable({
-       dom: "<'row'<'#edit_buttons.col-md-3 col-md-offset-9'B>>" +
+       dom: "<'row'<'#edit_buttons.col-md-4 col-md-offset-8'B>>" +
             "<'row'<'col-sm-6'l><'col-sm-6'f>>" +
             "<'row'<'col-sm-12'tr>>" +
             "<'row'<'col-sm-5'i><'col-sm-7'p>>",
@@ -236,7 +234,8 @@
        ],
        buttons: [
            {
-               text: 'Save changes',
+               text: 'Submit changes',
+               className: 'datatables-submit',
                init: function() {
                     this.disable();
                },
@@ -265,6 +264,7 @@
        ]
     });
 
+
     var changed_rows = [];
     var open_vals = "";
     var table_json = "";
@@ -274,9 +274,15 @@
             $(this).css('color', 'black');
             $(this).css('background-color', 'yellow');
             row_update = true;
+
         } else {
             row_update = false;
         }
+
+        $(this).tooltip('hide');
+
+        // Depending on the event triggering blur we're better off manually triggering the submit.
+        local_editor.submit();
     });
 
     local_editor.on('open', function() {
