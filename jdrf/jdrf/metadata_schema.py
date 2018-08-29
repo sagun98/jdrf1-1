@@ -1,3 +1,6 @@
+from collections import defaultdict
+import re
+
 from pandas_schema import Column, Schema
 from pandas_schema.validation import (LeadingWhitespaceValidation, TrailingWhitespaceValidation, 
                                       CanConvertValidation, MatchesPatternValidation, CustomSeriesValidation,
@@ -42,7 +45,7 @@ sample_schema = Schema([
                            InRangeValidation(0, 120)]),
     Column('subject_sex', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_sex column.'),
                            InListValidation(['M', 'm', 'F', 'f'])]),
-    Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.'),
+    Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the md5_checksum column.'),
                             MatchesPatternValidation(r'[a-zA-Z0-9]{32}', message='MD5 Checksum may only contain 32 alphanumeric characters.')]),
     Column('host_body_mass_index', [LeadingWhitespaceValidation() | CanConvertValidation(float)]),
     Column('host_disease', [LeadingWhitespaceValidation() | 
@@ -78,3 +81,28 @@ sample_optional_cols = set(['read_number','host_body_mass_index','host_diet','ho
                             'samp_mat_process','samp_store_dur','samp_store_temp','samp_vol_mass'])
 
 schemas = {'sample': sample_schema, 'study': study_schema}
+
+# Credit to https://stackoverflow.com/a/14323887
+#
+# Parses our weird PHP-format querystrings that DataTables Editor sends to a 
+# normal python looking dictionary.
+def split(string, brackets_on_first_result = False):
+    matches = re.split("[\[\]]+", string)
+    matches.remove('')
+    return matches
+
+
+def mr_parse(params):
+    results = {}
+    for key in params:
+        if '[' in key:
+            key_list = split(key)
+            d = results
+            for partial_key in key_list[:-1]:
+                if partial_key not in d:
+                    d[partial_key] = dict()
+                d = d[partial_key]
+            d[key_list[-1]] = params[key]
+        else:
+            results[key] = params[key]
+    return results

@@ -27,7 +27,7 @@ SixteenS_THREADS="30"
 
 import pandas as pd
 
-from jdrf.metadata_schema import schemas, sample_optional_cols
+from jdrf.metadata_schema import schemas, sample_optional_cols, mr_parse
 
 
 # name the general workflow stdout/stderr files
@@ -89,9 +89,12 @@ def delete_validation_files(upload_folder, logger):
     validation files if they exist.
     """
     validation_file = os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME)
+    update_file = os.path.join(upload_folder, settings.METADATA_EDIT_FILE_NAME)
+    errors_csv = os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME_CSV)
 
-    if os.path.exists(validation_file):
-        os.remove(validation_file)
+    for metadata_file in [validation_file, update_file, errors_csv]:
+        if os.path.exists(metadata_file):
+            os.remove(metadata_file)
 
 
 def errors_to_json(errors, metadata_df):
@@ -101,26 +104,37 @@ def errors_to_json(errors, metadata_df):
     """
     def _map_errors_to_df(err):
         """ Quick little closure to handle mapping our errors to the dataframe """
-        metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
-
+        metadata_df.loc[err.row, err.column] = err.value
+        metadata_df.loc[err.row, err.column + "_error"] = True
+        metadata_df.loc[err.row, err.column + "_validation_msg"] = err.message
+    
     map(_map_errors_to_df, errors)
-    return (metadata_df, metadata_df.to_json(orient='records'))
+
+    # For DataTable Editor to work properly we need to add a column that identifies
+    # each row uniquely.
+    metadata_df['DT_RowId'] = map(lambda x: "row_" + str(x+1), metadata_df.index)
+
+    return (metadata_df, metadata_df.to_json(orient='records', date_format='iso'))
 
 
-def errors_to_excel(metadata_df, output_folder):
+def errors_to_excel(errors, metadata_df, output_folder):
     """ Takes any JDRF metadata validation errors and writes them out to an 
         Excel file with cells containing errors denoted.
     """    
     def _highlight_error(s):
-        return ['background-color: red' if isinstance(v, str) 
-                 and v.startswith('ERROR') else '' for v in s]
+        return ['background-color: red']
     def _color_error(s):
-        return ['color: white' if isinstance(v, str)
-                and v.startswith('ERROR') else 'black' for v in s]                 
+        return ['color: white' if v.startswith('ERROR') else 'black' for v in s]
+
+    def _map_errors_to_df(err):
+        """ Quick little closure to handle mapping our errors to the dataframe """
+        metadata_df.loc[err.row, err.column] = "ERROR;%s;%s" % (err.value, err.message)
+    
+    map(_map_errors_to_df, errors)
 
     errors_file = os.path.join(output_folder, settings.METADATA_VALIDATION_FILE_NAME)
-    styled_df = metadata_df.style.apply(_highlight_error).apply(_color_error)
-    styled_df.to_excel(errors_file, index=False, engine='openpyxl')
+    metadata_df.style.apply(_highlight_error)
+    metadata_df.to_excel(errors_file, index=False, engine='openpyxl')
 
     return errors_file
     
@@ -136,7 +150,7 @@ def validate_study_metadata(metadata_dict, logger):
     return (is_valid, metadata_df, error_context)
 
 
-def validate_sample_metadata(metadata_file, output_folder, logger):
+def validate_sample_metadata(metadata_file, output_folder, logger, inline=False):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
@@ -159,7 +173,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
             metadata_df[col] = ""
 
         schema = schemas['sample']
-        (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder)
+        (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder, inline)
     except pd.errors.ParserError as pe:
         if "Error tokenizing data" in pe.message:
             line_elts = pe.message.split()
@@ -192,7 +206,7 @@ def _get_mismatched_columns(metadata_df, schema):
     return [extra_cols, missing_cols]
 
 
-def _validate_metadata(metadata_df, schema, logger, output_folder=None):
+def _validate_metadata(metadata_df, schema, logger, output_folder=None, inline=False):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
     """
@@ -203,7 +217,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     
     is_valid = False if errors else True
     if errors:
-        if len(errors) == 1:
+        if len(errors) == 1 and not inline:
             error_context['error_msg'] = str(errors[0])
 
             ## Adding a check here if we have a mismatch in the number of columns
@@ -211,13 +225,41 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
             if "Invalid number of columns" in str(errors[0]):
                 error_context['mismatch_cols'] = _get_mismatched_columns(metadata_df, schema)
         else:
-            (errors_metadata_df, errors_json) = errors_to_json(errors,metadata_df)
+            (errors_metadata_df, errors_json) = errors_to_json(errors, metadata_df.copy(deep=True))
+            logger.debug(errors_json)
             error_context['errors_datatable'] = errors_json
 
             if output_folder:
-               error_context['errors_file'] = errors_to_excel(errors_metadata_df, output_folder)
+                error_context['errors_file'] = errors_to_excel(errors, metadata_df.copy(deep=True), output_folder)
+
+                # Kinda hacky but in order to do in-line editing we need a copy of the error'd 
+                # CSV in a temporary location.
+                metadata_df.to_csv(os.path.join(output_folder, settings.METADATA_VALIDATION_FILE_NAME_CSV), index=False)
 
     return (is_valid, error_context)
+
+
+def update_metadata_file(field_updates_raw, upload_folder, logger):
+    """Receives any inline edits done to a metadata file by the user via the DataTable Editor
+    on the upload metadta page.
+    """
+    logger = logging.getLogger('jdrf1')
+
+    updated_metadata_file = os.path.join(upload_folder, settings.METADATA_EDIT_FILE_NAME)
+    metadata_error_df = pd.read_csv(os.path.join(upload_folder, settings.METADATA_VALIDATION_FILE_NAME_CSV), parse_dates=['collection_date'])
+
+    field_updates = mr_parse(field_updates_raw)
+
+    for (row_num, row_data) in field_updates.get('data').items():
+        row_num = int(row_num.replace('row_', '')) - 1
+        test_df = pd.Series(row_data)
+        logger.debug(row_num)
+        logger.debug(test_df['collection_date'])
+        metadata_error_df.loc[row_num] = test_df
+
+    metadata_error_df.to_csv(updated_metadata_file, index=False)
+
+    return updated_metadata_file
 
 
 def check_metadata_files_complete(user,folder,metadata_file,study_file):

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import os
 import sys
 import time
+import json
 
 import pandas as pd
 
@@ -155,7 +156,7 @@ def upload_sample_metadata(request):
     study_file = os.path.join(metadata_folder,settings.METADATA_GROUP_FILE_NAME)
 
     if request.method == 'POST':
-        if request.FILES['metadata_file']:
+        if request.FILES and request.FILES['metadata_file']:
             file = request.FILES['metadata_file']
             file_name = file.name
 
@@ -192,10 +193,31 @@ def upload_sample_metadata(request):
                 metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
                 metadata_df.to_csv(metadata_file, index=False)
 
+            return JsonResponse(data)
+
+        # If we get a POST request and it contains the editor parameter we know that 
+        # we are attempting to modify an existing metadata file in place.
+        elif request.POST.get('action') == "edit":
+            field_updates = request.POST.copy()
+            del field_updates['action']
+
+            updated_metadata_file = process_data.update_metadata_file(field_updates, upload_folder, logger)
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(updated_metadata_file, upload_folder, logger, inline=True)
+            
+            logger.info(is_valid)
+
+            if not is_valid:
+                data['error'] = 'Metadata validation failed!'
+                data.update(error_context)
+            else: 
+                process_data.delete_validation_files(upload_folder, logger)
+
+                metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
+                metadata_df.to_csv(metadata_file, index=False)
+
+            return HttpResponse(json.dumps(data), content_type="application/json")
         else:
             data['error'] = 'Oops something went wrong here.'                
-
-        return JsonResponse(data)
     else :
         form = UploadForm()
         return render(request, 'upload_metadata.html', {'form': form})
