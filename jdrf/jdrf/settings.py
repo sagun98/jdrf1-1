@@ -90,6 +90,13 @@ AUTH_LDAP_CONNECTION_OPTIONS = {
     ldap.OPT_REFERRALS: 0,
 }
 
+# Populate the Django user from the LDAP directory.
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail"
+}
+
 # Set up logger for ldap
 ldap_logger = logging.getLogger('django_auth_ldap')
 ldap_logger.addHandler(logging.StreamHandler())
