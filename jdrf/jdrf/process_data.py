@@ -150,7 +150,7 @@ def validate_study_metadata(metadata_dict, logger):
     return (is_valid, metadata_df, error_context)
 
 
-def validate_sample_metadata(metadata_file, output_folder, logger, inline=False):
+def validate_sample_metadata(metadata_file, output_folder, logger):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
@@ -173,7 +173,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger, inline=False)
             metadata_df[col] = ""
 
         schema = schemas['sample']
-        (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder, inline)
+        (is_valid, error_context) = _validate_metadata(metadata_df, schema, logger, output_folder)
     except pd.errors.ParserError as pe:
         if "Error tokenizing data" in pe.message:
             line_elts = pe.message.split()
@@ -206,7 +206,7 @@ def _get_mismatched_columns(metadata_df, schema):
     return [extra_cols, missing_cols]
 
 
-def _validate_metadata(metadata_df, schema, logger, output_folder=None, inline=False):
+def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
     """
@@ -217,16 +217,11 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None, inline=F
     
     is_valid = False if errors else True
     if errors:
-        if len(errors) == 1 and not inline:
+        if len(errors) == 1 and "columns" in str(errors[0]):
             error_context['error_msg'] = str(errors[0])
-
-            ## Adding a check here if we have a mismatch in the number of columns
-            ## in the supplied metadata we will want to list which columns mismatch
-            if "Invalid number of columns" in str(errors[0]):
-                error_context['mismatch_cols'] = _get_mismatched_columns(metadata_df, schema)
+            error_context['mismatch_cols'] = _get_mismatched_columns(metadata_df, schema)
         else:
             (errors_metadata_df, errors_json) = errors_to_json(errors, metadata_df.copy(deep=True))
-            logger.debug(errors_json)
             error_context['errors_datatable'] = errors_json
 
             if output_folder:
