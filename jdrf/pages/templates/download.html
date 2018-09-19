@@ -1,116 +1,285 @@
-
 {% load staticfiles %}
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-    <title>JDRF MIBC Download</title>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-    <!-- Bootstrap core CSS -->
-    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <title>JDRF MIBC Download</title>
 
-    <!-- Custom styles for this template -->
-    <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
+  <!-- Bootstrap core CSS -->
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
 
-    <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
+  <!-- Custom styles for this template -->
+  <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
 
-  </head>
+  <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
 
-   <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" style="color: #e3ede4" href="/">JDRF MIBC</a>
-        </div>
-          <div id="navbar" class="navbar-collapse collapse">
-            <ul class="nav navbar-nav">
-              {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
-              <li><a href="/metadata">Upload Metadata</a></li>
-              <li><a href="/upload">Upload Raw Data</a></li>
-              <li><a href="/process">Process</a></li>
-              <li class="active"><a href="/download">Download</a></li>
-              <li><a href="/about">About</a></li>
-              </li>
-            </ul>
-        {% if user.is_authenticated %}
-          <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
-        </form>
-        {% endif %}
-        </div><!--/.navbar-collapse -->
+  <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet">
+
+  <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+
+  <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+
+  <script type="text/javascript" src="{% static 'js/download.js' %}"></script>
+
+</head>
+
+<!-- This is a hidden modal pop-up containing some information about the analysis description textarea -->
+<div class="modal fade" id="delete-files-modal" tabindex="-1" role="dialog" aria-labelledby="delete-modal-label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header modal-header-warning">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="modal-label">WARNING</h4>
       </div>
-    </nav>
-    <!-- Main jumbotron for a primary marketing message or call to action -->
-    <div class="jumbotron">
-      <div class="container" style="background: url('{% static 'img/cropped-nature_microbiome2_darken50-1.jpg' %}') no-repeat center">
-        <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
+      <div class="modal-body">
+        <p>Are you sure you want to delete the following files?</p>
+        <ul id='to-delete-list'></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove-sign"></span> Yes</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="rename-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="rename-modal-label">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="modal-label">Rename Files</h4>
+      </div>
+      <div class="modal-body">
+        <p>Please provide a new filename for file <span id="old-fname"></span>
+          <div class="form-group">
+            <label for="file-rename-input">New Filename</label>
+            <input type="text" class="form-control" id="file-rename-input" placeholder="New Filename">
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success"><span class="glyphicon glyphicon glyphicon-ok-sign"></span>
+          Rename</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<body>
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+          aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" style="color: #e3ede4" href="/">JDRF MIBC</a>
+      </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
+          <li><a href="/metadata">Upload Metadata</a></li>
+          <li><a href="/upload">Upload Raw Data</a></li>
+          <li><a href="/process">Process</a></li>
+          <li class="active"><a href="/download">Download</a></li>
+          <li><a href="/about">About</a></li>
+          </li>
+        </ul>
+        {% if user.is_authenticated %}
+        <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
+        </form>
+        {% endif %}
+      </div>
+      <!--/.navbar-collapse -->
+    </div>
+  </nav>
+  <!-- Main jumbotron for a primary marketing message or call to action -->
+  <div class="jumbotron">
+    <div class="container" style="background: url('{% static 'img/cropped-nature_microbiome2_darken50-1.jpg' %}') no-repeat center">
+      <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>Download</h2>
+    <p>The files uploaded, archived, and generated from the workflows are shown on this page. Click on a file to
+      download.</p>
 
     <div class="container">
-          <h2>Download</h2>
-          <p>The files uploaded, archived, and generated from the workflows are shown on this page. Click on a file to download.</p>
-
-    <div class="container">
+      <div class="row" style="margin-right: 0px !important">
         <h3>Uploaded Files</h3>
-          <table class="table_bold">
-            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+      </div>
+      <div class="row" style="margin-right: 0px !important">
+        <table class="table">
+          <tr>
+            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
+            <th class="width_75">File</th>
+            <th class="width_5">Size</th>
+            <th class="width_20">Timestamp</th>
+            <th style="width: 3%">Rename</th>
+            <th style="width: 3%">Delete</th>
+          </tr>
+          {% if uploaded_files %}
             {% for name, file, size, mtime in uploaded_files %}
-              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+              <tr>
+                <td><input class="checkbox" type="checkbox"></td>
+                <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></td>
+                <td>{{ size }}</td>
+                <td>{{ mtime }}</td>
+                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
+                    aria-labelledby="rename-modal-label"></i></td>
+                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
+                    aria-labelledby="delete-modal-label"></i></td>
+              </tr>
             {% endfor %}
-          </table>
+          {% else %}
+            <tr>
+              <td class="no-files-row" colspan="6">No uploaded files are currently available.</td>
+            </tr>
+          {% endif %}
+        </table>
         </p>
-        <hr>
+      </div>
+      <div id="delete-button-row" class="row hidden">
+        <button id="delete-checked" type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove-sign"></span>
+          Delete Files</button>
+      </div>
+      <div class="row" style="margin-right: 0px !important">
         <h3>Archived Files</h3>
-          <table class="table_bold">
-            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+        <table class="table">
+          <tr>
+            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
+            <th class="width_75">File</th>
+            <th class="width_5">Size</th>
+            <th class="width_20">Timestamp</th>
+            <th style="width: 3%">Rename</th>
+            <th style="width: 3%">Delete</th>
+          </tr>
+          {% if archived_files %}
             {% for name, file, size, mtime in archived_files %}
-              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+              <tr>
+                <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></td>
+                <td>{{ size }}</td>
+                <td>{{ mtime }}</td>
+                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
+                    aria-labelledby="rename-modal-label"></i></td>
+                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
+                    aria-labelledby="delete-modal-label"></i></td>
+              </tr>
             {% endfor %}
-          </table>
+          {% else %}
+            <tr>
+              <td class="no-files-row" colspan="6">No archived files are currently available.</td>
+            </tr>
+          {% endif %}
+        </table>
         </p>
-        <hr>
+      </div>
+      <div class="row" style="margin-right: 0px !important">
         <h3>Current Workflow Output Files</h3>
         <h4>MD5SUM Workflow Output</h4>
-          <table class="table_bold">
-            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+        <table class="table">
+          <tr>
+            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
+            <th class="width_75">File</th>
+            <th class="width_5">Size</th>
+            <th class="width_20">Timestamp</th>
+            <th style="width: 3%">Rename</th>
+            <th style="width: 3%">Delete</th>
+          </tr>
+          {% if md5sum_files %}
             {% for name, file, size, mtime in md5sum_files %}
-              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+              <tr>
+                <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></td>
+                <td>{{ size }}</td>
+                <td>{{ mtime }}</td>
+                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
+                    aria-labelledby="rename-modal-label"></i></td>
+                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
+                    aria-labelledby="delete-modal-label"></i></td>
+              </tr>
             {% endfor %}
-          </table>
+          {% else %}
+            <tr>
+              <td class="no-files-row" colspan="6">No md5sum files are currently available.</td>
+            </tr>
+          {% endif %}
+        </table>
         </p>
         <h4>Data Products Workflow Output</h4>
-          <table class="table_bold">
-            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+        <table class="table">
+          <tr>
+            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
+            <th class="width_75">File</th>
+            <th class="width_5">Size</th>
+            <th class="width_20">Timestamp</th>
+            <th style="width: 3%">Rename</th>
+            <th style="width: 3%">Delete</th>
+          </tr>
+          {% if data_product_files %}
             {% for name, file, size, mtime in data_product_files %}
-              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+              <tr>
+                <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></td>
+                <td>{{ size }}</td>
+                <td>{{ mtime }}</td>
+                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
+                    aria-labelledby="rename-modal-label"></i></td>
+                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
+                    aria-labelledby="delete-modal-label"></i></td>
+              </tr>
             {% endfor %}
-          </table>
+          {% else %}
+            <tr>
+              <td class="no-files-row" colspan="6">No data product files are currently available.</td>
+            </tr>
+          {% endif %}
+        </table>
         </p>
         <h4>Visualization Workflow Output</h4>
-          <table class="table_bold">
-            <tr><th class="width_75">File</th><th class="width_5">Size</th><th class="width_20">Timestamp</th></tr>
+        <table class="table">
+          <tr>
+            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
+            <th class="width_75">File</th>
+            <th class="width_5">Size</th>
+            <th class="width_20">Timestamp</th>
+            <th style="width: 3%">Rename</th>
+            <th style="width: 3%">Delete</th>
+          </tr>
+          {% if visualization_files %}
             {% for name, file, size, mtime in visualization_files %}
-              <tr><td><a href="{% url 'download_file' file %}">{{ name }}</a></a></td><td>{{ size }}</td><td>{{ mtime }}</td></tr>
+              <tr>
+                <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></a></td>
+                <td>{{ size }}</td>
+                <td>{{ mtime }}</td>
+                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
+                    aria-labelledby="rename-modal-label"></i></td>
+                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
+                    aria-labelledby="delete-modal-label"></i></td>
+              </tr>
             {% endfor %}
-          </table>
+          {% else %}
+            <tr>
+              <td class="no-files-row" colspan="6">No visualization files are currently available.</td>
+            </tr>
+          {% endif %}
+        </table>
         </p>
       </div>
-      </div>
+    </div>
+  </div>
 
-      <hr>
+  </div> <!-- /container -->
+</body>
 
-    </div> <!-- /container -->
-  </body>
 </html>
