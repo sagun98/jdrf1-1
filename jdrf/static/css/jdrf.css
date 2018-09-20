@@ -173,3 +173,13 @@ td.to-rename, td.to-delete {
     text-align: center;
     font-weight: bold;
 }
+
+tr {
+    background-color: white;
+    transition: background-color 1s;
+}
+
+.flash-success {
+    background-color: #dff0d8;
+    transition: background-color 1s;
+}

@@ -15,7 +15,7 @@ from django.contrib.auth.decorators import login_required
 
 from django.core.urlresolvers import reverse
 from django.core.files.storage import FileSystemStorage
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, QueryDict
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import requires_csrf_token
@@ -27,6 +27,8 @@ from jdrf import process_data
 from .forms import UploadForm
 
 import logging
+
+import fasteners
 
 def get_user_and_folders_plus_logger(request, full_user_info=False):
     """ Get the user and all of the user folders """
@@ -379,6 +381,62 @@ def list_file_in_folder(folder,exclude_files=[".anadama"]):
             list_files_reduced.append(file_info)
 
     return list_files_reduced
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def delete_files(request):
+    """ Handle a request to delete one or more files for any uploaded, archived or workflow-generated files. """
+    pass
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def rename_files(request, file_name):
+    """ Handle a request to rename one or more files for any uploaded, archived or workflow-generated files. """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Renaming file(s) for user: %s", user)
+
+    data = {}
+    response_code = 200
+
+    # Files we are renaming should be lists with the first item being the file name 
+    # and the second item being the new filename to rename too and the third item being the 
+    # category of file (uploaded, archived, md5sum, viz, data_product) 
+    put_dict = QueryDict(request.body)
+    rename_fname = put_dict.get('rename_file');
+    file_type = put_dict.get('type'); 
+
+    logger.info('Variables passed in: %s %s %s' % (file_name, rename_fname, file_type))
+
+    file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
+    file = os.path.join(file_folder, file_name)
+    renamed_file = os.path.join(file_folder, rename_fname)
+
+    with fasteners.InterProcessLock('/tmp/rename_file_lock_' + file_name):
+        logger.debug("Acquired process lock for file %s" % file_name)
+        logger.info("Renaming file %s to %s" % (file, rename_fname))
+
+        try:
+            os.rename(file, renamed_file)
+
+            data['status'] = "success"
+            data['renamed_file'] = rename_fname
+            data['original_file'] = file_name
+        except OSError as e:
+            # If we get an error here we want to record that the rename failed 
+            # and try the rest of the files. We can pass on partial success to
+            # the user
+            data['status'] = "fail"
+            data['error_msg'] = str(e);
+            data['renamed_file'] = rename_fname
+            data['original_file'] = file_name
+            pass
+
+    return JsonResponse(data)
+
 
 @login_required(login_url='/login/')
 def download_files(request):

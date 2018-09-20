@@ -23,6 +23,14 @@ REMOTE_TRANSFER_SERVER = "jdrf2.rc.fas.harvard.edu"
 REMOTE_TRANSFER_FOLDER = "/data/processed_data/"
 REMOTE_TRANSFER_USER = "ljmciver"
 
+FILE_FOLDER_MAP = {
+    'upload': UPLOAD_FOLDER,
+    'process': PROCESS_FOLDER,
+    'archive': ARCHIVE_FOLDER,
+    'viz': PROCESS_FOLDER,
+    'data_products': PROCESS_FOLDER
+}
+
 # set the default metadata file names
 METADATA_FILE_NAME = "metadata.tsv"
 METADATA_GROUP_FILE_NAME = "metadata_study.tsv"
