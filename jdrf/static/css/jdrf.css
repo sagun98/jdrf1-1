@@ -183,3 +183,13 @@ tr {
     background-color: #dff0d8;
     transition: background-color 1s;
 }
+
+.flash-delete {
+    background-color: #f8d7da;
+    transition: background-color 1s;
+}
+
+#deleted-list {
+    padding-top: 8px;
+    margin-bottom: 5px !important;
+}

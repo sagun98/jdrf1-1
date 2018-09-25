@@ -15,16 +15,14 @@
 
   <!-- Custom styles for this template -->
   <link href="{% static 'bootstrap/css/jumbotron.css' %}" rel="stylesheet">
-
   <link href="{% static 'css/jdrf.css' %}" rel="stylesheet">
-
   <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet">
 
   <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
-
   <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
-
   <script type="text/javascript" src="{% static 'js/download.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/validator.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/js.cookie.js' %}"></script>
 
 </head>
 
@@ -41,7 +39,7 @@
         <ul id='to-delete-list'></ul>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove-sign"></span> Yes</button>
+        <button type="button" id="delete-files-btn" class="btn btn-danger"><span class="glyphicon glyphicon-remove-sign"></span> Yes</button>
         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
       </div>
     </div>
@@ -57,10 +55,13 @@
       </div>
       <div class="modal-body">
         <p>Please provide a new filename for file <span id="old-fname"></span>
+        <form id="rename-file-form" role="form">
           <div class="form-group">
             <label for="file-rename-input">New Filename</label>
-            <input type="text" class="form-control" id="file-rename-input" placeholder="New Filename">
+            <input type="text" class="form-control" data-overwrite="" required id="file-rename-input" placeholder="New Filename">
+            <div class="help-block with-errors"></div>
           </div>
+        </form>
       </div>
       <div class="modal-footer">
         <button id="rename-file-btn" type="button" class="btn btn-success"><span class="glyphicon glyphicon glyphicon-ok-sign"></span>
@@ -122,7 +123,7 @@
       </div>
       <div class="row" style="margin-right: 0px !important">
         <div id="upload_file_mod_alert" class="hidden"></div>
-        <table class="table">
+        <table id="uploaded-files-table" class="table">
           <tr>
             <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
             <th class="width_75">File</th>
@@ -160,12 +161,9 @@
         <h3>Archived Files</h3>
         <table class="table">
           <tr>
-            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
             <th class="width_75">File</th>
             <th class="width_5">Size</th>
             <th class="width_20">Timestamp</th>
-            <th style="width: 3%">Rename</th>
-            <th style="width: 3%">Delete</th>
           </tr>
           {% if archived_files %}
             {% for name, file, size, mtime in archived_files %}
@@ -173,15 +171,11 @@
                 <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></td>
                 <td>{{ size }}</td>
                 <td>{{ mtime }}</td>
-                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
-                    aria-labelledby="rename-modal-label"></i></td>
-                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
-                    aria-labelledby="delete-modal-label"></i></td>
               </tr>
             {% endfor %}
           {% else %}
             <tr>
-              <td class="no-files-row" colspan="6">No archived files are currently available.</td>
+              <td class="no-files-row" colspan="3">No archived files are currently available.</td>
             </tr>
           {% endif %}
         </table>
@@ -192,12 +186,9 @@
         <h4>MD5SUM Workflow Output</h4>
         <table class="table">
           <tr>
-            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
             <th class="width_75">File</th>
             <th class="width_5">Size</th>
             <th class="width_20">Timestamp</th>
-            <th style="width: 3%">Rename</th>
-            <th style="width: 3%">Delete</th>
           </tr>
           {% if md5sum_files %}
             {% for name, file, size, mtime in md5sum_files %}
@@ -205,15 +196,11 @@
                 <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></td>
                 <td>{{ size }}</td>
                 <td>{{ mtime }}</td>
-                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
-                    aria-labelledby="rename-modal-label"></i></td>
-                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
-                    aria-labelledby="delete-modal-label"></i></td>
               </tr>
             {% endfor %}
           {% else %}
             <tr>
-              <td class="no-files-row" colspan="6">No md5sum files are currently available.</td>
+              <td class="no-files-row" colspan="3">No md5sum files are currently available.</td>
             </tr>
           {% endif %}
         </table>
@@ -221,12 +208,9 @@
         <h4>Data Products Workflow Output</h4>
         <table class="table">
           <tr>
-            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
             <th class="width_75">File</th>
             <th class="width_5">Size</th>
             <th class="width_20">Timestamp</th>
-            <th style="width: 3%">Rename</th>
-            <th style="width: 3%">Delete</th>
           </tr>
           {% if data_product_files %}
             {% for name, file, size, mtime in data_product_files %}
@@ -234,15 +218,11 @@
                 <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></td>
                 <td>{{ size }}</td>
                 <td>{{ mtime }}</td>
-                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
-                    aria-labelledby="rename-modal-label"></i></td>
-                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
-                    aria-labelledby="delete-modal-label"></i></td>
               </tr>
             {% endfor %}
           {% else %}
             <tr>
-              <td class="no-files-row" colspan="6">No data product files are currently available.</td>
+              <td class="no-files-row" colspan="3">No data product files are currently available.</td>
             </tr>
           {% endif %}
         </table>
@@ -250,12 +230,9 @@
         <h4>Visualization Workflow Output</h4>
         <table class="table">
           <tr>
-            <th style="width: 3%"><input id="edit-all" type="checkbox"></th>
             <th class="width_75">File</th>
             <th class="width_5">Size</th>
             <th class="width_20">Timestamp</th>
-            <th style="width: 3%">Rename</th>
-            <th style="width: 3%">Delete</th>
           </tr>
           {% if visualization_files %}
             {% for name, file, size, mtime in visualization_files %}
@@ -263,15 +240,11 @@
                 <td><a name="{{ name }}" href="{% url 'download_file' file %}">{{ name }}</a></a></td>
                 <td>{{ size }}</td>
                 <td>{{ mtime }}</td>
-                <td class="to-rename"><i class="fa fa-edit" ari-hidden="true" data-toggle="modal" data-target="#rename-modal"
-                    aria-labelledby="rename-modal-label"></i></td>
-                <td class="to-delete"><i class="fa fa-trash" aria-hidden="true" data-toggle="modal" data-target="#delete-files-modal"
-                    aria-labelledby="delete-modal-label"></i></td>
               </tr>
             {% endfor %}
           {% else %}
             <tr>
-              <td class="no-files-row" colspan="6">No visualization files are currently available.</td>
+              <td class="no-files-row" colspan="3">No visualization files are currently available.</td>
             </tr>
           {% endif %}
         </table>

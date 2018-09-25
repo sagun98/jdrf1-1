@@ -13,6 +13,8 @@ from email.mime.text import MIMEText
 
 from django.conf import settings
 
+import fasteners
+
 # Set default email options
 EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
 EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
@@ -596,3 +598,28 @@ def check_md5sum_and_process_data(user,user_name,user_email,upload_folder,proces
     
     return 0, "Success! The first workflow is running. It will take at least a few hours to run through all processing steps. The progress for each of the workflows will be shown below. Refresh this page to get the latest progress or check your inbox for status emails."
 
+
+def delete_file(target_file, target_fname, logger):
+    """ Deletes the supplied file from the JDRF1 docker instance """
+    data = {}
+
+    with fasteners.InterProcessLock('/tmp/delete_file_lock_' + target_fname):
+        logger.debug("Acquired process lock for file %s" % target_fname)
+        logger.info("Deleting file %s" % target_file)
+
+        try:
+            if os.path.isfile(target_file):
+                os.remove(target_file)
+
+                data['success'] = True
+                data['target_file'] = target_fname
+            else:
+                raise OSError('File does not exist')
+        except OSError as e:
+            data['status'] = "fail"
+            data['error_msg'] = str(e);
+            data['target_file_file'] = target_fname
+ 
+            pass
+
+    return data

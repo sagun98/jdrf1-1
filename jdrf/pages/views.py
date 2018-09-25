@@ -386,21 +386,12 @@ def list_file_in_folder(folder,exclude_files=[".anadama"]):
 @login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
-def delete_files(request):
-    """ Handle a request to delete one or more files for any uploaded, archived or workflow-generated files. """
-    pass
-
-
-@login_required(login_url='/login/')
-@csrf_exempt
-@requires_csrf_token
-def rename_files(request, file_name):
-    """ Handle a request to rename one or more files for any uploaded, archived or workflow-generated files. """
+def rename_file(request, file_name):
+    """ Handle a request to rename any uploaded file that is not being processed or is an archived file. """
     logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
-    logger.info("Renaming file(s) for user: %s", user)
+    logger.info("Renaming file for user: %s", user)
 
     data = {}
-    response_code = 200
 
     # Files we are renaming should be lists with the first item being the file name 
     # and the second item being the new filename to rename too and the third item being the 
@@ -437,6 +428,53 @@ def rename_files(request, file_name):
 
     return JsonResponse(data)
 
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def delete_file(request, file_name):
+    """ Deletes a single uploaded file. """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Deleting file %s for user: %s", (file_name, user))
+
+    data = {}
+    file_type = 'upload'
+
+    file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
+    target_file = os.path.join(file_folder, file_name)
+
+    data = process_data.delete_file(target_file, file_name, logger)
+
+    return JsonResponse(data)
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def delete_files(request):
+    """ Deletes multiple uploaded files. """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Deleting files for user: %s", user)
+
+    data = {}
+    data['results'] = []
+    data['success'] = False 
+
+    del_dict = QueryDict(request.body)
+
+    target_fnames = del_dict.getlist('delete_file[]');
+    file_type = 'upload'
+
+    file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
+
+    for target_fname in target_fnames:
+        logger.info("Deleting file %s" % target_fname)
+        target_file = os.path.join(file_folder, target_fname)
+        data['results'].append(process_data.delete_file(target_file, target_fname, logger))
+
+    data['success'] = all([file['success'] for file in data['results']]) if data['results'] else False
+
+    return JsonResponse(data)
 
 @login_required(login_url='/login/')
 def download_files(request):
