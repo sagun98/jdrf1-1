@@ -406,25 +406,15 @@ def rename_file(request, file_name):
     file = os.path.join(file_folder, file_name)
     renamed_file = os.path.join(file_folder, rename_fname)
 
-    with fasteners.InterProcessLock('/tmp/rename_file_lock_' + file_name):
-        logger.debug("Acquired process lock for file %s" % file_name)
-        logger.info("Renaming file %s to %s" % (file, rename_fname))
+    is_workflow_running = process_data.check_workflow_running(user, process_folder)
 
-        try:
-            os.rename(file, renamed_file)
-
-            data['status'] = "success"
-            data['renamed_file'] = rename_fname
-            data['original_file'] = file_name
-        except OSError as e:
-            # If we get an error here we want to record that the rename failed 
-            # and try the rest of the files. We can pass on partial success to
-            # the user
-            data['status'] = "fail"
-            data['error_msg'] = str(e);
-            data['renamed_file'] = rename_fname
-            data['original_file'] = file_name
-            pass
+    if not is_workflow_running:
+        data = process_data.rename_file(file, file_name, renamed_file, logger)
+    else: 
+        data['success'] = False
+        data['error_msg'] = "Files cannot be renamed when a workflow is running."
+        data['renamed_file'] = rename_fname
+        data['original_file'] = file_name
 
     return JsonResponse(data)
 
@@ -435,7 +425,7 @@ def rename_file(request, file_name):
 def delete_file(request, file_name):
     """ Deletes a single uploaded file. """
     logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
-    logger.info("Deleting file %s for user: %s", (file_name, user))
+    logger.info("Deleting file %s for user: %s" % (file_name, user))
 
     data = {}
     file_type = 'upload'
@@ -443,7 +433,15 @@ def delete_file(request, file_name):
     file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
     target_file = os.path.join(file_folder, file_name)
 
-    data = process_data.delete_file(target_file, file_name, logger)
+    # Check if we have any workflows running. If so we want to prevent rename or delete operations 
+    # here since they will interfere with the workflows running
+    is_workflow_running = process_data.check_workflow_running(user, process_folder)
+
+    if not is_workflow_running:
+        data = process_data.delete_file(target_file, file_name, file_folder, logger)
+    else: 
+        data['success'] = False
+        data['error_msg'] = "Files cannot be deleted when a workflow is running."
 
     return JsonResponse(data)
 
@@ -454,7 +452,7 @@ def delete_file(request, file_name):
 def delete_files(request):
     """ Deletes multiple uploaded files. """
     logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
-    logger.info("Deleting files for user: %s", user)
+    logger.info("Deleting files for user: %s" % user)
 
     data = {}
     data['results'] = []
@@ -467,12 +465,20 @@ def delete_files(request):
 
     file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
 
-    for target_fname in target_fnames:
-        logger.info("Deleting file %s" % target_fname)
-        target_file = os.path.join(file_folder, target_fname)
-        data['results'].append(process_data.delete_file(target_file, target_fname, logger))
+    # Prevent files from being renamed/deleted if the workflow is running
+    is_workflow_running = process_data.check_workflow_running(user, process_folder)
 
-    data['success'] = all([file['success'] for file in data['results']]) if data['results'] else False
+    if not is_workflow_running: 
+        for target_fname in target_fnames:
+            logger.info("Deleting file %s" % target_fname)
+            target_file = os.path.join(file_folder, target_fname)
+            data['results'].append(process_data.delete_file(target_file, target_fname, file_folder, logger))
+
+        data['success'] = all([file['success'] for file in data['results']]) if data['results'] else False
+    else:
+        data['success'] = False
+        data['target_files'] = target_fnames;
+        data['error_msg'] = "Files cannot be deleted when a workflow is running."
 
     return JsonResponse(data)
 

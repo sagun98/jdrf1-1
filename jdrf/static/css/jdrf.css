@@ -189,7 +189,7 @@ tr {
     transition: background-color 1s;
 }
 
-#deleted-list {
+.deleted-list {
     padding-top: 8px;
     margin-bottom: 5px !important;
 }

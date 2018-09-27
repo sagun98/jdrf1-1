@@ -17,10 +17,6 @@ function centerModal() {
 function deleteTableRows(deleted_file) {
     var target_td = $("td:contains('" + deleted_file + "')");
     var target_tr = target_td.parent();
-    var delete_icon = target_tr.children().find('i.fa-spin');
-
-    delete_icon.removeClass('fa-refresh fa-spin').addClass('fa-trash');
-
 
     target_tr.addClass('flash-delete');
     setTimeout(function() {
@@ -126,30 +122,53 @@ jQuery(document).ready(function() {
                 type: 'upload' // hard coded for now
             },
             success: function(data) {
-                // If our rename succeeded we are going to want to let the user know and update 
-                // the table dynamically.
                 var target_td = $("td:contains('" + file + "')");
                 var target_tr = target_td.parent();
-                var edit_icon = target_tr.children().find('i.fa-spin');
 
-                edit_icon.removeClass('fa-refresh fa-spin').addClass('fa-edit');
+                if (data.success == true) {
+                    // If our rename succeeded we are going to want to let the user know and update 
+                    // the table dynamically.
+                    var message = "File <b>" + data['original_file'] + "</b> successully renamed to <b>" + data['renamed_file'] + "</b>";
+                    $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-success alert-dismissable">' +
+                                                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                                     '<div class="glyphicon glyphicon-ok-sign"></div><span>'+message+'</span></div>');
+                    $('#upload_file_mod_alert').removeClass('hidden');
 
-                var message = "File <b>" + data['original_file'] + "</b> successully renamed to <b>" + data['renamed_file'] + "</b>";
-                $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-success alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>'+message+'</span></div>');
-                $('#upload_file_mod_alert').removeClass('hidden');
-
-                td_old_html = target_td.html();
-                target_td.html(td_old_html.split(data['original_file']).join(data['renamed_file']))
- 
-                target_tr.addClass('flash-success');
-                setTimeout(function() {
-                    target_tr.removeClass('flash-success');
-                }, 1200);
+                    td_old_html = target_td.html();
+                    target_td.html(td_old_html.split(data['original_file']).join(data['renamed_file']))
+    
+                    target_tr.addClass('flash-success');
+                    setTimeout(function() {
+                        target_tr.removeClass('flash-success');
+                    }, 1200);
+                } else {
+                    var message = "Failed to rename file <b>" + data['original_file'] + "</b>: <b>" + data.error_msg + "</b>";  
+                    $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-danger alert-dismissable">' +
+                                                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                                     '<div class="glyphicon glyphicon-remove-sign"><span>'+message+'</span></div>');
+                    $('#upload_file_mod_alert').removeClass('hidden');
+                }
             },
             error: function(data) {
-                // Something clearly went wrong here so let's remove our cookie
-                // for the time being...
-                console.log("OOPS");
+                // Something bigger went wrong here so we'll want to tell the user to get in touch with JDRF admins
+                var message = "Failed to rename file -- Please contact JDRF MIBC support jdrfmibc-dev@googlegroups.com"
+
+                $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-danger alert-dismissable">' +
+                                                 '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                                 '<div class="glyphicon glyphicon-remove-sign"><span>'+message+'</span></div>');
+                $('#upload_file_mod_alert').removeClass('hidden');
+            },
+            complete: function(jqXHR) {
+                data = jqXHR.responseJSON;
+
+                if ($("td:contains('" + data.renamed_file + "')").length > 0) {
+                    var target_td = $("td:contains('" + data.renamed_file + "')");
+                } else {
+                    var target_td = $("td:contains('" + data.original_file + "')");
+                }
+                var target_tr = target_td.parent();
+                var edit_icon = target_tr.children().find('i.fa-spin');
+                edit_icon.removeClass('fa-refresh fa-spin').addClass('fa-edit');
             }
         });
     });
@@ -177,31 +196,69 @@ jQuery(document).ready(function() {
                     delete_file: files
                 },
                 success: function(data) {
-                    if (data.success == true) {
-                        files_deleted = []
+                    var file_mod_alert = "";
 
-                        data['results'].forEach(function(record) {
+                    // First let's remove all of the files that successfully deleted
+                    var deleted_success = data['results'].filter(function(record) { return record.success == true } );
+                    var deleted_fail = data['results'].filter(function(record) { return record.success == false } );
+
+                    var files_deleted = [];
+                    var files_failed = [];
+
+                    if (deleted_success.length > 0) {
+                        deleted_success.forEach(function(record) { 
                             deleteTableRows(record['target_file']);
                             files_deleted.push(record['target_file']);
                         });
-                        
-                        var message = "The following files were successully deleted: <ul id='deleted-list'>";
+
+                        var message = "The following files were successully deleted: <ul class='deleted-list'>";
                         message += '<li><b>' + files_deleted.join('</b></li><li><b>') + '</b></li></ul>'
-                        $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-success alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>'+message+'</span></div>');
-                        $('#upload_file_mod_alert').removeClass('hidden');
+                        file_mod_alert += '<div id="file-mod-alert" class="alert alert-success alert-dismissable">' +
+                                          '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                          '<div class="glyphicon glyphicon-ok-sign"></div><span>'+message+'</span></div>';
+                    }
 
-                        $('#delete-button-row').addClass('hidden');
-                        $('#edit-all').prop('checked', false); 
-                    } else {
-                        // Something wrong happened here so let's report that to the user
-                        var message = "Failed to delete files: " + data.error_msg; 
+                    if (deleted_fail.length > 0) {
+                        deleted_fail.forEach(function(record) {
+                            files_failed.push(record['target_file']);
+                        });
 
-                        $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>'+message+'</span></div>');
+                        var message = "The following files failed to be deleted: <ul class='deleted-list'>";
+                        message += '<li><b>' + files_failed.join('</b></li><li><b>') + '</b></li></ul>'
+                        file_mod_alert += '<div id="file-mod-alert" class="alert alert-danger alert-dismissable">' +
+                                          '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                          '<div class="glyphicon glyphicon-remove-sign"><span>'+message+'</span></div>'
+                    }
+
+                    if (message) {
+                        $('#upload_file_mod_alert').html(file_mod_alert);
                         $('#upload_file_mod_alert').removeClass('hidden');
                     }
+
+                    $('#delete-button-row').addClass('hidden');
+                    $('#edit-all').prop('checked', false); 
                 },
                 error: function(data) {
-                    console.log("Deleting file failed!");
+                    // Something bigger went wrong here so we'll want to tell the user to get in touch with JDRF admins
+                    var message = "Failed to delete file -- Please contact JDRF MIBC support at jdrfmibc-dev@googlegroups.com"
+
+                    $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-danger alert-dismissable">' +
+                                                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                                     '<div class="glyphicon glyphicon-remove-sign"><span>'+message+'</span></div>');
+                    $('#upload_file_mod_alert').removeClass('hidden');
+                },
+                complete: function(jqXHR) {
+                    // Things are a bit more complicated here since some of our deletes could work but some of the may fail
+                    // in which case we'll want to indicate which of these failed and which succeeded.
+                    data = jqXHR.responseJSON;
+
+                    data['results'].forEach(function(record) {
+                        var target_td = $("td:contains('" + record['target_file'] + "')");
+                        var target_tr = target_td.parent();
+                        var delete_icon = target_tr.children().find('i.fa-spin');
+
+                        delete_icon.removeClass('fa-refresh fa-spin').addClass('fa-trash');
+                    })
                 }
             });
         } else {
@@ -212,21 +269,25 @@ jQuery(document).ready(function() {
                     delete_file: files[0]
                 },
                 success: function(data) {
-                    if (data.success == true) {
-                        deleted_file = data.target_file;
+                    deleted_file = data.target_file;
 
+                    if (data.success == true) {
                         // When our delete suceeds we want to let the user know.
                         deleteTableRows(deleted_file);
 
                         var message = "File <b>" + deleted_file + "</b> successully deleted.";
-                        $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-success alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>'+message+'</span></div>');
+                        $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-success alert-dismissable">' +
+                                                         '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                                         '<div class="glyphicon glyphicon-ok-sign"></div><span>'+message+'</span></div>');
                         $('#upload_file_mod_alert').removeClass('hidden');
 
                     } else {
                         // Something wrong happened here so let's report that to the user
-                        var message = "Failed to delete file <b>" + deleted_file + "<b>: " + data.error_msg; 
+                        var message = "Failed to delete file <b>" + deleted_file + "</b>: <b>" + data.error_msg + "</b>"; 
 
-                        $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>'+message+'</span></div>');
+                        $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-danger alert-dismissable">' +
+                                                         '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' + 
+                                                         '<div class="glyphicon glyphicon-remove-sign"></div><span>'+message+'</span></div>');
                         $('#upload_file_mod_alert').removeClass('hidden');
                     }
 
@@ -234,7 +295,24 @@ jQuery(document).ready(function() {
                     $('#edit-all').prop('checked', false); 
                 },
                 error: function(data) {
-                    console.log("Deleting file failed!");
+                    // Something bigger went wrong here so we'll want to tell the user to get in touch with JDRF admins
+                    var message = "Failed to delete files -- Please contact JDRF MIBC support at jdrfmibc-dev@googlegroups.com"
+
+                    $('#upload_file_mod_alert').html('<div id="file-mod-alert" class="alert alert-danger alert-dismissable">' +
+                                                     '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                                                     '<div class="glyphicon glyphicon-remove-sign"><span>'+message+'</span></div>');
+                    $('#upload_file_mod_alert').removeClass('hidden');
+                },
+                complete: function(jqXHR) {
+                    // If we have some sort of failure that occurs during the whole delete process we should still receive a JSON packet detailing the 
+                    // issue (unless something catastrophic happened but we can deal with that as well.)
+                    data = jqXHR.responseJSON;
+
+                    var target_td = $("td:contains('" + data.target_file + "')");
+                    var target_tr = target_td.parent();
+                    var delete_icon = target_tr.children().find('i.fa-spin');
+
+                    delete_icon.removeClass('fa-refresh fa-spin').addClass('fa-trash');
                 }
             });
         }

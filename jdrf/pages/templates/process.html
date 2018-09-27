@@ -82,9 +82,11 @@
           </p>
           {% if message1 and message1|first == 0 %}
               <p><span class="green_bold_text" style="white-space: pre-line">{{ message1|last }}</span></p>
+              <input id="verify-status" type="hidden" value="success">
           {% endif %}
           {% if message1 and message1|first == 1 %}
               <p><span class="berry_red_text">{{ message1|last }}</span></p>
+              <input id="verify-status" type="hidden" value="fail">
           {% endif %}
 
 
@@ -113,15 +115,18 @@
           </p>
           {% if message2 and message2|first == 0 %}
               <p><span class="green_bold_text">{{ message2|last }}</span></p>
+              <input id="process-status" type="hidden" value="success">
           {% endif %}
           {% if message2 and message2|first == 1 %}
               <p><span class="berry_red_text">{{ message2|last }}</span></p>
+              <input id="process-status" type="hidden" value="fail">
           {% endif %}
 
           {% if md5sum_stdout %}
             <p><span class="bold_text">MD5SUM Workflow Progress</span></p>
             {% if "failed" in md5sum_stdout or "ERROR" in md5sum_stdout %}
               <div class="container terminalstylered"><span style="white-space: pre-line">{{ md5sum_stdout }}</span></div>
+              <input id="verify-md5sum" type="hidden" value="fail">
             {% else %}
               <div class="container terminalstyle"><span style="white-space: pre-line">{{ md5sum_stdout }}</span></div>
             {% endif %}

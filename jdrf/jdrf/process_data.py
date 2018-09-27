@@ -599,7 +599,44 @@ def check_md5sum_and_process_data(user,user_name,user_email,upload_folder,proces
     return 0, "Success! The first workflow is running. It will take at least a few hours to run through all processing steps. The progress for each of the workflows will be shown below. Refresh this page to get the latest progress or check your inbox for status emails."
 
 
-def delete_file(target_file, target_fname, logger):
+def rename_file(target_file, target_fname, rename_file, logger):
+    """ Renames the supplied file using the passed in new filename  """
+    data = {}
+
+    with fasteners.InterProcessLock('/tmp/rename_file_lock_' + target_fname):
+        logger.debug("Acquired process lock for file %s" % target_fname)
+        logger.info("Renaming file %s to %s" % (target_file, rename_file))
+
+        try:
+            os.rename(target_file, rename_file)
+
+            data['success'] = True
+        except OSError as e:
+            # If we get an error here we want to record that the rename failed 
+            # and try the rest of the files. We can pass on partial success to
+            # the user
+            data['success'] = False
+            data['error_msg'] = str(e);
+            pass
+        finally:
+            data['renamed_file'] = os.path.basename(rename_file)
+            data['original_file'] = target_fname
+
+    return data
+
+def _validate_file_path(file_name, target_folder):
+    """ Verifies whether or not the provided file path contains any malicious characters (i.e. '*') 
+        or attemps to traverse outside of the desired directories (using relative paths) 
+        
+        CREDIT - https://stackoverflow.com/a/6803714
+    """
+    requested_path = os.path.relpath(file_name, start=target_folder)
+    requested_path = os.path.abspath(requested_path)
+    common_prefix = os.path.commonprefix([requested_path, target_folder])
+    return common_prefix != target_folder
+
+
+def delete_file(target_file, target_fname, target_folder, logger):
     """ Deletes the supplied file from the JDRF1 docker instance """
     data = {}
 
@@ -608,18 +645,20 @@ def delete_file(target_file, target_fname, logger):
         logger.info("Deleting file %s" % target_file)
 
         try:
+            if not _validate_file_path(target_fname, target_folder):
+                raise OSError('Malformed filename. Please contact JDRF MIBC support.')
+
             if os.path.isfile(target_file):
                 os.remove(target_file)
 
                 data['success'] = True
-                data['target_file'] = target_fname
             else:
                 raise OSError('File does not exist')
         except OSError as e:
-            data['status'] = "fail"
+            data['success'] = False
             data['error_msg'] = str(e);
-            data['target_file_file'] = target_fname
- 
             pass
+        finally:
+            data['target_file'] = target_fname
 
     return data
