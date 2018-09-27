@@ -2,6 +2,32 @@
  * Javascript needed for the JDRF download page
  */
 
+
+ var SUPPORTED_FILE_TYPES = [
+     '.jpg',
+     '.gif',
+     '.png',
+     '.tar',
+     '.gzip',
+     '.gz',
+     '.bz2',
+     '.txt',
+     '.tsv',
+     '.csv',
+     '.zip',
+     '.raw',
+     '.fasta',
+     '.fa',
+     '.fna',
+     '.fasta.gz',
+     '.fa.gz',
+     '.fna.gz',
+     '.fastq',
+     '.fq',
+     '.fastq.gz',
+     '.fq.gz'
+ ]
+
 // Credit - https://stackoverflow.com/a/20444744
 function centerModal() {
     $(this).css('display', 'block');
@@ -63,6 +89,14 @@ jQuery(document).ready(function() {
                 if ($("a[name='" + file_name + "']").length > 0) {
                     return "New filename must not match any existing filenames."
                 } 
+            },
+            'fileformat': function($el) {
+                var file_name = $($el).val();
+                var file_ext = file_name.split('.').pop()
+
+                if ( !( SUPPORTED_FILE_TYPES.some(function(ext) { return file_name.endsWith(ext) }) ) ) {
+                    return "New filename is not in list of supported file formats."
+                }
             }
         }
     });
