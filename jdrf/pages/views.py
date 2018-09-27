@@ -28,7 +28,6 @@ from .forms import UploadForm
 
 import logging
 
-import fasteners
 
 def get_user_and_folders_plus_logger(request, full_user_info=False):
     """ Get the user and all of the user folders """
