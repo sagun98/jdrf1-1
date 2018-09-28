@@ -186,11 +186,15 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
             error_context['error_msg'] = "Line %s contained %s columns, expected %s columns" % (line_number, observed_fields, expected_fields)
         else:
             raise
+    except ValueError as ve:
+        if "collection_date" in ve.message:
+            error_context['error_msg'] = "Metadata file is malformed and does not match JDRF metadata schema."
+        else:
+            raise
     except Exception as e:
         # If we have an error here we don't want to leave the user hanging
-        error_context['error_msg'] = ("An unexpected error occurred. This error has been logged;" 
-                                      "please contant JDRF support for help with your metadata upload")
-        raise
+        error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
+                                      "Please contant JDRF support for help with your metadata upload")
 
     return (is_valid, metadata_df, error_context)
 
