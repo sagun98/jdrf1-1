@@ -104,6 +104,16 @@ def upload_files(request):
 @login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
+def upload_metadata(request):
+    """ Generic view here just to handle authentication and redirect in case 
+    the user is not logged in"""
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    return render(request, 'upload_metadata.html')
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
 def upload_study_metadata(request):
     """ Validates and saves study metadata provided by the logged in user. """
     (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)

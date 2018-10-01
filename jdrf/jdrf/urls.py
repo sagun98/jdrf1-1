@@ -34,7 +34,7 @@ urlpatterns = [
     url(r'^files/(?P<file_name>.*)/delete$', views.delete_file,name="delete_file"),
     url(r'^files/delete$', views.delete_files,name="delete_files"),
     url(r'^files/(?P<file_name>.*)/rename$', views.rename_file,name="rename_file"),
-    url(r'^metadata/', TemplateView.as_view(template_name='upload_metadata.html'),name="upload_metadata"),
+    url(r'^metadata/', views.upload_metadata, name="upload_metadata"),
     url(r'^process/', views.process_files,name="process"),
     url(r'^download/$', views.download_files,name="download"),
     url(r'^about/', TemplateView.as_view(template_name='about.html'),name="about"),

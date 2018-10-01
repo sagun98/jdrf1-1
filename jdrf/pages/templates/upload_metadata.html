@@ -1,275 +1,316 @@
 {% load staticfiles %}
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-    <title>JDRF MIBC Upload Metadata</title>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-    <!-- Bootstrap core CSS -->
-    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+  <title>JDRF MIBC Upload Metadata</title>
 
-    <!-- Custom styles for this template -->
-    <link href="{% static 'css/fileinput.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
-    <link href="{% static 'bootstrap/css/jumbotron.css' %}" media="all" rel="stylesheet" rel="stylesheet">
-    <link href="{% static 'css/datatables.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
-    <link href="{% static 'css/jdrf.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+  <!-- Bootstrap core CSS -->
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
 
-    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/fileinput.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/moment.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/jdrf_upload_metadata.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/validator.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/js.cookie.js' %}"></script>
-  </head>
+  <!-- Custom styles for this template -->
+  <link href="{% static 'css/fileinput.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+  <link href="{% static 'bootstrap/css/jumbotron.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+  <link href="{% static 'css/datatables.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+  <link href="{% static 'css/jdrf.css' %}" media="all" rel="stylesheet" rel="stylesheet">
 
-   <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" style="color: #e3ede4" href="/">JDRF MIBC</a>
-        </div>
-          <div id="navbar" class="navbar-collapse collapse">
-            <ul class="nav navbar-nav">
-              {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
-              <li class="active"><a href="/metadata">Upload Metadata</a></li>
-              <li><a href="/upload">Upload Raw Data</a></li>
-              <li><a href="/process">Process</a></li>
-              <li><a href="/download">Download</a></li>
-              <li><a href="/about">About</a></li>
-              </li>
-            </ul>
+  <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/fileinput.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/moment.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/jdrf_upload_metadata.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/validator.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/js.cookie.js' %}"></script>
+</head>
+
+<body>
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+          aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" style="color: #e3ede4" href="/">JDRF MIBC</a>
+      </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          {% if not user.is_authenticated %} <li><a href="/login">Login</a></li> {% endif %}
+          <li class="active"><a href="/metadata">Upload Metadata</a></li>
+          <li><a href="/upload">Upload Raw Data</a></li>
+          <li><a href="/process">Process</a></li>
+          <li><a href="/download">Download</a></li>
+          <li><a href="/about">About</a></li>
+          </li>
+        </ul>
         {% if user.is_authenticated %}
-          <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
+        <form class="navbar-form navbar-right" method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="btn btn-success" style="background: #11511b" type="submit">Logout</button>
         </form>
         {% endif %}
-        </div><!--/.navbar-collapse -->
       </div>
-    </nav>
-    <!-- Main jumbotron for a primary marketing message or call to action -->
-    <div class="jumbotron">
-      <div class="container" style="background: url('{% static 'img/cropped-nature_microbiome2_darken50-1.jpg' %}') no-repeat center">
-        <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
-      </div>
+      <!--/.navbar-collapse -->
     </div>
+  </nav>
+  <!-- Main jumbotron for a primary marketing message or call to action -->
+  <div class="jumbotron">
+    <div class="container" style="background: url('{% static 'img/cropped-nature_microbiome2_darken50-1.jpg' %}') no-repeat center">
+      <img src="{% static 'img/hutlab_jdrf_logo_small_border_red.png' %}" heigh=100 width=125>
+    </div>
+  </div>
 
-    <!-- This is a hidden modal pop-up containing some information about the analysis description textarea -->
-    <div class="modal fade" id="analysis_desc_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="modal_label">Help: Analysis Description</h4>
-          </div>
-          <div class="modal-body">
-          <p>Please provide a detailed description the analysis performed to generate this file, including software version numbers. 
-              Metadata for individual samples included in this analysis will be added on the next page.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
+  <!-- This is a hidden modal pop-up containing some information about the analysis description textarea -->
+  <div class="modal fade" id="analysis_desc_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="modal_label">Help: Analysis Description</h4>
+        </div>
+        <div class="modal-body">
+          <p>Please provide a detailed description the analysis performed to generate this file, including software
+            version numbers.
+            Metadata for individual samples included in this analysis will be added on the next page.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="container">
-        <h2>Upload Metadata</h2>
-        <p>Using the application on this page, upload study and sample metadata to deposit it with the JDRF MIBC for processing.</p>
+  <div class="container">
+    <h2>Upload Metadata</h2>
+    <p>Using the application on this page, upload study and sample metadata to deposit it with the JDRF MIBC for
+      processing.</p>
 
-        <div id="panel_study_metadata" class="panel panel-default">
-          <div class="panel-heading">
-            <h3 class="panel-title">Study Metadata</h3>
+    <div id="panel_study_metadata" class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Study Metadata</h3>
+      </div>
+      <div class="panel-body">
+        <form id="study_metadata_form" method="post" action="{% url 'upload_study_metadata' %}" data-toggle="validator">
+          <div class="form-group has-feedback">
+            <label for="study_id" class="control-label">Study ID</label>
+            <input type="text" pattern="^[a-zA-Z0-9_\-]+" class="form-control" id="study_id" name="study_id" , placeholder=""
+              required>
+            <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
           </div>
-          <div class="panel-body">
-              <form id="study_metadata_form" method="post" action="{% url 'upload_study_metadata' %}" data-toggle="validator">
-                  <div class="form-group has-feedback">
-                      <label for="study_id" class="control-label">Study ID</label>
-                      <input type="text" pattern="^[a-zA-Z0-9]+" class="form-control" id="study_id" name="study_id", placeholder="" required>
-                      <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                  </div>
-                  <div class="form-group has-feedback">
-                      <label for="pi_name" class="control-label">PI Name</label>
-                      <input type="text" pattern="^[A-Za-z]+" class="form-control" id="pi_name", name="pi_name", placeholder="" data-error="Please provide a valid PI name." required>
-                      <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                      <div class="help-block with-errors"></div>
-                  </div>
-                  <div class="col-xs-5">
-                    <div class="form-group">
-                      <label for="sample_type" class="control-label">Sample Type</label>
-                      <select id="sample_type", name="sample_type" class="form-control" data-width="50%" required>
-                        <option disabled selected value>Please choose a sample type...</option>
-                        <option value="MGX">Metagenomics</option>
-                        <option value="MTX">Metatranscriptomics</option>
-                        <option value="16S">16S</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="clearfix"></div>
-                  <div class="collapse-optional-fields">
-                    <a data-toggle="collapse" class="collapsed" href="#collapseFilter">
-                        <span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
-                        <strong>Optional Fields</strong>
-                    </a>
-                    <div class="collapse" id="collapseFilter">
-                      <div class="form-group has-feedback">
-                          <label for="bioproject_accession" class="control-label">Bioproject Accession</label>
-                          <input type="text" pattern="PRJ\w+\d+" class="form-control" id="bioproject_accession", name="bioproject_accession", data-error="Please provide a bioproject accession in the format PRJXX#####" placeholder="PRJEB22283">
-                          <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                          <div class="help-block with-errors"></div>
-                      </div>
-                      <div class="form-group has-feedback">
-                          <label for="geo_loc_name" class="control-label">Geo Location Name</label>
-                          <input type="text" pattern="[a-zA-Z]+:[a-zA-Z]+:[a-zA-Z]+" class="form-control" id="geo_loc_name", name="geo_loc_name", data-error="Please provide a geolocation name in format Country:State:City" placeholder="US:Massachusetts:Boston">
-                          <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                          <div class="help-block with-errors"></div>
-                      </div>
-                      <div class="form-group has-feedback">
-                          <label for="sequencing_facility" class="control-label">Sequencing Facility</label>
-                          <input type="text" class="form-control" id="sequencing_facility", name="sequencing_facility", data-error="Please provide a Sequencing Facility" placeholder="Broad Institute">
-                          <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                          <div class="help-block with-errors"></div>
-                      </div>
-                      <div class="form-group has-feedback">
-                          <label for="env_biom" class="control-label">Env Biome</label>
-                          <input type="text" pattern="ENVO:\d+" class="form-control" id="env_biom", name="env_biom", data-error="Please provide corresponding biome from EnvO ontology." placeholder="ENVO:00002003">
-                          <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                          <div class="help-block with-errors"></div>
-                      </div>
-                      <div class="form-group has-feedback">
-                          <label for="env_feature" class="control-label">Env Feature</label>
-                          <input type="text" pattern="ENVO:\d+" class="form-control" id="env_feature", name="env_feature", data-error="Please provide corresponding feature from EnvO ontology." placeholder="ENVO:00002003">
-                          <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                          <div class="help-block with-errors"></div>
-                      </div>
-                      <div class="form-group has-feedback">
-                        <label for="env_material" class="control-label">Env Material</label>
-                        <input type="text" pattern="ENVO:\d+" class="form-control" id="env_material", name="env_material", data-error="Please provide corresponding material from EnvO ontology." placeholder="ENVO:00002003">
-                        <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                        <div class="help-block with-errors"></div>
-                      </div>
-                      <div class="form-group has-feedback">
-                        <label for="animal_vendor" class="control-label">Animal Vendor</label>
-                        <input type="text" pattern="^[A-Za-z]+" class="form-control" id="animal_vendor", name="animal_vendor", data-error="Please provide a valid animal vendor." placeholder="JAX">
-                        <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                        <div class="help-block with-errors"></div>
-                      </div>
-                      <div class="form-group has-feedback">
-                        <label for="host_tissue_sampled" class="control-label">Host Tissue Sampled</label>
-                        <input type="text" pattern="BTO:\d+" class="form-control" id="host_tissue_sampled", name="host_tissue_sampled", data-error="Please provide corresponding host tissue sampled from BTO ontology." placeholder="BTO:0003120">
-                        <pan class="glyphicon form-control-feedback" aria-hidden="true"></pan>
-                        <div class="help-block with-errors"></div>
-                      </div>
-                     <div class="col-xs-5">
-                        <div class="form-group">
-                          <label for="paired" class="control-label">Paired-end Data</label>
-                          <select id="paired", name="paired" class="form-control" data-width="50%">
-                            <option value=""></option>
-                            <option value="yes">Yes</option>
-                            <option value="no">No</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="clearfix"></div>
-                      <div id="analysis_desc_div" class="col-md-8 hidden nopadding">
-                        <div class="form-group">
-                          <label for="analysis_desc">Analysis Description</label>
-                          <span class="glyphicon glyphicon-question-sign" data-toggle="modal" data-target="#analysis_desc_modal" aria-labelledby="myModalLabel"></span>
-                          <textarea class="form-control" id="analysis_desc" name="analysis_desc" rows="3"></textarea>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                <div class="clearfix"></div>
-                <button id="submit_study_metadata" type="submit" class="btn btn-primary">
-                    Submit <span class="glyphicon glyphicon-send" aria-hidden="true"></span>
-                </button>
-              </form>
+          <div class="form-group has-feedback">
+            <label for="pi_name" class="control-label">PI Name</label>
+            <input type="text" pattern="^[A-Za-z]+" class="form-control" id="pi_name" , name="pi_name" , placeholder=""
+              data-error="Please provide a valid PI name." required>
+            <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+            <div class="help-block with-errors"></div>
           </div>
-        </div>
-        
-        <div id="panel_sample_metadata" class="panel panel-default">
-          <div class="panel-heading">
-            <h3 class="panel-title">Sample Metadata</h3>
-          </div>
-          <div class="panel-body">
-            <p>Upload JDRF sample metadata in Excel/CSV format below. An example template containing
-              the required metadata fields can be found <a href="{% static 'data/JDRF_metadata_schema.xlsx' %}">here</a>.</p>
-
-            <p>Metadata will be validated and any errors found will be displayed. Errors must be 
-              corrected before metadata can be properly submitted.</p>
-            <br />
-            <div class="row">
-              <div class="col-md-8 col-md-offset-2">
-                <form id="upload_form" enctype="multipart/form-data" method="post" >
-                  <input id="metadata_file_upload" name="metadata_file" type="file">
-                </form>
-              </div>
+          <div class="row">
+            <div class="col-md-6 form-group has-feedback">
+              <label for="bioproject_accession" class="control-label">Bioproject Accession</label>
+              <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+              <input type="text" pattern="PRJ\w+\d+" class="form-control" id="bioproject_accession" , name="bioproject_accession"
+                , data-error="Please provide a bioproject accession in the format PRJXX#####" placeholder="PRJEB22283">
+              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+              <div class="help-block with-errors"></div>
             </div>
-            <div id="validation" class="hidden">
-              <h3>Validation </h3>
-              <p>Errors in the submitted metadata file are displayed below. 
-                Please correct errors and resubmit file.</p>
-              <span id="error_spreadsheet">A spreadsheet containing all validation errors can be downloaded <a href="/download-file/sample_metadata.errors.xlsx">here</a>.</span>
-              
-              <div id="validation_error_single" class="alert alert-danger hidden"></div>
-              <div id="datatables_div">
-                <table id="metadata_file_preview" class="table table-striped table-bordered" 
-                  cellspacing="0" width="100%">
-                  <thead>
-                      <tr>
-                          <th>Sample ID</th>
-                          <th>Host Subject ID</th>
-                          <th>Subject Age</th>
-                          <th>Subject Sex</th>
-                          <th>Ethnicity</th>
-                          <th>Collection Date</th>
-                          <th>Host Body Mass Index</th>
-                          <th>Host Diet</th>
-                          <th>Host Disease</th>
-                          <th>Host Body Product</th>
-                          <th>Host Family Relationship</th>
-                          <th>Host Genotype</th>
-                          <th>Host Phenotype</th>
-                          <th>Gastrointestinal Disease</th>
-                          <th>IHMC Medication Code</th>
-                          <th>Subject Tax ID</th>
-                          <th>Source Material ID</th>
-                          <th>Isolation Source</th>
-                          <th>Sample Material Process</th>
-                          <th>Sample Storage Duration</th>
-                          <th>Sample Storage Temperature</th>
-                          <th>Sample Storage Mass</th>
-                          <th>Variable Region</th>
-                          <th>Organism Count</th>
-                          <th>Sequencer</th>
-                          <th>Read Number</th>
-                          <th>File Name</th>
-                          <th>MD5 Checksum</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                  </tbody>
-                </table>
+            <div class="col-md-6 form-group has-feedback">
+              <label for="env_biom" class="control-label">Env Biome</label>
+              <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+              <input type="text" pattern="ENVO:\d+" class="form-control" id="env_biom" , name="env_biom" , data-error="Please provide corresponding biome from EnvO ontology."
+                placeholder="ENVO:00002003">
+              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+              <div class="help-block with-errors"></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 form-group has-feedback">
+              <label for="env_material" class="control-label">Env Material</label>
+              <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+              <input type="text" pattern="ENVO:\d+" class="form-control" id="env_material" , name="env_material" ,
+                data-error="Please provide corresponding material from EnvO ontology." placeholder="ENVO:00002003">
+              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+              <div class="help-block with-errors"></div>
+            </div>
+            <div class="col-md-6 form-group has-feedback">
+              <label for="host_tissue_sampled" class="control-label">Host Tissue Sampled</label>
+              <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+              <input type="text" pattern="BTO:\d+" class="form-control" id="host_tissue_sampled" , name="host_tissue_sampled"
+                , data-error="Please provide corresponding host tissue sampled from BTO ontology." placeholder="BTO:0003120">
+              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+              <div class="help-block with-errors"></div>
+            </div>
+          </div>
+          <div class="col-xs-5">
+            <div class="form-group">
+              <label for="sample_type" class="control-label">Sample Type</label>
+              <select id="sample_type" , name="sample_type" class="form-control" data-width="50%" required>
+                <option disabled selected value>Please choose a sample type...</option>
+                <option value="MGX">Metagenomics</option>
+                <option value="MTX">Metatranscriptomics</option>
+                <option value="16S">16S</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="clearfix"></div>
+          <div id="paired-end-div" class="col-xs-5">
+            <div class="form-group">
+              <label for="paired" class="control-label">Paired-end Data</label>
+              <select id="paired" , name="paired" class="form-control" data-width="50%" required>
+                <option selected disabled value>Please indicate if data is paired end or not...</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+          </div>
+          <div class="clearfix"></div>
+          <div id="analysis_desc_div" class="col-md-8 hidden nopadding">
+            <div class="form-group">
+              <label for="analysis_desc">Analysis Description</label>
+              <a data-toggle="tooltip" data-placement="top" title="Please click for more information">
+                <span class="glyphicon glyphicon-info-sign" data-toggle="modal" data-target="#analysis_desc_modal"
+                  aria-labelledby="myModalLabel">
+                </span>
+              </a>
+              <textarea class="form-control" id="analysis_desc" name="analysis_desc" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="clearfix"></div>
+          <div class="collapse-optional-fields">
+            <a data-toggle="collapse" class="collapsed" href="#collapseFilter">
+              <span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+              <strong>Optional Fields</strong>
+            </a>
+            <div class="collapse" id="collapseFilter">
+              <div class="form-group has-feedback">
+                <label for="geo_loc_name" class="control-label">Geo Location Name</label>
+                <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+                <input type="text" pattern="[a-zA-Z]+:[a-zA-Z]+:[a-zA-Z]+" class="form-control" id="geo_loc_name" ,
+                  name="geo_loc_name" , data-error="Please provide a geolocation name in format Country:State:City"
+                  placeholder="US:Massachusetts:Boston">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
+              </div>
+              <div class="form-group has-feedback">
+                <label for="sequencing_facility" class="control-label">Sequencing Facility</label>
+                <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+                <input type="text" class="form-control" id="sequencing_facility" , name="sequencing_facility" ,
+                  data-error="Please provide a Sequencing Facility" placeholder="Broad Institute">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
+              </div>
+              <div class="form-group has-feedback">
+                <label for="env_feature" class="control-label">Env Feature</label>
+                <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+                <input type="text" pattern="ENVO:\d+" class="form-control" id="env_feature" , name="env_feature" ,
+                  data-error="Please provide corresponding feature from EnvO ontology." placeholder="ENVO:00002003">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
+              </div>
+              <div class="form-group has-feedback">
+                <label for="animal_vendor" class="control-label">Animal Vendor</label>
+                <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+                <input type="text" pattern="^[A-Za-z]+" class="form-control" id="animal_vendor" , name="animal_vendor"
+                  , data-error="Please provide a valid animal vendor." placeholder="JAX">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
               </div>
             </div>
           </div>
+          <div class="clearfix"></div>
+          <button id="submit_study_metadata" type="submit" class="btn btn-primary">
+            Submit <span class="glyphicon glyphicon-send" aria-hidden="true"></span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div id="panel_sample_metadata" class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Sample Metadata</h3>
+      </div>
+      <div class="panel-body">
+        <p>Upload JDRF sample metadata in Excel/CSV format below. An example template containing
+          the required metadata fields can be found <a href="{% static 'data/JDRF_metadata_schema.xlsx' %}">here</a>.</p>
+
+        <p>Metadata will be validated and any errors found will be displayed. Errors must be
+          corrected before metadata can be properly submitted.</p>
+        <br />
+        <div class="row">
+          <div class="col-md-8 col-md-offset-2">
+            <form id="upload_form" enctype="multipart/form-data" method="post">
+              <input id="metadata_file_upload" name="metadata_file" type="file">
+            </form>
+          </div>
         </div>
-        <div id="upload_success" class="alert alert-success hidden" role="alert"><div class="glyphicon glyphicon-ok-sign"></div><div>Metadata successfully uploaded. Please proceed to the <a class="alert-link" href="{% url 'upload' %}">Upload Data</a> page to continue.</div></div>
-        <div id="date_format_audit" class="alert alert-warning hidden" role="alert"><div class="glyphicon glyphicon-exclamation-sign"></div><div>Please note that all dates found in the metadata have been auto-converted to <b>YYYY-MM-DD</b> (i.e. <b>2018-04-18</b>) format for consistency.</div></div>
-    </div> <!-- /container -->
-  </body>
+        <div id="validation" class="hidden">
+          <h3>Validation </h3>
+          <p>Errors in the submitted metadata file are displayed below.
+            Please correct errors and resubmit file.</p>
+          <span id="error_spreadsheet">A spreadsheet containing all validation errors can be downloaded <a href="/download-file/sample_metadata.errors.xlsx">here</a>.</span>
+
+          <div id="validation_error_single" class="alert alert-danger hidden"></div>
+          <div id="datatables_div">
+            <table id="metadata_file_preview" class="table table-striped table-bordered" cellspacing="0" width="100%">
+              <thead>
+                <tr>
+                  <th>Sample ID</th>
+                  <th>Host Subject ID</th>
+                  <th>Subject Age</th>
+                  <th>Subject Sex</th>
+                  <th>Ethnicity</th>
+                  <th>Collection Date</th>
+                  <th>Host Body Mass Index</th>
+                  <th>Host Diet</th>
+                  <th>Host Disease</th>
+                  <th>Host Body Product</th>
+                  <th>Host Family Relationship</th>
+                  <th>Host Genotype</th>
+                  <th>Host Phenotype</th>
+                  <th>Gastrointestinal Disease</th>
+                  <th>IHMC Medication Code</th>
+                  <th>Subject Tax ID</th>
+                  <th>Source Material ID</th>
+                  <th>Isolation Source</th>
+                  <th>Sample Material Process</th>
+                  <th>Sample Storage Duration</th>
+                  <th>Sample Storage Temperature</th>
+                  <th>Sample Storage Mass</th>
+                  <th>Variable Region</th>
+                  <th>Organism Count</th>
+                  <th>Sequencer</th>
+                  <th>Read Number</th>
+                  <th>File Name</th>
+                  <th>MD5 Checksum</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="upload_success" class="alert alert-success hidden" role="alert">
+      <div class="glyphicon glyphicon-ok-sign"></div>
+      <div>Metadata successfully uploaded. Please proceed to the <a class="alert-link" href="{% url 'upload' %}">Upload
+          Data</a> page to continue.</div>
+    </div>
+    <div id="date_format_audit" class="alert alert-warning hidden" role="alert">
+      <div class="glyphicon glyphicon-exclamation-sign"></div>
+      <div>Please note that all dates found in the metadata have been auto-converted to <b>YYYY-MM-DD</b> (i.e. <b>2018-04-18</b>)
+        format for consistency.</div>
+    </div>
+  </div> <!-- /container -->
+</body>
+
 </html>

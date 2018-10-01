@@ -8,6 +8,9 @@
                              $("input[name='csrfmiddlewaretoken']").val());
       }});
 
+    // Hope this doesn't break the datatables error tooltips...
+    $('[data-toggle="tooltip"]').tooltip()
+
     var editor_opts = {
         table: "#metadata_file_preview",
         fields: [
@@ -56,10 +59,12 @@
 
         if (value == "other") {
             $('#analysis_desc_div').removeClass('hidden');
+            $('#paired-end-div').addClass('hidden');
             is_other_data_type = true;
         } else {
             $('#analysis_desc').val("");
             $('#analysis_desc_div').addClass('hidden');
+            $('#paired-end-div').removeClass('hidden');
             is_other_data_type = false;
         }
     })
@@ -418,5 +423,4 @@
         $('#upload_success').removeClass('hidden');
         $('#date_format_audit').removeClass('hidden');
      });
-
  });
