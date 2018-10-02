@@ -7,6 +7,7 @@ import time
 import json
 
 import pandas as pd
+import whoosh.index as index
 
 from django.conf import settings
 
@@ -22,9 +23,12 @@ from django.views.decorators.csrf import requires_csrf_token
 
 from django.http import StreamingHttpResponse
 
+from whoosh.qparser import QueryParser
+
 from jdrf import process_data
 
 from .forms import UploadForm
+
 
 import logging
 
@@ -536,3 +540,33 @@ def download_file(request, file_name):
     response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(download_file)+'"'
 
     return response
+
+
+@login_required(login_url='/login/')
+def search_ontology(request, ontology_name, term_query):
+    """ Searches the specified ontology for the provided query """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Searching ontology %s for term: %s", (ontology_name, term_query))
+
+    response_code = 200
+    response = {}
+
+    index_dir = os.path.join(settings.INDEX_BASE_DIR, ontology_name, "index")
+    if not os.path.exists(index_dir):
+        response['success'] = False
+        response['error_msg'] = "Could not find index for ontology %s at location %s" % (ontology_name, index_dir)
+        response_code = 404
+    else:
+        ix = index.open_dir(index_dir)
+
+        with ix.searcher() as searcher:
+            parser = QueryParser("name", ix.schema)
+            query = parser.parse(term_query)
+            results = searcher.search(query)
+
+            response['success'] = True
+            response['num_results'] = len(results)
+            response['results'] = [dict(res) for res in results]
+
+    return JsonResponse(response, status=response_code)
+    

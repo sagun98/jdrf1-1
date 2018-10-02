@@ -18,8 +18,10 @@
   <link href="{% static 'bootstrap/css/jumbotron.css' %}" media="all" rel="stylesheet" rel="stylesheet">
   <link href="{% static 'css/datatables.min.css' %}" media="all" rel="stylesheet" rel="stylesheet">
   <link href="{% static 'css/jdrf.css' %}" media="all" rel="stylesheet" rel="stylesheet">
+  <link href="{% static 'css/awesomplete.css' %}" media="all" rel="stylesheet" rel="stylesheet">
 
   <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/awesomplete.js' %}"></script>
   <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
   <script type="text/javascript" src="{% static 'js/fileinput.min.js' %}"></script>
   <script type="text/javascript" src="{% static 'js/moment.min.js' %}"></script>
@@ -102,8 +104,8 @@
         <form id="study_metadata_form" method="post" action="{% url 'upload_study_metadata' %}" data-toggle="validator">
           <div class="form-group has-feedback">
             <label for="study_id" class="control-label">Study ID</label>
-            <input type="text" pattern="^[a-zA-Z0-9_\-]+" class="form-control" id="study_id" name="study_id" , placeholder=""
-              required>
+            <input type="text" pattern="^[a-zA-Z0-9_\-]+" class="form-control" id="study_id" name="study_id" ,
+              placeholder="" required>
             <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
           </div>
           <div class="form-group has-feedback">
@@ -124,29 +126,38 @@
             </div>
             <div class="col-md-6 form-group has-feedback">
               <label for="env_biom" class="control-label">Env Biome</label>
-              <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
-              <input type="text" pattern="ENVO:\d+" class="form-control" id="env_biom" , name="env_biom" , data-error="Please provide corresponding biome from EnvO ontology."
-                placeholder="ENVO:00002003">
-              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-              <div class="help-block with-errors"></div>
+              <span class="glyphicon glyphicon-question-sign" data-validate="false" data-toggle="tooltip"
+                data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
+              <div class="right-inner-addon">
+                <input type="text" pattern="ENVO:\d+" id="env_biom" name="env_biom" class="form-control ontology-field"
+                  data-ontology-name=envo data-error="Please provide corresponding biome from EnvO ontology."
+                  placeholder="ENVO:00002003">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
+              </div>
             </div>
           </div>
           <div class="row">
             <div class="col-md-6 form-group has-feedback">
               <label for="env_material" class="control-label">Env Material</label>
               <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
-              <input type="text" pattern="ENVO:\d+" class="form-control" id="env_material" , name="env_material" ,
-                data-error="Please provide corresponding material from EnvO ontology." placeholder="ENVO:00002003">
-              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-              <div class="help-block with-errors"></div>
+              <div class="right-inner-addon">
+                <input type="text" pattern="ENVO:\d+" class="form-control ontology-field" id="env_material" , name="env_material"
+                  , data-ontology-name=envo data-error="Please provide corresponding material from EnvO ontology."
+                  placeholder="ENVO:00002003">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
+              </div>
             </div>
             <div class="col-md-6 form-group has-feedback">
               <label for="host_tissue_sampled" class="control-label">Host Tissue Sampled</label>
               <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
-              <input type="text" pattern="BTO:\d+" class="form-control" id="host_tissue_sampled" , name="host_tissue_sampled"
-                , data-error="Please provide corresponding host tissue sampled from BTO ontology." placeholder="BTO:0003120">
-              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-              <div class="help-block with-errors"></div>
+              <div class="right-inner-addon">
+                <input type="text" pattern="BTO:\d+" class="form-control ontology-field" id="host_tissue_sampled" , name="host_tissue_sampled"
+                  , data-ontology-name=bto data-error="Please provide corresponding host tissue sampled from BTO ontology." placeholder="BTO:0003120">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
+              </div>
             </div>
           </div>
           <div class="col-xs-5">

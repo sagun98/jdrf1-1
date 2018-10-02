@@ -269,7 +269,6 @@
        ]
     });
 
-
     var changed_rows = [];
     var open_vals = "";
     var table_json = "";
@@ -423,4 +422,36 @@
         $('#upload_success').removeClass('hidden');
         $('#date_format_audit').removeClass('hidden');
      });
+
+     // The javascript below handles autocompleting any of the fields that are filled by 
+     // ontology IDs
+    var awesomplete_objs = {};
+    awesomplete_objs['env_biom'] = new Awesomplete($('#env_biom')[0]);
+    awesomplete_objs['env_material'] = new Awesomplete($('#env_material')[0]);
+    awesomplete_objs['host_tissue_sampled'] = new Awesomplete($('#host_tissue_sampled')[0]);
+
+    $('.ontology-field').on('awesomplete-selectcomplete', function(e) {
+        $(e.target).trigger('input');
+    });
+
+    $('.ontology-field').on("keyup", function(evt) {
+        var ontology_name = $(this).data('ontologyName');
+        if (evt.keyCode != 38 && evt.keyCode != 40 && evt.keyCode != 27) {
+            $.ajax({
+                url: '/term/' + ontology_name + '/' + this.value,
+                type: 'GET',
+                dataType: 'json',
+                context: this
+            })
+            .success(function(data) {
+                var list = [];
+                data.results.forEach(function(record) {
+                    list.push({label: record.envo_id + " - " + record.name, value: record.envo_id})
+                });
+
+                awesomplete_objs[this.id].list = list;
+            });
+        }
+     });
+
  });

@@ -35,6 +35,7 @@ urlpatterns = [
     url(r'^files/delete$', views.delete_files,name="delete_files"),
     url(r'^files/(?P<file_name>.*)/rename$', views.rename_file,name="rename_file"),
     url(r'^metadata/', views.upload_metadata, name="upload_metadata"),
+    url(r'^term/(?P<ontology_name>.*)/(?P<term_query>.*)/', views.search_ontology, name="search_ontology"),
     url(r'^process/', views.process_files,name="process"),
     url(r'^download/$', views.download_files,name="download"),
     url(r'^about/', TemplateView.as_view(template_name='about.html'),name="about"),

@@ -31,6 +31,8 @@ FILE_FOLDER_MAP = {
     'data_products': PROCESS_FOLDER
 }
 
+INDEX_BASE_DIR = "/opt/whoosh_ontology_indices/"
+
 # set the default metadata file names
 METADATA_FILE_NAME = "metadata.tsv"
 METADATA_GROUP_FILE_NAME = "metadata_study.tsv"
