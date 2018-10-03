@@ -119,10 +119,12 @@
             <div class="col-md-6 form-group has-feedback">
               <label for="bioproject_accession" class="control-label">Bioproject Accession</label>
               <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
-              <input type="text" pattern="PRJ\w+\d+" class="form-control" id="bioproject_accession" , name="bioproject_accession"
-                , data-error="Please provide a bioproject accession in the format PRJXX#####" placeholder="PRJEB22283">
-              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-              <div class="help-block with-errors"></div>
+              <div class="right-inner-addon">
+                <input type="text" pattern="PRJ\w+\d+" class="form-control" id="bioproject_accession" , name="bioproject_accession"
+                  , data-error="Please provide a bioproject accession in the format PRJXX#####" placeholder="PRJEB22283">
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="help-block with-errors"></div>
+              </div>
             </div>
             <div class="col-md-6 form-group has-feedback">
               <label for="env_biom" class="control-label">Env Biome</label>
@@ -130,7 +132,7 @@
                 data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
               <div class="right-inner-addon">
                 <input type="text" pattern="ENVO:\d+" id="env_biom" name="env_biom" class="form-control ontology-field"
-                  data-ontology-name=envo data-error="Please provide corresponding biome from EnvO ontology."
+                  data-ontology-name=envo data-delay=1500 data-error="Please provide corresponding biome from EnvO ontology."
                   placeholder="ENVO:00002003">
                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                 <div class="help-block with-errors"></div>
@@ -143,7 +145,7 @@
               <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
               <div class="right-inner-addon">
                 <input type="text" pattern="ENVO:\d+" class="form-control ontology-field" id="env_material" , name="env_material"
-                  , data-ontology-name=envo data-error="Please provide corresponding material from EnvO ontology."
+                  , data-ontology-name=envo data-delay=1500 data-error="Please provide corresponding material from EnvO ontology."
                   placeholder="ENVO:00002003">
                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                 <div class="help-block with-errors"></div>
@@ -153,8 +155,9 @@
               <label for="host_tissue_sampled" class="control-label">Host Tissue Sampled</label>
               <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Use BRENDA Tissue and Enzyme source"></span>
               <div class="right-inner-addon">
-                <input type="text" pattern="BTO:\d+" class="form-control ontology-field" id="host_tissue_sampled" , name="host_tissue_sampled"
-                  , data-ontology-name=bto data-error="Please provide corresponding host tissue sampled from BTO ontology." placeholder="BTO:0003120">
+                <input type="text" pattern="BTO:\d+" class="form-control ontology-field" id="host_tissue_sampled" ,
+                  name="host_tissue_sampled" , data-ontology-name=bto data-delay=1500 data-error="Please provide corresponding host tissue sampled from BTO ontology."
+                  placeholder="BTO:0003120">
                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                 <div class="help-block with-errors"></div>
               </div>

@@ -426,9 +426,9 @@
      // The javascript below handles autocompleting any of the fields that are filled by 
      // ontology IDs
     var awesomplete_objs = {};
-    awesomplete_objs['env_biom'] = new Awesomplete($('#env_biom')[0]);
-    awesomplete_objs['env_material'] = new Awesomplete($('#env_material')[0]);
-    awesomplete_objs['host_tissue_sampled'] = new Awesomplete($('#host_tissue_sampled')[0]);
+    awesomplete_objs['env_biom'] = new Awesomplete($('#env_biom')[0], { minChars: 2, autoFirst: true });
+    awesomplete_objs['env_material'] = new Awesomplete($('#env_material')[0], { minChars: 2, autoFirst: true });
+    awesomplete_objs['host_tissue_sampled'] = new Awesomplete($('#host_tissue_sampled')[0], { minChars: 2, autoFirst: true });
 
     $('.ontology-field').on('awesomplete-selectcomplete', function(e) {
         $(e.target).trigger('input');
@@ -436,6 +436,7 @@
 
     $('.ontology-field').on("keyup", function(evt) {
         var ontology_name = $(this).data('ontologyName');
+
         if (evt.keyCode != 38 && evt.keyCode != 40 && evt.keyCode != 27) {
             $.ajax({
                 url: '/term/' + ontology_name + '/' + this.value,
@@ -450,7 +451,7 @@
                 });
 
                 awesomplete_objs[this.id].list = list;
-            });
+            })
         }
      });
 
