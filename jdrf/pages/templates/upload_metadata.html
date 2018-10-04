@@ -176,7 +176,7 @@
             </div>
           </div>
           <div class="clearfix"></div>
-          <div id="paired-end-div" class="col-xs-5">
+          <div id="paired-end-div" class="col-xs-5 hidden">
             <div class="form-group">
               <label for="paired" class="control-label">Paired-end Data</label>
               <select id="paired" , name="paired" class="form-control" data-width="50%" required>
@@ -184,6 +184,18 @@
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
               </select>
+            </div>
+          </div>
+          <div class="clearfix"></div>
+          <div id="paired-id-div" class="col-xs-5 hidden">
+            <div class="form-group has-feedback">
+              <label for="paired" class="control-label">Paired-end Identifier</label>
+              <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Paired-end identifier (i.e. R1 for seqA_R1.fq and seqB_R2.fq)"></span>
+              <input type="text" pattern="\w+" class="form-control" id="paired_id" ,
+                name="paired_id" , data-pair-identifier="" data-error="Please provide a valid paired-end identifier (i.e. R1 or 1)."
+                placeholder="R1">
+              <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+              <div class="help-block with-errors"></div>
             </div>
           </div>
           <div class="clearfix"></div>
