@@ -57,6 +57,10 @@
     $('#sample_type').on('change', function() {
         var value = $(this).val();
 
+        $("#paired_id").val("");
+        $("#paired").val("no");
+        $('#paired-id-div').addClass('hidden');
+
         if (value == "other") {
             $('#analysis_desc_div').removeClass('hidden');
             $('#paired-end-div').addClass('hidden');
@@ -66,6 +70,12 @@
             $('#analysis_desc_div').addClass('hidden');
             $('#paired-end-div').removeClass('hidden');
             is_other_data_type = false;
+
+            if (value == "16S") {
+                $('#paired_id').val("_R1_001");
+            } else if (value == "wmgx" || value == "wmtx") {
+                $("#paired_id").val(".R1");
+            }
         }
     })
 
@@ -75,7 +85,6 @@
         if (value == "yes") {
             $('#paired-id-div').removeClass('hidden');
             $('#paired_id').prop('required', true);
-            $('#paired_id').val("");
         } else {
             $('#paired-id-div').addClass('hidden');
             $('#paired_id').prop('required', false);
@@ -89,9 +98,6 @@
         $.ajax({
             url: '/metadata/study',
             method: 'GET',
-            //data: {
-            //    csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val()
-            //},
             success: function(data) {
                 var form_elts = data.study_form;
                 $.each(form_elts, function(key, val) {
@@ -149,7 +155,7 @@
         custom: {
             'pair-identifier': function(el) {
                 var pair_identifier = $(el).val();
-                var pair_ident_re = /[a-zA-Z0-9_-]+/;
+                var pair_ident_re = /[-a-zA-Z0-9_.]+/;
                 if ($('#paired').val() == "yes" && pair_ident_re.test(pair_identifier) == false) {
                     return "Must provide valid pair-identifier (e.g. R1, 1, etc.)";
                 } 

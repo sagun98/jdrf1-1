@@ -186,7 +186,8 @@ def upload_sample_metadata(request):
 
             # When we receive a sample metadata file where the study has been tagged as the 
             # "Other" data type we need to forego any validation checks (for the time being)
-            is_other_datatype = True if process_data.get_study_type(study_file) == "other" else False
+            study_metadata = process_data.get_study_metadata(study_file)
+            is_other_datatype = True if study_metadata.sample_type == "other" else False
 
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
