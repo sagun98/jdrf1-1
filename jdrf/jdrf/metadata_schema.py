@@ -12,7 +12,7 @@ study_schema = Schema([
                         ~InListValidation([''])]),
     Column('pi_name', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the pi_name column.') &
                         ~InListValidation([''])]),
-    Column('sample_type', [InListValidation(['MGX', 'MTX', '16S', 'other'])]),
+    Column('sample_type', [InListValidation(['wmgx', 'wmtx', '16S', 'other'])]),
     Column('bioproject_accession', [InListValidation(['']) | MatchesPatternValidation(r'PRJ\w+\d+')]),
     Column('geo_loc_name', [InListValidation(['']) | MatchesPatternValidation(r'\w+:\w+:\w+')]),
     Column('analysis_desc', [InListValidation(['']) | CanConvertValidation(str)]),
