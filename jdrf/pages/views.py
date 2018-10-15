@@ -273,6 +273,9 @@ def process_files(request):
     logger, user, user_full_name, user_email, upload_folder, process_folder = get_user_and_folders_plus_logger(request, full_user_info=True)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
    
+    # Var to keep track of our workflow status. Needed so we can clear our some cookies
+    # on workflow success.
+    success = False
     # set the default responses
     responses={"message1":[],"message2":[]}
  
@@ -315,6 +318,7 @@ def process_files(request):
                 responses["message2"]=(1, "ERROR: The workflows have finished running. One of the tasks failed.")
             elif len(list(filter(lambda x: "Finished" in x, [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])))  == 3:
                 responses["message2"]=(0, "Success! All three workflows (md5sum check, data processing, and visualization) finished without error.")
+                success = True
             elif ( responses["md5sum_stdout"] and not ( responses["data_products_stdout"] or responses["visualizations_stdout"] ) or 
                 responses["md5sum_stdout"] and responses["data_products_stdout"] and not responses["visualizations_stdout"] ):
                 # add the case where we are in between workflows running
@@ -335,8 +339,13 @@ def process_files(request):
     else:
         responses["process_button"] = 0
         responses["refresh_button"] = 1
-        
-    return render(request,'process.html',responses)
+    
+    response = render(request, 'process.html', responses)
+    if success:
+        response.delete_cookie('study_metadata')
+        response.delete_cookie('sample_metadata')
+
+    return response
 
 def get_file_size(file):
     """ Get the size of the file """
