@@ -141,3 +141,80 @@ th, td { white-space: nowrap; overflow: hidden; }
 #edit_buttons .dt-buttons {
     float: right !important;
 }
+
+td.to-rename, td.to-delete {
+    text-align: center;
+    cursor: pointer;
+}
+
+.modal-header-warning {
+	color:#fff;
+    padding:9px 15px;
+    border-bottom:1px solid #eee;
+    background-color: #f0ad4e;
+    -webkit-border-top-left-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    -moz-border-radius-topleft: 5px;
+    -moz-border-radius-topright: 5px;
+     border-top-left-radius: 5px;
+     border-top-right-radius: 5px;
+}
+
+.modal-body {
+    max-height: calc(100vh - 212px);
+    overflow-y: auto;
+}
+
+#rename-modal .modal-sm {
+    width: 400px;
+}
+
+.no-files-row  {
+    text-align: center;
+    font-weight: bold;
+}
+
+tr {
+    background-color: white;
+    transition: background-color 1s;
+}
+
+.flash-success {
+    background-color: #dff0d8;
+    transition: background-color 1s;
+}
+
+.flash-delete {
+    background-color: #f8d7da;
+    transition: background-color 1s;
+}
+
+.deleted-list {
+    padding-top: 8px;
+    margin-bottom: 5px !important;
+}
+
+.right-inner-addon {
+    position: relative;
+}
+
+/**
+ * bootstrap's input groups modify the float & z-index of form-controls, this allows awesomplete
+ * to assume the position of the form-control and reset the input
+ */
+.form-group div.awesomplete {
+    position: relative;
+    width: 100%;
+    margin-bottom: 0;
+}
+.form-group div.awesomplete > input {
+    float: none;
+}
+.form-group div.awesomplete > ul {
+    z-index: 3; /* bootstrap sets .input-group .form-control to 2 */
+}
+
+/* reinstitute initial .form-control border radius when nested within .awesomeplete */
+.form-group .awesomplete .form-control {
+    border-radius: 4px;
+}

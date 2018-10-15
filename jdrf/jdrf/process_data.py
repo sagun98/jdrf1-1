@@ -13,6 +13,8 @@ from email.mime.text import MIMEText
 
 from django.conf import settings
 
+import fasteners
+
 # Set default email options
 EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
 EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
@@ -184,11 +186,15 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
             error_context['error_msg'] = "Line %s contained %s columns, expected %s columns" % (line_number, observed_fields, expected_fields)
         else:
             raise
+    except ValueError as ve:
+        if "collection_date" in ve.message:
+            error_context['error_msg'] = "Metadata file is malformed and does not match JDRF metadata schema."
+        else:
+            raise
     except Exception as e:
         # If we have an error here we don't want to leave the user hanging
-        error_context['error_msg'] = ("An unexpected error occurred. This error has been logged;" 
-                                      "please contant JDRF support for help with your metadata upload")
-        raise
+        error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
+                                      "Please contant JDRF support for help with your metadata upload")
 
     return (is_valid, metadata_df, error_context)
 
@@ -263,11 +269,11 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
         Finally check that all files in the metadata exist. 
     """
 
-    # get the study type
-    study_type = get_study_type(study_file)
+    # get the study metadata
+    study_metadata = get_study_metadata(study_file)
 
     # if study type is other, bypass verify
-    if study_type == "other":
+    if study_metadata.sample_type == "other":
         message="BYPASS VERIFICATION: The study type is OTHER so verification is not required.\n"
         message+="NEXT STEP: The files are now ready to be processed.\n"
         error_code = 0
@@ -456,21 +462,9 @@ def email_workflow_status(user,command,output_folder,workflow,user_name=None,use
 
     return error
 
-def get_study_type(study_file):
-    """ Ready the metadata study file to determine the sequencing type """
-
-    study_info="\n".join(open(study_file).readlines())
-    if "16S" in study_info:
-        return "16S"
-    elif "other" in study_info:
-        return "other"
-    else:
-        return "wmgx"
-
-def get_study_name(study_file):
-    """ Return the name of the study (alpha numeric only) """
-
-    return re.sub(r'\W+','',open(study_file).readlines()[-1].split(",")[-1])
+def get_study_metadata(study_file):
+    """ Parses study metadata file and returns a pandas DataFrame representation of metadata """
+    return pd.read_csv(study_file).ix[0]
 
 def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata_file,study_file):
     """ First run the md5sum steps then run the remainder of the workflow """
@@ -486,11 +480,11 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
     data_products = os.path.join(process_folder,WORKFLOW_DATA_PRODUCTS_FOLDER)
     visualizations = os.path.join(process_folder,WORFLOW_VISUALIZATIONS_FOLDER)
  
-    # get the study type
-    study_type = get_study_type(study_file)
-    logger.info("Starting workflow for study type: " + study_type)
+    # get the study metadata 
+    study_metadata = get_study_metadata(study_file)
+    logger.info("Starting workflow for study type: " + study_metadata.sample_type)
 
-    if study_type != "other":
+    if study_metadata.sample_type != "other":
         create_folder(md5sum_check)
         create_folder(visualizations) 
         create_folder(data_products)
@@ -512,14 +506,18 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
         "--input",upload_folder,"--output",md5sum_check,"--input-metadata",
         metadata_file,"--input-extension",extension]
     error_state = False
-    if study_type != "other":
+    if study_metadata.sample_type != "other":
         error_state = email_workflow_status(user,command,md5sum_check,"md5sum",user_name,user_email)
 
-    # run the wmgx workflow
-    if study_type == "16S":
+    # run the 16S workflow
+    if study_metadata.sample_type == "16S":
         command=["biobakery_workflows","16s","--input",
             upload_folder,"--output",data_products,"--input-extension",
             extension,"--local-jobs",SixteenS_PROCESSES,"--threads",SixteenS_THREADS]
+
+        if study_metadata.paired:
+            command.extend(['--pair-identifier', study_metadata.paired_id])
+
         if not error_state:
             error_state = email_workflow_status(user,command,data_products,"16s",user_name,user_email)
 
@@ -529,11 +527,15 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
             "JDRF MIBC Generated"]
         if not error_state:
             error_state = email_workflow_status(user,command,visualizations,"visualization",user_name,user_email)
-    elif study_type != "other":
+    elif study_metadata.sample_type != "other":
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
             extension,"--remove-intermediate-output","--bypass-strain-profiling",
             "--local-jobs",WMGX_PROCESSES,"--threads",WMGX_THREADS]
+
+        if study_metadata.paired:
+            command.extend(['--pair-identifier', study_metadata.paired_id])
+
         if not error_state:
             error_state = email_workflow_status(user,command,data_products,"wmgx",user_name,user_email)
 
@@ -552,12 +554,11 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
     # run the archive and transfer workflow
     archive_folder = os.path.join(settings.ARCHIVE_FOLDER,user)
     create_folder(archive_folder)
-    study_name = get_study_name(study_file)
     command=["python",os.path.join(folder,"archive_workflow.py"),
         "--input-upload",upload_folder,"--input-processed",process_folder,
         "--key",settings.SSH_KEY,"--remote",settings.REMOTE_TRANSFER_SERVER,
         "--user",settings.REMOTE_TRANSFER_USER,
-        "--study",study_name,"--output",archive_folder,"--output-transfer",
+        "--study",study_metadata.study_id,"--output",archive_folder,"--output-transfer",
         os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/"]
     if not error_state:
         email_workflow_status(user,command,archive_folder,"archive and transfer",user_name,user_email)
@@ -596,3 +597,67 @@ def check_md5sum_and_process_data(user,user_name,user_email,upload_folder,proces
     
     return 0, "Success! The first workflow is running. It will take at least a few hours to run through all processing steps. The progress for each of the workflows will be shown below. Refresh this page to get the latest progress or check your inbox for status emails."
 
+
+def rename_file(target_file, target_fname, rename_file, logger):
+    """ Renames the supplied file using the passed in new filename  """
+    data = {}
+
+    with fasteners.InterProcessLock('/tmp/rename_file_lock_' + target_fname):
+        logger.debug("Acquired process lock for file %s" % target_fname)
+        logger.info("Renaming file %s to %s" % (target_file, rename_file))
+
+        try:
+            os.rename(target_file, rename_file)
+
+            data['success'] = True
+        except OSError as e:
+            # If we get an error here we want to record that the rename failed 
+            # and try the rest of the files. We can pass on partial success to
+            # the user
+            data['success'] = False
+            data['error_msg'] = str(e);
+            pass
+        finally:
+            data['renamed_file'] = os.path.basename(rename_file)
+            data['original_file'] = target_fname
+
+    return data
+
+def _validate_file_path(file_name, target_folder):
+    """ Verifies whether or not the provided file path contains any malicious characters (i.e. '*') 
+        or attemps to traverse outside of the desired directories (using relative paths) 
+        
+        CREDIT - https://stackoverflow.com/a/6803714
+    """
+    requested_path = os.path.relpath(file_name, start=target_folder)
+    requested_path = os.path.abspath(requested_path)
+    common_prefix = os.path.commonprefix([requested_path, target_folder])
+    return common_prefix != target_folder
+
+
+def delete_file(target_file, target_fname, target_folder, logger):
+    """ Deletes the supplied file from the JDRF1 docker instance """
+    data = {}
+
+    with fasteners.InterProcessLock('/tmp/delete_file_lock_' + target_fname):
+        logger.debug("Acquired process lock for file %s" % target_fname)
+        logger.info("Deleting file %s" % target_file)
+
+        try:
+            if not _validate_file_path(target_fname, target_folder):
+                raise OSError('Malformed filename. Please contact JDRF MIBC support.')
+
+            if os.path.isfile(target_file):
+                os.remove(target_file)
+
+                data['success'] = True
+            else:
+                raise OSError('File does not exist')
+        except OSError as e:
+            data['success'] = False
+            data['error_msg'] = str(e);
+            pass
+        finally:
+            data['target_file'] = target_fname
+
+    return data

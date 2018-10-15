@@ -7,6 +7,7 @@ import time
 import json
 
 import pandas as pd
+import whoosh.index as index
 
 from django.conf import settings
 
@@ -15,18 +16,22 @@ from django.contrib.auth.decorators import login_required
 
 from django.core.urlresolvers import reverse
 from django.core.files.storage import FileSystemStorage
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, QueryDict
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import requires_csrf_token
 
 from django.http import StreamingHttpResponse
 
+from whoosh.qparser import QueryParser
+
 from jdrf import process_data
 
 from .forms import UploadForm
 
+
 import logging
+
 
 def get_user_and_folders_plus_logger(request, full_user_info=False):
     """ Get the user and all of the user folders """
@@ -103,6 +108,16 @@ def upload_files(request):
 @login_required(login_url='/login/')
 @csrf_exempt
 @requires_csrf_token
+def upload_metadata(request):
+    """ Generic view here just to handle authentication and redirect in case 
+    the user is not logged in"""
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    return render(request, 'upload_metadata.html')
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
 def upload_study_metadata(request):
     """ Validates and saves study metadata provided by the logged in user. """
     (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
@@ -171,7 +186,8 @@ def upload_sample_metadata(request):
 
             # When we receive a sample metadata file where the study has been tagged as the 
             # "Other" data type we need to forego any validation checks (for the time being)
-            is_other_datatype = True if process_data.get_study_type(study_file) == "other" else False
+            study_metadata = process_data.get_study_metadata(study_file)
+            is_other_datatype = True if study_metadata.sample_type == "other" else False
 
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
@@ -257,6 +273,9 @@ def process_files(request):
     logger, user, user_full_name, user_email, upload_folder, process_folder = get_user_and_folders_plus_logger(request, full_user_info=True)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
    
+    # Var to keep track of our workflow status. Needed so we can clear our some cookies
+    # on workflow success.
+    success = False
     # set the default responses
     responses={"message1":[],"message2":[]}
  
@@ -299,6 +318,7 @@ def process_files(request):
                 responses["message2"]=(1, "ERROR: The workflows have finished running. One of the tasks failed.")
             elif len(list(filter(lambda x: "Finished" in x, [responses["md5sum_stdout"],responses["data_products_stdout"],responses["visualizations_stdout"]])))  == 3:
                 responses["message2"]=(0, "Success! All three workflows (md5sum check, data processing, and visualization) finished without error.")
+                success = True
             elif ( responses["md5sum_stdout"] and not ( responses["data_products_stdout"] or responses["visualizations_stdout"] ) or 
                 responses["md5sum_stdout"] and responses["data_products_stdout"] and not responses["visualizations_stdout"] ):
                 # add the case where we are in between workflows running
@@ -319,8 +339,13 @@ def process_files(request):
     else:
         responses["process_button"] = 0
         responses["refresh_button"] = 1
-        
-    return render(request,'process.html',responses)
+    
+    response = render(request, 'process.html', responses)
+    if success:
+        response.delete_cookie('study_metadata')
+        response.delete_cookie('sample_metadata')
+
+    return response
 
 def get_file_size(file):
     """ Get the size of the file """
@@ -380,6 +405,106 @@ def list_file_in_folder(folder,exclude_files=[".anadama"]):
 
     return list_files_reduced
 
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def rename_file(request, file_name):
+    """ Handle a request to rename any uploaded file that is not being processed or is an archived file. """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Renaming file for user: %s", user)
+
+    data = {}
+
+    # Files we are renaming should be lists with the first item being the file name 
+    # and the second item being the new filename to rename too and the third item being the 
+    # category of file (uploaded, archived, md5sum, viz, data_product) 
+    put_dict = QueryDict(request.body)
+    rename_fname = put_dict.get('rename_file');
+    file_type = put_dict.get('type'); 
+
+    logger.info('Variables passed in: %s %s %s' % (file_name, rename_fname, file_type))
+
+    file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
+    file = os.path.join(file_folder, file_name)
+    renamed_file = os.path.join(file_folder, rename_fname)
+
+    is_workflow_running = process_data.check_workflow_running(user, process_folder)
+
+    if not is_workflow_running:
+        data = process_data.rename_file(file, file_name, renamed_file, logger)
+    else: 
+        data['success'] = False
+        data['error_msg'] = "Files cannot be renamed when a workflow is running."
+        data['renamed_file'] = rename_fname
+        data['original_file'] = file_name
+
+    return JsonResponse(data)
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def delete_file(request, file_name):
+    """ Deletes a single uploaded file. """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Deleting file %s for user: %s" % (file_name, user))
+
+    data = {}
+    file_type = 'upload'
+
+    file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
+    target_file = os.path.join(file_folder, file_name)
+
+    # Check if we have any workflows running. If so we want to prevent rename or delete operations 
+    # here since they will interfere with the workflows running
+    is_workflow_running = process_data.check_workflow_running(user, process_folder)
+
+    if not is_workflow_running:
+        data = process_data.delete_file(target_file, file_name, file_folder, logger)
+    else: 
+        data['success'] = False
+        data['error_msg'] = "Files cannot be deleted when a workflow is running."
+
+    return JsonResponse(data)
+
+
+@login_required(login_url='/login/')
+@csrf_exempt
+@requires_csrf_token
+def delete_files(request):
+    """ Deletes multiple uploaded files. """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Deleting files for user: %s" % user)
+
+    data = {}
+    data['results'] = []
+    data['success'] = False 
+
+    del_dict = QueryDict(request.body)
+
+    target_fnames = del_dict.getlist('delete_file[]');
+    file_type = 'upload'
+
+    file_folder = os.path.join(settings.FILE_FOLDER_MAP.get(file_type), user)
+
+    # Prevent files from being renamed/deleted if the workflow is running
+    is_workflow_running = process_data.check_workflow_running(user, process_folder)
+
+    if not is_workflow_running: 
+        for target_fname in target_fnames:
+            logger.info("Deleting file %s" % target_fname)
+            target_file = os.path.join(file_folder, target_fname)
+            data['results'].append(process_data.delete_file(target_file, target_fname, file_folder, logger))
+
+        data['success'] = all([file['success'] for file in data['results']]) if data['results'] else False
+    else:
+        data['success'] = False
+        data['target_files'] = target_fnames;
+        data['error_msg'] = "Files cannot be deleted when a workflow is running."
+
+    return JsonResponse(data)
+
 @login_required(login_url='/login/')
 def download_files(request):
     """ List all of the processed files available for the user to download """
@@ -425,3 +550,33 @@ def download_file(request, file_name):
     response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(download_file)+'"'
 
     return response
+
+
+@login_required(login_url='/login/')
+def search_ontology(request, ontology_name, term_query):
+    """ Searches the specified ontology for the provided query """
+    logger, user, upload_folder, process_folder = get_user_and_folders_plus_logger(request)
+    logger.info("Searching ontology %s for term: %s", (ontology_name, term_query))
+
+    response_code = 200
+    response = {}
+
+    index_dir = os.path.join(settings.INDEX_BASE_DIR, ontology_name, "index")
+    if not os.path.exists(index_dir):
+        response['success'] = False
+        response['error_msg'] = "Could not find index for ontology %s at location %s" % (ontology_name, index_dir)
+        response_code = 404
+    else:
+        ix = index.open_dir(index_dir)
+
+        with ix.searcher() as searcher:
+            parser = QueryParser("name", ix.schema)
+            query = parser.parse(term_query)
+            results = searcher.search(query)
+
+            response['success'] = True
+            response['num_results'] = len(results)
+            response['results'] = [dict(res) for res in results]
+
+    return JsonResponse(response, status=response_code)
+    

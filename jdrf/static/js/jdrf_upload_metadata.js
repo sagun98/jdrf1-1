@@ -8,6 +8,9 @@
                              $("input[name='csrfmiddlewaretoken']").val());
       }});
 
+    // Hope this doesn't break the datatables error tooltips...
+    $('[data-toggle="tooltip"]').tooltip()
+
     var editor_opts = {
         table: "#metadata_file_preview",
         fields: [
@@ -54,16 +57,40 @@
     $('#sample_type').on('change', function() {
         var value = $(this).val();
 
+        $("#paired_id").val("");
+        $("#paired").val("no");
+        $('#paired-id-div').addClass('hidden');
+
         if (value == "other") {
             $('#analysis_desc_div').removeClass('hidden');
+            $('#paired-end-div').addClass('hidden');
             is_other_data_type = true;
         } else {
             $('#analysis_desc').val("");
             $('#analysis_desc_div').addClass('hidden');
+            $('#paired-end-div').removeClass('hidden');
             is_other_data_type = false;
+
+            if (value == "16S") {
+                $('#paired_id').val("_R1_001");
+            } else if (value == "wmgx" || value == "wmtx") {
+                $("#paired_id").val(".R1");
+            }
         }
     })
 
+    $('#paired').on('change', function() {
+        var value = $(this).val();
+
+        if (value == "yes") {
+            $('#paired-id-div').removeClass('hidden');
+            $('#paired_id').prop('required', true);
+        } else {
+            $('#paired-id-div').addClass('hidden');
+            $('#paired_id').prop('required', false);
+            $('#paired_id').val("");
+        }
+    })
     // On page load we want to see if a cookie exists to indicate study metadata has been created for this file.
     if (Cookies.get('study_metadata') == '1') {
         // Need to do an AJAX request here to parse the contents of our CSV file and fill in 
@@ -71,17 +98,25 @@
         $.ajax({
             url: '/metadata/study',
             method: 'GET',
-            //data: {
-            //    csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val()
-            //},
             success: function(data) {
                 var form_elts = data.study_form;
                 $.each(form_elts, function(key, val) {
                     $('#panel_study_metadata #' + key).val(val);
                 });
 
-                $('#analysis_desc_div').removeClass('hidden');
-                is_other_data_type = true;
+                if ($('#sample_type').val() === "other") {
+                    $('#analysis_desc_div').removeClass('hidden');
+                    $('#paired-end-div').addClass('hidden');
+                    is_other_data_type = true;
+                } else {
+                    $('#paired-end-div').removeClass('hidden');
+
+                    if ($('#paired').val() === "yes") {
+                       $('#paired-id-div').removeClass('hidden');
+                    }
+                    
+                    is_other_data_type = false;
+                }
             },
             error: function(data) {
                 // Something clearly went wrong here so let's remove our cookie
@@ -115,6 +150,18 @@
         $('#upload_success').removeClass('hidden');
         $('#date_format_audit').removeClass('hidden');
     }
+
+    $('#study_metadata_form').validator({
+        custom: {
+            'pair-identifier': function(el) {
+                var pair_identifier = $(el).val();
+                var pair_ident_re = /[-a-zA-Z0-9_.]+/;
+                if ($('#paired').val() == "yes" && pair_ident_re.test(pair_identifier) == false) {
+                    return "Must provide valid pair-identifier (e.g. R1, 1, etc.)";
+                } 
+            }
+        }
+    });
 
     $('#study_metadata_form').validator().on('submit', function(e) {
         if (e.isDefaultPrevented()) {
@@ -263,7 +310,6 @@
            }
        ]
     });
-
 
     var changed_rows = [];
     var open_vals = "";
@@ -417,6 +463,38 @@
 
         $('#upload_success').removeClass('hidden');
         $('#date_format_audit').removeClass('hidden');
+     });
+
+     // The javascript below handles autocompleting any of the fields that are filled by 
+     // ontology IDs
+    var awesomplete_objs = {};
+    awesomplete_objs['env_biom'] = new Awesomplete($('#env_biom')[0], { minChars: 2, autoFirst: true });
+    awesomplete_objs['env_material'] = new Awesomplete($('#env_material')[0], { minChars: 2, autoFirst: true });
+    awesomplete_objs['host_tissue_sampled'] = new Awesomplete($('#host_tissue_sampled')[0], { minChars: 2, autoFirst: true });
+
+    $('.ontology-field').on('awesomplete-selectcomplete', function(e) {
+        $(e.target).trigger('input');
+    });
+
+    $('.ontology-field').on("keyup", function(evt) {
+        var ontology_name = $(this).data('ontologyName');
+
+        if (evt.keyCode != 38 && evt.keyCode != 40 && evt.keyCode != 27) {
+            $.ajax({
+                url: '/term/' + ontology_name + '/' + this.value,
+                type: 'GET',
+                dataType: 'json',
+                context: this
+            })
+            .success(function(data) {
+                var list = [];
+                data.results.forEach(function(record) {
+                    list.push({label: record.envo_id + " - " + record.name, value: record.envo_id})
+                });
+
+                awesomplete_objs[this.id].list = list;
+            })
+        }
      });
 
  });

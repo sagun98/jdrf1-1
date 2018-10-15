@@ -27,7 +27,10 @@ RUN pip install --upgrade pip && \
     pip install setuptools && \
     pip install supervisor && \
     pip install django==1.11.0 gunicorn==19.7 MySQL-python==1.2.5 && \
-    pip install django-widget-tweaks
+    pip install django-widget-tweaks && \
+    pip install fasteners && \
+    pip install pronto && \
+    pip install whoosh
 
 # add supervisor conf
 RUN mkdir -pv /var/log/supervisord
@@ -103,5 +106,12 @@ RUN apt-get update -y && \
     rm -r picrust-1.1.3* && \
     download_picrust_files.py && \
     pip install numpy==1.13
+
+# generate the whoosh indices we need for the autocomplete in some of the metadata 
+# form fields
+RUN python /usr/local/src/bin/create_ontology_index.py -i "http://purl.obolibrary.org/obo/envo.owl" \
+    -o /opt/whoosh_ontology_indices/envo
+RUN python /usr/local/src/bin/create_ontology_index.py -i "http://aber-owl.net/media/ontologies/BTO/33/bto.obo" \
+    -o /opt/whoosh_ontology_indices/bto
 
 EXPOSE :80
