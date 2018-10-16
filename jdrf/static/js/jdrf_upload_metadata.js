@@ -2,7 +2,7 @@
  * Javascript needed for the metadata upload functionality of the JDRF MIBC website.
  */
 
- jQuery(document).ready(function() {
+jQuery(document).ready(function() {
     $.ajaxSetup({beforeSend: function(xhr, settings){
         xhr.setRequestHeader('X-CSRFToken', 
                              $("input[name='csrfmiddlewaretoken']").val());
@@ -315,20 +315,32 @@
     var open_vals = "";
     var table_json = "";
 
-    $('#metadata_file_preview').on('blur', 'tbody td:not(:first-child):not(div)', function(e) {
-        if (open_vals !== JSON.stringify( local_editor.get() )) {
-            $(this).css('color', 'black');
-            $(this).css('background-color', 'yellow');
-            row_update = true;
-
-        } else {
-            row_update = false;
+    // Because Firefox and Safari handle blur a little different need this here
+    // Also handle when someone hits the 'Escape' key when editing.
+    $('#metadata_file_preview').on('keydown', 'tbody td:not(:first-child):not(div)', function(e) {
+        if (e.which == 13) {
+            $(this).blur();
         }
+    });
 
-        $(this).tooltip('hide');
+    $('#metadata_file_preview').on('blur', 'tbody td:not(:first-child):not(div)', function(e) {
+        if (e.which == 0 && row_update == false) {
+            e.stopImmediatePropagation();
+        } else {
+            if (open_vals !== JSON.stringify( local_editor.get() )) {
+                $(this).css('color', 'black');
+                $(this).css('background-color', 'yellow');
+                row_update = true;
 
-        // Depending on the event triggering blur we're better off manually triggering the submit.
-        local_editor.submit();
+            } else {
+                row_update = false;
+            }
+
+            $(this).tooltip('hide');
+
+            // Depending on the event triggering blur we're better off manually triggering the submit.
+            local_editor.submit();
+        }
     });
 
     local_editor.on('open', function() {
