@@ -358,9 +358,16 @@ jQuery(document).ready(function() {
         }
     });
 
+    ajax_editor.on('preSubmit', function(e, data, action) {
+        $('#panel_sample_metadata').addClass('loading');
+        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-refresh glyphicon-spin"></span></h3>');
+    });
+
     ajax_editor.on('postSubmit', function (e, json, data, action, xhr) {
+        $('#panel_sample_metadata').removeClass('loading');
         if (json.error) {
             console.log("More errors!");
+            $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
             Cookies.remove('sample_metadata');
 
             tables_json = JSON.parse(json.errors_datatable);
@@ -388,9 +395,17 @@ jQuery(document).ready(function() {
         });
     });
 
-     $('#metadata_file_upload').on('filebatchuploaderror', function(event, data, msg) {
-        var response = data.response;
+    $('#metadata_file_upload').on('filelock', function(event, filestack, extraData) {
+        $('#panel_sample_metadata').addClass('loading')
+        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-refresh glyphicon-spin"></span></h3>');
+    });
 
+    $('#metadata_file_upload').on('fileunlock', function(event, filestack, extraData) {
+        $('#panel_sample_metadata').removeClass('loading')
+    });
+
+    $('#metadata_file_upload').on('filebatchuploaderror', function(event, data, msg) {
+        var response = data.response;
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
         Cookies.remove('sample_metadata');
 
@@ -470,6 +485,7 @@ jQuery(document).ready(function() {
      
      $('#metadata_file_upload').on('filebatchuploadsuccess', function(event, files, extra) {
         $('#panel_sample_metadata .panel-body').slideUp();
+        $('#panel_sample_metadata').removeClass('loading');
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
         Cookies.set('sample_metadata', 1);
 
