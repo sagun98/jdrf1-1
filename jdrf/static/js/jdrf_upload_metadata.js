@@ -2,7 +2,7 @@
  * Javascript needed for the metadata upload functionality of the JDRF MIBC website.
  */
 
- jQuery(document).ready(function() {
+jQuery(document).ready(function() {
     $.ajaxSetup({beforeSend: function(xhr, settings){
         xhr.setRequestHeader('X-CSRFToken', 
                              $("input[name='csrfmiddlewaretoken']").val());
@@ -315,20 +315,32 @@
     var open_vals = "";
     var table_json = "";
 
-    $('#metadata_file_preview').on('blur', 'tbody td:not(:first-child):not(div)', function(e) {
-        if (open_vals !== JSON.stringify( local_editor.get() )) {
-            $(this).css('color', 'black');
-            $(this).css('background-color', 'yellow');
-            row_update = true;
-
-        } else {
-            row_update = false;
+    // Because Firefox and Safari handle blur a little different need this here
+    // Also handle when someone hits the 'Escape' key when editing.
+    $('#metadata_file_preview').on('keydown', 'tbody td:not(:first-child):not(div)', function(e) {
+        if (e.which == 13) {
+            $(this).blur();
         }
+    });
 
-        $(this).tooltip('hide');
+    $('#metadata_file_preview').on('blur', 'tbody td:not(:first-child):not(div)', function(e) {
+        if (e.which == 0 && row_update == false) {
+            e.stopImmediatePropagation();
+        } else {
+            if (open_vals !== JSON.stringify( local_editor.get() )) {
+                $(this).css('color', 'black');
+                $(this).css('background-color', 'yellow');
+                row_update = true;
 
-        // Depending on the event triggering blur we're better off manually triggering the submit.
-        local_editor.submit();
+            } else {
+                row_update = false;
+            }
+
+            $(this).tooltip('hide');
+
+            // Depending on the event triggering blur we're better off manually triggering the submit.
+            local_editor.submit();
+        }
     });
 
     local_editor.on('open', function() {
@@ -346,9 +358,16 @@
         }
     });
 
+    ajax_editor.on('preSubmit', function(e, data, action) {
+        $('#panel_sample_metadata').addClass('loading');
+        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-refresh glyphicon-spin"></span></h3>');
+    });
+
     ajax_editor.on('postSubmit', function (e, json, data, action, xhr) {
+        $('#panel_sample_metadata').removeClass('loading');
         if (json.error) {
             console.log("More errors!");
+            $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
             Cookies.remove('sample_metadata');
 
             tables_json = JSON.parse(json.errors_datatable);
@@ -376,9 +395,17 @@
         });
     });
 
-     $('#metadata_file_upload').on('filebatchuploaderror', function(event, data, msg) {
-        var response = data.response;
+    $('#metadata_file_upload').on('filelock', function(event, filestack, extraData) {
+        $('#panel_sample_metadata').addClass('loading')
+        $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-refresh glyphicon-spin"></span></h3>');
+    });
 
+    $('#metadata_file_upload').on('fileunlock', function(event, filestack, extraData) {
+        $('#panel_sample_metadata').removeClass('loading')
+    });
+
+    $('#metadata_file_upload').on('filebatchuploaderror', function(event, data, msg) {
+        var response = data.response;
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
         Cookies.remove('sample_metadata');
 
@@ -458,6 +485,7 @@
      
      $('#metadata_file_upload').on('filebatchuploadsuccess', function(event, files, extra) {
         $('#panel_sample_metadata .panel-body').slideUp();
+        $('#panel_sample_metadata').removeClass('loading');
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
         Cookies.set('sample_metadata', 1);
 
