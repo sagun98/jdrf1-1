@@ -273,14 +273,17 @@ def process_files(request):
     logger, user, user_full_name, user_email, upload_folder, process_folder = get_user_and_folders_plus_logger(request, full_user_info=True)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
    
+    files_nonempty = process_data.get_recursive_files_nonempty(upload_folder,include_path=False,recursive=False)
+
     # Var to keep track of our workflow status. Needed so we can clear our some cookies
     # on workflow success.
-    success = False
+    success = False if len(files_nonempty) > 0 else True
+
     # set the default responses
     responses={"message1":[],"message2":[]}
  
     responses["raw_input"]="The following raw files have been uploaded and are ready to verify:\n"
-    responses["raw_input"]+="\n".join(process_data.get_recursive_files_nonempty(upload_folder,include_path=False,recursive=False))+"\n"
+    responses["raw_input"]+="\n".join(files_nonempty)+"\n"
 
     if request.method == 'POST' and not "refresh" in request.POST:
         logger.info("Post from process page received")
@@ -341,7 +344,7 @@ def process_files(request):
         responses["refresh_button"] = 1
     
     response = render(request, 'process.html', responses)
-    if success:
+    if success and request.COOKIES.get('sample_metadata', False):
         response.delete_cookie('study_metadata')
         response.delete_cookie('sample_metadata')
 
