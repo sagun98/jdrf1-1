@@ -228,6 +228,7 @@ jQuery(document).ready(function() {
        scrollY: '425px',
        scrollX: '400px',
        scrollCollapse: false,
+       order: [],
        columns: [
            {data: 'sample_id'},
            {data: 'host_subject_id'},
