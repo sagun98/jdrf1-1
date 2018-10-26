@@ -2,6 +2,102 @@
  * Javascript needed for the metadata upload functionality of the JDRF MIBC website.
  */
 
+// Dragging DOM elements
+// Credit: https://css-tricks.com/snippets/jquery/draggable-without-jquery-ui/
+(function($) {
+    $.fn.drags = function(opt) {
+
+        opt = $.extend({handle:"",cursor:"move"}, opt);
+
+        if(opt.handle === "") {
+            var $el = this;
+        } else {
+            var $el = this.find(opt.handle);
+        }
+
+        return $el.css('cursor', opt.cursor).on("mousedown", function(e) {
+            if(opt.handle === "") {
+                var $drag = $(this).addClass('draggable');
+            } else {
+                var $drag = $(this).addClass('active-handle').parent().addClass('draggable');
+            }
+            var z_idx = $drag.css('z-index'),
+                drg_h = $drag.outerHeight(),
+                drg_w = $drag.outerWidth(),
+                pos_y = $drag.offset().top + drg_h - e.pageY,
+                pos_x = $drag.offset().left + drg_w - e.pageX;
+            $drag.css('z-index', 1000).parents().on("mousemove", function(e) {
+                $('.draggable').offset({
+                    top:e.pageY + pos_y - drg_h,
+                    left:e.pageX + pos_x - drg_w
+                }).on("mouseup", function() {
+                    $(this).removeClass('draggable').css('z-index', z_idx);
+                });
+            });
+            e.preventDefault(); // disable selection
+        }).on("mouseup", function() {
+            if(opt.handle === "") {
+                $(this).removeClass('draggable');
+            } else {
+                $(this).removeClass('active-handle').parent().removeClass('draggable');
+            }
+        });
+
+    }
+})(jQuery);
+
+/**
+ * Takes an array of errors from the sample metadata validation and populates 
+ * all the widgets on our upload_metadata page to allow the user to jump to the pages
+ * in the DataTable with the error.
+ */
+function populateErrorsList(table, response) {
+    $('#errors-count').html('<b>' + response.errors_list.length + '</b>');
+    $('#errors-list ul').empty();
+
+    var error_list_html = "";
+    response.errors_list.slice(0,10).forEach(function(err) {
+        error_list_html += "<li data-row=\"" + err.row + "\" data-col=\"" + err.col + "\"><span class='error-link'>" 
+                            + "<b>Row</b>: " + (err.row+1) + ", <b>Column</b>: " + err.col + " - " + err.mesg + "</span></div></li>";
+    });
+
+    $('#errors-list ul').html(error_list_html);
+    $('#errors-list li').on('click', function(e) {
+        var error_row = $(this).data('row');
+        var error_col = $(this).data('col');
+
+        // We break pages up by 12 so we want to figure out what our page number is based off of that
+        // TODO: The page num should probably be a var somewhere in case we change it in the DataTables config
+        var page_num = Math.floor(error_row / 20)
+        table.page(page_num).draw(false);
+        //table.row(error_row).scrollTo(false);
+
+        var col_idx = table.column(error_col + ':name').index()
+        var cell_node = table.cell(error_row, col_idx).node();
+
+        $('td.selected').removeClass('selected')
+        $(cell_node).addClass('selected');
+        setTimeout(function() {
+            $(cell_node).removeClass('selected');
+        }, 5000);
+
+
+        $('div.dataTables_scrollBody').scrollTop(0).scrollTop($(cell_node).position().top);
+        $('div.dataTables_scrollBody').scrollLeft(0).scrollLeft($(cell_node).position().left);
+    });
+}
+
+/**
+ * Updates the sample metadata errors DataTable with new error rows.
+ */
+function updateErrorsDataTable(table, response) {
+    tables_json = JSON.parse(response.errors_datatable);
+    table.clear()
+    table.rows.add(tables_json, false).draw();
+    //$('#metadata_file_preview').dataTable().fnAdjustColumnSizing()
+    table.columns.adjust().draw();
+}
+
 jQuery(document).ready(function() {
     $.ajaxSetup({beforeSend: function(xhr, settings){
         xhr.setRequestHeader('X-CSRFToken', 
@@ -10,6 +106,8 @@ jQuery(document).ready(function() {
 
     // Hope this doesn't break the datatables error tooltips...
     $('[data-toggle="tooltip"]').tooltip()
+
+    $('#error-list-modal').drags({ handle: ".modal-header" });
 
     var editor_opts = {
         table: "#metadata_file_preview",
@@ -46,7 +144,6 @@ jQuery(document).ready(function() {
     };
 
     var local_editor = new $.fn.dataTable.Editor(editor_opts);
-    
     var ajax_editor = new $.fn.dataTable.Editor(
         $.extend(true, {
             ajax: "/metadata/sample",
@@ -91,6 +188,7 @@ jQuery(document).ready(function() {
             $('#paired_id').val("");
         }
     })
+
     // On page load we want to see if a cookie exists to indicate study metadata has been created for this file.
     if (Cookies.get('study_metadata') == '1') {
         // Need to do an AJAX request here to parse the contents of our CSV file and fill in 
@@ -189,7 +287,7 @@ jQuery(document).ready(function() {
                     Cookies.set('study_metadata', "1");
                 },
                 error: function(data) {
-                    // Do stuff to handle errors here
+                    console.log("Yippidty do daaa");
                 }
             })
 
@@ -220,44 +318,44 @@ jQuery(document).ready(function() {
        dom: "<'row'<'#edit_buttons.col-md-4 col-md-offset-8'B>>" +
             "<'row'<'col-sm-6'l><'col-sm-6'f>>" +
             "<'row'<'col-sm-12'tr>>" +
-            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
-       pageLength: 12,
+            "<'row'<'col-sm-5'i><'#errors_list_button.col-md-2'><'col-sm-5'p>>",
+       pageLength: 20,
        searching: false,
        deferLoading: 0,
        lengthChange: false,
-       scrollY: '425px',
-       scrollX: '400px',
+       scrollY: 425,
+       scrollX: 400,
        scrollCollapse: false,
        order: [],
        columns: [
-           {data: 'sample_id'},
-           {data: 'host_subject_id'},
-           {data: 'subject_age'},
-           {data: 'subject_sex'},
-           {data: 'ethnicity'},
-           {data: 'collection_date'},
-           {data: 'host_body_mass_index'},
-           {data: 'host_diet'},
-           {data: 'host_disease'},
-           {data: 'host_body_product'},
-           {data: 'host_family_relationship'},
-           {data: 'host_genotype'},
-           {data: 'host_phenotype'},
-           {data: 'gastrointest_disord'},
-           {data: 'ihmc_medication_code'},
-           {data: 'subject_tax_id'},
-           {data: 'source_material_id'},
-           {data: 'isolation_source'},
-           {data: 'samp_mat_process'},
-           {data: 'samp_store_dur'},
-           {data: 'samp_store_temp'},
-           {data: 'samp_vol_mass'},
-           {data: 'variable_region'},
-           {data: 'organism_count'},
-           {data: 'sequencer'},
-           {data: 'read_number'},
-           {data: 'filename'},
-           {data: 'md5_checksum'}
+           {data: 'sample_id', name: 'sample_id'},
+           {data: 'host_subject_id', name: 'host_subject_id'},
+           {data: 'subject_age', name: 'subject_age'},
+           {data: 'subject_sex', name: 'subject_sex'},
+           {data: 'ethnicity', name: 'ethnicity'},
+           {data: 'collection_date', name: 'collection_date'},
+           {data: 'host_body_mass_index', name: 'host_body_mass_index'},
+           {data: 'host_diet', name: 'host_diet'},
+           {data: 'host_disease', name: 'host_disease'},
+           {data: 'host_body_product', name: 'host_body_product'},
+           {data: 'host_family_relationship', name: 'host_family_relationship'},
+           {data: 'host_genotype', name: 'host_genotype'},
+           {data: 'host_phenotype', name: 'host_phenotype'},    
+           {data: 'gastrointest_disord', name: 'gastroinstest_disord'},
+           {data: 'ihmc_medication_code', name: 'ihmc_medication_code'},
+           {data: 'subject_tax_id', name: 'subject_tax_id'},
+           {data: 'source_material_id', name: 'source_material_id'},
+           {data: 'isolation_source', name: 'isolation_source'},
+           {data: 'samp_mat_process', name: 'samp_mat_process'},
+           {data: 'samp_store_dur', name: 'samp_store_dur'},
+           {data: 'samp_store_temp', name: 'samp_store_temp'},
+           {data: 'samp_vol_mass', name: 'samp_vol_mass'},
+           {data: 'variable_region', name: 'variable_region'},
+           {data: 'organism_count', name: 'organism_count'},
+           {data: 'sequencer', name: 'sequencer'},
+           {data: 'read_number', name: 'read_number'},
+           {data: 'filename', name: 'filename'},
+           {data: 'md5_checksum', name: 'md5_checksum'}
        ],
        columnDefs: [
            {
@@ -311,6 +409,18 @@ jQuery(document).ready(function() {
            }
        ]
     });
+
+    $('div#errors_list_button').html('<button type="button" class="btn btn-default" data-backdrop="false" data-toggle="modal" ' +
+                                     'data-target="#error-list-modal"><span class="glyphicon glyphicon-exclamation-sign"' +
+                                     'aria-hidden="true"></span> Show Error List</button>');
+
+    $('div#errors_list_button button').on('click', function(e) {
+        // This is pretty ugly but is my hack to get around our dialog covering the background and not letting us click...
+        var dialog_left_pos = $('#error-list-modal .modal-content').position().left;
+        if (dialog_left_pos <= 0) {
+            $('#error-list-modal .modal-content').css('left', 250);
+        }
+    })
 
     var changed_rows = [];
     var open_vals = "";
@@ -367,15 +477,11 @@ jQuery(document).ready(function() {
     ajax_editor.on('postSubmit', function (e, json, data, action, xhr) {
         $('#panel_sample_metadata').removeClass('loading');
         if (json.error) {
-            console.log("More errors!");
             $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
             Cookies.remove('sample_metadata');
 
-            tables_json = JSON.parse(json.errors_datatable);
-            table.clear()
-            table.rows.add(tables_json, false).draw();
-
-            $('#metadata_file_preview').dataTable().fnAdjustColumnSizing()
+            populateErrorsList(table, json);
+            updateErrorsDataTable(table, json);
         } else {
             $('#datatables_div').hide();
             $('#error_spreadsheet').addClass('hidden')
@@ -462,9 +568,7 @@ jQuery(document).ready(function() {
             $('#date_format_audit').addClass('hidden')
             Cookies.remove('sample_metadata');
 
-            tables_json = JSON.parse(response.errors_datatable);
-            table.clear();
-            table.rows.add(tables_json, false);
+            populateErrorsList(table, response);
 
             $('#validation_error_single').addClass('hidden');
             $('#error_spreadsheet').removeClass('hidden')
@@ -472,8 +576,9 @@ jQuery(document).ready(function() {
 
             $('#validation').css('width', '100%');
             $('#validation').removeClass('hidden');
-            $('#metadata_file_preview').dataTable().fnAdjustColumnSizing()
             $("#edit_buttons").hide();
+
+            updateErrorsDataTable(table, response);
         }
      });
 

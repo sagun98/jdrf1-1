@@ -1,4 +1,5 @@
 
+import csv
 import sys
 import os
 import threading
@@ -152,7 +153,17 @@ def validate_study_metadata(metadata_dict, logger):
     return (is_valid, metadata_df, error_context)
 
 
-def validate_sample_metadata(metadata_file, output_folder, logger):
+def _metadata_is_csv_file(metadata_file):
+    """ Verifies whether or not the supplied metadata file is in CSV format.
+    """
+    dialect = csv.Sniffer().sniff(metadata_file.read().decode('utf-8'), [','])
+    sep = dialect.delimiter
+    metadata_file.seek(0)
+
+    return True if sep == "," else False
+
+
+def validate_sample_metadata(metadata_file, output_folder, logger, sep=None):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
@@ -162,8 +173,11 @@ def validate_sample_metadata(metadata_file, output_folder, logger):
     error_context = {}
     metadata_df = None
 
+    if not sep:
+       sep = "," if _metadata_is_csv_file(metadata_file) else "\t"
+
     try:
-        metadata_df = pd.read_csv(metadata_file, keep_default_na=False, parse_dates=['collection_date'])
+        metadata_df = pd.read_csv(metadata_file, keep_default_na=False, parse_dates=['collection_date'], sep=sep)
 
         ## Before we get to validation we need to be able to handle "slim" metadata spreadsheets that 
         ## include just the required fields.
@@ -229,6 +243,8 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
         else:
             (errors_metadata_df, errors_json) = errors_to_json(errors, metadata_df.copy(deep=True))
             error_context['errors_datatable'] = errors_json
+            error_context['errors_list'] = [dict(row=err.row, col=err.column, mesg=err.message) for err in errors]
+            #error_context['errors_list'] = [[err.row, err.column, err.message] for err in errors]
 
             if output_folder:
                 error_context['errors_file'] = errors_to_excel(errors, metadata_df.copy(deep=True), output_folder)

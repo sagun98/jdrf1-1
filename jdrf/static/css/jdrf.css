@@ -247,3 +247,76 @@ tr {
         transform: rotate(359deg);
     }
 }
+
+#error-list-modal {
+    position: relative;
+}
+
+#error-list-modal .modal-dialog {
+    position: fixed;
+    width: 35%;
+    margin: 0 0 0 -250px;
+    padding: 10px;
+}
+
+#error-list-modal .modal-header{
+    height:30px;background-color:#444;
+    color:#ddd;
+}
+
+#error-list-modal .modal-title{
+    margin-top:-10px;
+    font-size:16px
+}
+
+#error-list-modal .modal-header .close{
+    margin-top:-10px;
+    color:#fff;
+}
+
+#errors_list_button {
+    padding-top: 2px;
+}
+
+#errors-list ul {
+    padding: 5px 0 0 0;
+    list-style-type: none;
+}
+
+#errors-list ul li {
+    text-overflow: ellipsis; 
+    overflow: hidden; 
+    white-space: nowrap;
+}
+
+#errors-list .error-link {
+    cursor:pointer;
+    color: #327AB7;
+}
+
+#errors-list .error-link:hover {
+    color: #444444; /* Change the value to with anchors hover color */
+}
+
+td.selected {
+    display: inline-block;
+    -webkit-animation: pulse-border 1s infinite;
+    -moz-animation: pulse-border 1s infinite;
+    -ms-animation: pulse-border 1s infinite;
+    animation: pulse-border 1s infinite;
+}
+
+@-webkit-keyframes pulse-border {
+    from, to { box-shadow: 0 0 0 0 #3681f9;}
+    50% { box-shadow: 0 0 0 4px #3681f9; }
+}
+
+@-moz-keyframes pulse-border {
+    from, to { box-shadow: 0 0 0 0 #3681f9; overflow: visible }
+    50% { box-shadow: 0 0 0 4px #3681f9; overflow: visible }
+}
+
+@keyframes pulse-border {
+    from, to { box-shadow: 0 0 0 0 #3681f9; }
+    50% { box-shadow: 0 0 0 4px #3681f9; }
+}

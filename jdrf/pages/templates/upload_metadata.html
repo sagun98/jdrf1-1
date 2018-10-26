@@ -71,6 +71,23 @@
     </div>
   </div>
 
+  <div id="error-list-modal" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Validation Errors</h4>
+        </div>
+        <div class="modal-body">
+          <span>This list contains up to the first ten errors. Click on an error to jump to its entry in the validation table.</span>
+          <div id="errors-list">
+            <ul></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- This is a hidden modal pop-up containing some information about the analysis description textarea -->
   <div class="modal fade" id="analysis_desc_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">
@@ -192,8 +209,8 @@
             <div class="form-group has-feedback">
               <label for="paired" class="control-label">Paired-end Identifier</label>
               <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="Paired-end identifier (i.e. R1 for seqA_R1.fq and seqB_R2.fq)"></span>
-              <input type="text" class="form-control" id="paired_id" ,
-                name="paired_id" , data-pair-identifier="" data-error="Please provide a valid paired-end identifier (i.e. R1 or 1)."
+              <input type="text" class="form-control" id="paired_id" , name="paired_id" ,
+                data-pair-identifier="" data-error="Please provide a valid paired-end identifier (i.e. R1 or 1)."
                 placeholder="R1">
               <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
               <div class="help-block with-errors"></div>
@@ -281,10 +298,11 @@
         </div>
         <div id="validation" class="hidden">
           <h3>Validation </h3>
-          <p>Errors in the submitted metadata file are displayed below.
-            Please correct errors and resubmit file.</p>
-          <span id="error_spreadsheet">A spreadsheet containing all validation errors can be downloaded <a href="/download-file/sample_metadata.errors.xlsx">here</a>.</span>
-
+          <p><span id="errors-count"></span> error(s) found in the submitted metadata file. Please correct errors using
+            the table below or resubmit a corrected file.</p>
+          <span id="error_spreadsheet">A spreadsheet containing all validation errors can be downloaded <a href="/download-file/sample_metadata.errors.xlsx">here</a>.
+          </span>
+          <br />
           <div id="validation_error_single" class="alert alert-danger hidden"></div>
           <div id="datatables_div">
             <table id="metadata_file_preview" class="table table-striped table-bordered" cellspacing="0" width="100%">
