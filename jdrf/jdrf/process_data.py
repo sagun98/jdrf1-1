@@ -11,6 +11,7 @@ import re
 import smtplib
 import socket
 from email.mime.text import MIMEText
+from xlrd import open_workbook, XLRDError
 
 from django.conf import settings
 
@@ -163,6 +164,19 @@ def _metadata_is_csv_file(metadata_file):
     return True if sep == "," else False
 
 
+def _metadata_is_excel_file(metadata_file):
+    """ Verifies whether or not the supplied metadata file is an Excel spreadsheet """
+    is_excel = False
+
+    try:
+        book = open_workbook(filename=None, file_contents=metadata_file.read())
+        is_excel = True
+    except XLRDError as e:
+        pass
+
+    return is_excel
+
+
 def validate_sample_metadata(metadata_file, output_folder, logger, sep=None):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
@@ -172,12 +186,17 @@ def validate_sample_metadata(metadata_file, output_folder, logger, sep=None):
     is_valid = False
     error_context = {}
     metadata_df = None
+    is_excel = _metadata_is_excel_file(metadata_file)
 
-    if not sep:
+    if not sep and not is_excel:
        sep = "," if _metadata_is_csv_file(metadata_file) else "\t"
 
     try:
-        metadata_df = pd.read_csv(metadata_file, keep_default_na=False, parse_dates=['collection_date'], sep=sep)
+        if is_excel:
+            # When opening an Excel spreadsheet we only look at the first worksheet and ignore any others.
+            metadata_df = pd.read_excel(metadata_file, keep_default_na=False, parse_dates=['collection_date'])
+        else:
+            metadata_df = pd.read_csv(metadata_file, keep_default_na=False, parse_dates=['collection_date'], sep=sep)
 
         ## Before we get to validation we need to be able to handle "slim" metadata spreadsheets that 
         ## include just the required fields.
@@ -204,7 +223,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger, sep=None):
         if "collection_date" in ve.message:
             error_context['error_msg'] = "Metadata file is malformed and does not match JDRF metadata schema."
         else:
-            raise
+            raise Exception
     except Exception as e:
         # If we have an error here we don't want to leave the user hanging
         error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
@@ -244,7 +263,6 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
             (errors_metadata_df, errors_json) = errors_to_json(errors, metadata_df.copy(deep=True))
             error_context['errors_datatable'] = errors_json
             error_context['errors_list'] = [dict(row=err.row, col=err.column, mesg=err.message) for err in errors]
-            #error_context['errors_list'] = [[err.row, err.column, err.message] for err in errors]
 
             if output_folder:
                 error_context['errors_file'] = errors_to_excel(errors, metadata_df.copy(deep=True), output_folder)
