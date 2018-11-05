@@ -22,7 +22,7 @@ study_schema = Schema([
     Column('env_material', [MatchesPatternValidation(r'ENVO:\d+') | InListValidation([''])]),
     Column('host_tissue_sampled', [InListValidation(['']) | MatchesPatternValidation(r'BTO:\d+')]),
     Column('animal_vendor', [LeadingWhitespaceValidation()]),
-    Column('paired', [InListValidation(['yes', 'no',''])]),
+    Column('paired', [InListValidation(['true', 'false'])]),
     Column('paired_id', [InListValidation(['']) | MatchesPatternValidation(r'[a-zA-Z0-9_.]+')])
 ])
 

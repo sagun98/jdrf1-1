@@ -207,12 +207,14 @@ jQuery(document).ready(function() {
                     $('#paired-end-div').addClass('hidden');
                     is_other_data_type = true;
                 } else {
+                    $('#paired option:eq(2)').prop('selected', true)
                     $('#paired-end-div').removeClass('hidden');
 
-                    if ($('#paired').val() === "yes") {
+                    if ($('#paired').val() === "true") {
                        $('#paired-id-div').removeClass('hidden');
+                       $('#paired option:eq(1)').prop('selected', true)
                     }
-                    
+ 
                     is_other_data_type = false;
                 }
             },
@@ -275,7 +277,7 @@ jQuery(document).ready(function() {
                 processData: false,
                 success: function(data) {
                     $('#validation_error_single').hide();
-                    
+
                     $('#panel_study_metadata .panel-body').slideUp();
                     $('#panel_study_metadata .panel-heading').html('<h3 class="panel-title">Study Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
                     $('#panel_study_metadata .panel-heading').on('click', function() {
