@@ -274,6 +274,8 @@ jQuery(document).ready(function() {
                 method: 'POST',
                 processData: false,
                 success: function(data) {
+                    $('#validation_error_single').hide();
+                    
                     $('#panel_study_metadata .panel-body').slideUp();
                     $('#panel_study_metadata .panel-heading').html('<h3 class="panel-title">Study Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
                     $('#panel_study_metadata .panel-heading').on('click', function() {
@@ -287,7 +289,11 @@ jQuery(document).ready(function() {
                     Cookies.set('study_metadata', "1");
                 },
                 error: function(data) {
-                    console.log("Yippidty do daaa");
+                    // If something goes wrong here we want to let the user know and to likely contact us for help.
+                    $('#panel_study_metadata .panel-heading').html('<h3 class="panel-title">Study Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
+                    $('#validation_error_single').html("<div class='glyphicon glyphicon-ban-circle'></div>" +
+                                                       "<div>Error processing study metadata. Please contact JDRF MIBC support.</div>");
+                    $('#validation_error_single').show();
                 }
             })
 
