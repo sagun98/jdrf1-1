@@ -214,11 +214,13 @@ def upload_sample_metadata(request):
         # If we get a POST request and it contains the editor parameter we know that 
         # we are attempting to modify an existing metadata file in place.
         elif request.POST.get('action') == "edit":
+            logger.info('Processing metadata EDIT action')
+
             field_updates = request.POST.copy()
             del field_updates['action']
 
             updated_metadata_file = process_data.update_metadata_file(field_updates, upload_folder, logger)
-            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(updated_metadata_file, upload_folder, logger)
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(updated_metadata_file, upload_folder, logger, sep=",")
             
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'
