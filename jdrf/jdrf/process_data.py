@@ -30,6 +30,7 @@ SixteenS_PROCESSES="1"
 SixteenS_THREADS="30"
 
 import pandas as pd
+import numpy as np
 
 from jdrf.metadata_schema import schemas, sample_optional_cols, mr_parse
 
@@ -498,7 +499,7 @@ def email_workflow_status(user,command,output_folder,workflow,user_name=None,use
 
 def get_study_metadata(study_file):
     """ Parses study metadata file and returns a pandas DataFrame representation of metadata """
-    return pd.read_csv(study_file).ix[0]
+    return pd.read_csv(study_file, dtype={'paired': np.bool}).ix[0]
 
 def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata_file,study_file):
     """ First run the md5sum steps then run the remainder of the workflow """
