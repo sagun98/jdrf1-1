@@ -155,22 +155,22 @@ def validate_study_metadata(metadata_dict, logger):
     return (is_valid, metadata_df, error_context)
 
 
-def _metadata_is_csv_file(metadata_file):
-    """ Verifies whether or not the supplied metadata file is in CSV format.
+def _is_csv_file(file):
+    """ Verifies whether or not the supplied file is in CSV format.
     """
-    dialect = csv.Sniffer().sniff(metadata_file.read().decode('utf-8'), [','])
+    dialect = csv.Sniffer().sniff(file.read().decode('utf-8'), [','])
     sep = dialect.delimiter
-    metadata_file.seek(0)
+    file.seek(0)
 
     return True if sep == "," else False
 
 
-def _metadata_is_excel_file(metadata_file):
-    """ Verifies whether or not the supplied metadata file is an Excel spreadsheet """
+def _is_excel_file(in_file):
+    """ Verifies whether or not the supplied file is an Excel spreadsheet """
     is_excel = False
 
     try:
-        book = open_workbook(filename=None, file_contents=metadata_file.read())
+        book = open_workbook(filename=None, file_contents=in_file.read())
         is_excel = True
     except XLRDError as e:
         pass
@@ -187,10 +187,10 @@ def validate_sample_metadata(metadata_file, output_folder, logger, sep=None):
     is_valid = False
     error_context = {}
     metadata_df = None
-    is_excel = _metadata_is_excel_file(metadata_file)
+    is_excel = _is_excel_file(metadata_file)
 
     if not sep and not is_excel:
-       sep = "," if _metadata_is_csv_file(metadata_file) else "\t"
+       sep = "," if _is_csv_file(metadata_file) else "\t"
 
     try:
         if is_excel:
@@ -307,20 +307,6 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
     # get the study metadata
     study_metadata = get_study_metadata(study_file)
 
-    # if study type is other, bypass verify
-    if study_metadata.sample_type == "other":
-        message="BYPASS VERIFICATION: The study type is OTHER so verification is not required.\n"
-        message+="NEXT STEP: The files are now ready to be processed.\n"
-        error_code = 0
-
-        # email status of verify
-        subject="data verify run by user "+user
-        send_email_update(subject,message)
-
-        # return the error code and message
-        return error_code, message
-
-
     # get all of the files that have been uploaded
     all_raw_files = set(get_recursive_files_nonempty(folder,recursive=False))
 
@@ -340,24 +326,39 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
     if len(list(metadata_files)) == 0:
         return 1, "ERROR: Unable to find any file names in the metadata. Please update metadata."
 
-    missing_from_metadata=all_raw_files.difference(metadata_files)
-    missing_from_raw=metadata_files.difference(all_raw_files)
+    # If study type is "other" data type we expect a tabular data file and we want
+    # to check to ensure at the minimum that the columns in the file match the 
+    # samples in the metadata.
+    #
+    # TODO: In the future we may want to come up with some way to validate any extra columns
+    # that exist in the uploaded file. We particularly want to make sure that no extra samples
+    # exist that should be in the sample metadata
+    if study_metadata.sample_type == "other":
+        metadata_samples = get_metadata_samples(metadat_file)
+        missing_samples=verify_samples_in_analysis_file(all_raw_files, metadata_samples)
 
-    message=""
-    if missing_from_metadata:
-        message="ERROR: The following raw files do not have metadata. Please update the metadata. Files: "+",".join(list(missing_from_metadata))
-    if missing_from_raw:
-        if message:
-            message+=" "
-        message+="ERROR: The following files in the metadata have not been uploaded. Please upload these files: "+",".join(list(missing_from_raw))
+        if missing_samples:
+            message="ERROR: The following samples are missing from uploaded files: " + ",".join(missing_samples)
+            error_code = 1
+    else:
+        missing_from_metadata=all_raw_files.difference(metadata_files)
+        missing_from_raw=metadata_files.difference(all_raw_files)
 
-    error_code = 1
-    if not message:
-        message="VERIFIED: All raw files have metadata.\n"
-        message+="VERIFIED: All files in the metadata have been uploaded.\n"
-        message+="SUCCESS! The metadata and raw files match.\n"
-        message+="NEXT STEP: The files are now ready to be processed.\n"
-        error_code = 0
+        message=""
+        if missing_from_metadata:
+            message="ERROR: The following raw files do not have metadata. Please update the metadata. Files: "+",".join(list(missing_from_metadata))
+        if missing_from_raw:
+            if message:
+                message+=" "
+            message+="ERROR: The following files in the metadata have not been uploaded. Please upload these files: "+",".join(list(missing_from_raw))
+
+        error_code = 1
+        if not message:
+            message="VERIFIED: All raw files have metadata.\n"
+            message+="VERIFIED: All files in the metadata have been uploaded.\n"
+            message+="SUCCESS! The metadata and raw files match.\n"
+            message+="NEXT STEP: The files are now ready to be processed.\n"
+            error_code = 0
 
     # email status of verify
     subject="data verify run by user "+user
@@ -500,6 +501,27 @@ def email_workflow_status(user,command,output_folder,workflow,user_name=None,use
 def get_study_metadata(study_file):
     """ Parses study metadata file and returns a pandas DataFrame representation of metadata """
     return pd.read_csv(study_file, dtype={'paired': np.bool}).ix[0]
+
+def get_metadata_samples(metadata_file):
+    """ Parses the sample metadata file and returns a list of all sample names """
+    return pd.read_csv(metadata_file)['sample_id'].tolist()    
+
+def verify_samples_in_analysis_files(raw_files, metadata_samples):
+    """ Parses over all analysis files uploaded of data type "other" and verifies that all samples 
+    listed in the sample metadata file are present across the analysis files.
+    """
+    analysis_cols = []
+
+    for raw_file in raw_files: 
+        if _is_excel(raw_file):
+            raw_df = pd.read_excel(raw_file)
+        else:
+            sep = "," if _is_csv_file(raw_file) else "\t"
+            raw_df = pd.read_csv(raw_file, sep=sep)
+
+        analysis_cols.extend(raw_df.columns.tolist())
+
+    return set(metadata_samples).difference(set(analysis_cols))
 
 def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata_file,study_file):
     """ First run the md5sum steps then run the remainder of the workflow """
