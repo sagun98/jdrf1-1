@@ -305,6 +305,8 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
         Then check that all files have metadata.
         Finally check that all files in the metadata exist. 
     """
+    message=""
+    error_code = 1
 
     # get the study metadata
     study_metadata = get_study_metadata(study_file)
@@ -328,6 +330,7 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
     if len(list(metadata_files)) == 0:
         return 1, "ERROR: Unable to find any file names in the metadata. Please update metadata."
 
+
     # If study type is "other" data type we expect a tabular data file and we want
     # to check to ensure at the minimum that the columns in the file match the 
     # samples in the metadata.
@@ -336,8 +339,10 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
     # that exist in the uploaded file. We particularly want to make sure that no extra samples
     # exist that should be in the sample metadata
     if study_metadata.sample_type == "other":
-        metadata_samples = get_metadata_samples(metadat_file)
-        missing_samples=verify_samples_in_analysis_file(all_raw_files, metadata_samples)
+        all_raw_files = [os.path.join(folder, raw_file) for raw_file in all_raw_files]
+
+        metadata_samples = get_metadata_samples(metadata_file)
+        missing_samples=verify_samples_in_analysis_files(all_raw_files, metadata_samples)
 
         if missing_samples:
             message="ERROR: The following samples are missing from uploaded files: " + ",".join(missing_samples)
@@ -346,7 +351,6 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
         missing_from_metadata=all_raw_files.difference(metadata_files)
         missing_from_raw=metadata_files.difference(all_raw_files)
 
-        message=""
         if missing_from_metadata:
             message="ERROR: The following raw files do not have metadata. Please update the metadata. Files: "+",".join(list(missing_from_metadata))
         if missing_from_raw:
@@ -355,12 +359,13 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
             message+="ERROR: The following files in the metadata have not been uploaded. Please upload these files: "+",".join(list(missing_from_raw))
 
         error_code = 1
-        if not message:
-            message="VERIFIED: All raw files have metadata.\n"
-            message+="VERIFIED: All files in the metadata have been uploaded.\n"
-            message+="SUCCESS! The metadata and raw files match.\n"
-            message+="NEXT STEP: The files are now ready to be processed.\n"
-            error_code = 0
+
+    if not message:
+        message="VERIFIED: All raw files have metadata.\n"
+        message+="VERIFIED: All files in the metadata have been uploaded.\n"
+        message+="SUCCESS! The metadata and raw files match.\n"
+        message+="NEXT STEP: The files are now ready to be processed.\n"
+        error_code = 0
 
     # email status of verify
     subject="data verify run by user "+user
@@ -515,13 +520,14 @@ def verify_samples_in_analysis_files(raw_files, metadata_samples):
     analysis_cols = []
 
     for raw_file in raw_files: 
-        if _is_excel(raw_file):
-            raw_df = pd.read_excel(raw_file)
-        else:
-            sep = "," if _is_csv_file(raw_file) else "\t"
-            raw_df = pd.read_csv(raw_file, sep=sep)
+        with open(raw_file, 'rb') as raw_fh:
+            if _is_excel_file(raw_fh):
+                raw_df = pd.read_excel(raw_fh)
+            else:
+                sep = "," if _is_csv_file(raw_fh) else "\t"
+                raw_df = pd.read_csv(raw_fh, sep=sep)
 
-        analysis_cols.extend(raw_df.columns.tolist())
+            analysis_cols.extend(raw_df.columns.tolist())
 
     return set(metadata_samples).difference(set(analysis_cols))
 
