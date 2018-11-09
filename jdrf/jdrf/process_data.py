@@ -549,8 +549,8 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
     study_metadata = get_study_metadata(study_file)
     logger.info("Starting workflow for study type: " + study_metadata.sample_type)
 
+    create_folder(md5sum_check)
     if study_metadata.sample_type != "other":
-        create_folder(md5sum_check)
         create_folder(visualizations) 
         create_folder(data_products)
 
@@ -571,8 +571,7 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
         "--input",upload_folder,"--output",md5sum_check,"--input-metadata",
         metadata_file,"--input-extension",extension]
     error_state = False
-    if study_metadata.sample_type != "other":
-        error_state = email_workflow_status(user,command,md5sum_check,"md5sum",user_name,user_email)
+    error_state = email_workflow_status(user,command,md5sum_check,"md5sum",user_name,user_email)
 
     # run the 16S workflow
     if study_metadata.sample_type == "16S":

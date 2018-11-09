@@ -37,9 +37,10 @@ def verify_checksum(task):
     try:
         md5sum = filter(lambda x: original_input == x[0], get_metadata_file_md5sums(task.depends[2].name))[0][1]
     except IndexError:
-        sys.stderr.write("ERROR: md5sum not found for sample: "+task.depends[0].name+"\n")
-        sys.stderr.write("\n".join([file+":"+sum for file,sum in get_metadata_file_md5sums(task.depends[2].name)]))
-        raise
+        error_msg = "ERROR: md5sum not found for sample: " + task.depends[0].name + "\n"
+        sys.stderr.write(error_msg)
+        sys.stderr.write("\n".join([file+":"+sum for file,sum in get_metadata_file_md5sums(task.depends[2].name)]) + "\n")
+        raise Exception(error_msg)
 
     # read in the md5sum computed on the raw file
     with open(task.depends[1].name) as file_handle:
@@ -53,7 +54,6 @@ def verify_checksum(task):
         sys.stderr.write("ERROR: Sums do not match")
         sys.stderr.write(new_sum)
         sys.stderr.write(md5sum)
-
 
 # create a workflow and get the arguments
 workflow = Workflow()
@@ -81,4 +81,3 @@ for in_file, sum_file, check_file in zip(input_files, md5sum_outputs, md5sum_che
         targets=[check_file])
 
 workflow.go()
-
