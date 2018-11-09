@@ -161,6 +161,7 @@ jQuery(document).ready(function() {
         if (value == "other") {
             $('#analysis_desc_div').removeClass('hidden');
             $('#paired-end-div').addClass('hidden');
+            $("#paired").val("false");
             is_other_data_type = true;
         } else {
             $('#analysis_desc').val("");

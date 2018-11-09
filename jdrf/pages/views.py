@@ -191,12 +191,7 @@ def upload_sample_metadata(request):
 
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
-            if not is_other_datatype:
-                (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
-            else:
-                is_valid = True
-                metadata_df = pd.read_csv(file, keep_default_na=False)
-                process_data.send_email_update("NEEDS REVIEW: Metadata","The user "+user+" has uploaded a metadata file of type OTHER. Please manually review.") 
+            (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
                                 
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'

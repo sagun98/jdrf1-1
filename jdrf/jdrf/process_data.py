@@ -155,12 +155,12 @@ def validate_study_metadata(metadata_dict, logger):
     return (is_valid, metadata_df, error_context)
 
 
-def _is_csv_file(file):
+def _is_csv_file(in_file):
     """ Verifies whether or not the supplied file is in CSV format.
     """
-    dialect = csv.Sniffer().sniff(file.read().decode('utf-8'), [','])
+    dialect = csv.Sniffer().sniff(in_file.read().decode('utf-8'), [',', '\t'])
     sep = dialect.delimiter
-    file.seek(0)
+    in_file.seek(0)
 
     return True if sep == "," else False
 
@@ -174,6 +174,8 @@ def _is_excel_file(in_file):
         is_excel = True
     except XLRDError as e:
         pass
+    finally:
+       in_file.seek(0)
 
     return is_excel
 
