@@ -15,7 +15,8 @@ RUN apt-get update -y && \
         python-pip \
         dialog \
         net-tools \
-	nginx
+	nginx \
+        cron
 
 # clone the django site and rename folder
 RUN git clone https://github.com/biobakery/jdrf1.git && \
@@ -30,7 +31,8 @@ RUN pip install --upgrade pip && \
     pip install django-widget-tweaks && \
     pip install fasteners && \
     pip install pronto && \
-    pip install whoosh
+    pip install whoosh && \
+    pip install pendulum
 
 # add supervisor conf
 RUN mkdir -pv /var/log/supervisord
@@ -39,6 +41,10 @@ ADD etc/supervisor.ini /etc/supervisord.conf
 # replace nginx config to proxy gunicorn
 RUN rm -v /etc/nginx/nginx.conf
 ADD etc/jdrf_nginx.conf /etc/nginx/nginx.conf
+
+# Add our crontab that will check for datasets to be released
+ADD etc/crontab /etc/cron.d/jdrf-data-release-cron
+RUN chmod 0644 /etc/cron.d/jdrf-data-release-cron
 
 # install workflows dependencies
 RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
