@@ -125,7 +125,7 @@ def send_dataset_notifications(dataset_status):
         public_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[0], d[2].get('internal')) for d in datasets])
 
         release_msg = release_msg % (internal_release_dates, public_release_dates)
-        send_email_update("JDRF Data Release Update %s" % pendulum.now, release_msg, email)
+        send_email_update("Data Release Update %s" % pendulum.now, release_msg, to=email)
 
 
 archived_datasets = get_all_archived_data_sets(settings.ARCHIVE_FOLDER)

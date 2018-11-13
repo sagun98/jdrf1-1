@@ -45,6 +45,8 @@ ADD etc/jdrf_nginx.conf /etc/nginx/nginx.conf
 # Add our crontab that will check for datasets to be released
 ADD etc/crontab /etc/cron.d/jdrf-data-release-cron
 RUN chmod 0644 /etc/cron.d/jdrf-data-release-cron
+RUN crontab /etc/cron.d/jdrf-data-release-cron
+RUN touch /var/log/cron.log
 
 # install workflows dependencies
 RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
