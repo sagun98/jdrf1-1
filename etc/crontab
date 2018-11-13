@@ -1,1 +1,1 @@
-* * * * * echo "Hello world" >> /var/log/cron.log 2>&1
+0 0 1 * * /usr/bin/python /usr/local/src/bin/jdrf_check_data_release_status.py >> /var/log/cron.log 2>&1
