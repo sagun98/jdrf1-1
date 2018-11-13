@@ -594,7 +594,8 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
         "--key",settings.SSH_KEY,"--remote",settings.REMOTE_TRANSFER_SERVER,
         "--user",settings.REMOTE_TRANSFER_USER,
         "--study",study_metadata.study_id,"--output",archive_folder,"--output-transfer",
-        os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/"]
+        os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/",
+        "--study-type",study_metadata.sample_type]
     if not error_state:
         email_workflow_status(user,command,archive_folder,"archive and transfer",user_name,user_email)
 

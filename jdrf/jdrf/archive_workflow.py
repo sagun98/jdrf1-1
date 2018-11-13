@@ -15,6 +15,7 @@ workflow.add_argument("key", desc="the key file to use for the transfer", requir
 workflow.add_argument("user", desc="the user id for the transfer", required=True)
 workflow.add_argument("remote", desc="the remote host name for the transfer", required=True)
 workflow.add_argument("study", desc="the name of the study", required=True)
+workflow.add_argument("study-type", desc="the type of the study", required=True)
 workflow.add_argument("output-transfer", desc="the folder to transfer the data", required=True)
 args = workflow.parse_args()
 
@@ -34,15 +35,19 @@ task1=workflow.add_task(
 process_archive = archive_folder+"_processed"
 utilities.create_folders(process_archive)
 
-task2=workflow.add_task(
-    "mv [args[0]]/* [args[1]]/",
-    depends=task1,
-    args=[args.input_processed,process_archive])
+if study_type != "other":
+    task2=workflow.add_task(
+        "mv [args[0]]/* [args[1]]/",
+        depends=task1,
+        args=[args.input_processed,process_archive])
+    task3_depends = task2
+else:
+    task3_depends = task1
 
 # transfer the processed files to a named study folder on remote machine
 task3=workflow.add_task(
     "rsync --exclude '*.fastq*' --exclude '*.fq*' --exclude '*.fasta*' --exclude '*.fa*' --exclude '*.bam' --exclude '*.sam' --exclude '*.vcf*' --recursive -e 'ssh -i [args[0]] -l [args[1]]' [args[2]] [args[3]]:[args[4]]",
-    depends=task2,
+    depends=task3_depends,
     args=[args.key, args.user, process_archive, args.remote, args.output_transfer])
 
 workflow.go()
