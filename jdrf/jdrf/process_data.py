@@ -186,8 +186,6 @@ def validate_sample_metadata(metadata_file, output_folder, logger, action="uploa
     """
     logger=logging.getLogger('jdrf1')
 
-    logger.debug(metadata_file)
-
     is_valid = False
     is_excel = False
     error_context = {}
@@ -253,7 +251,6 @@ def _get_mismatched_columns(metadata_df, schema):
 
     return [extra_cols, missing_cols]
 
-
 def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
@@ -262,7 +259,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
 
     error_context = {}
     errors = schema.validate(metadata_df)
-    
+
     is_valid = False if errors else True
     if errors:
         if len(errors) == 1 and "columns" in str(errors[0]):

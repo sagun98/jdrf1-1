@@ -493,7 +493,11 @@ jQuery(document).ready(function() {
             updateErrorsDataTable(table, resp);
         } else {
             $('#datatables_div').hide();
-            $('#error_spreadsheet').addClass('hidden')
+            $('#error_spreadsheet').addClass('hidden');
+
+            if ($('#error-list-modal').hasClass('in')) {
+               $('#error-list-modal').modal('hide');
+            }
 
             $('#panel_sample_metadata .panel-body').slideUp();
             $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
@@ -596,6 +600,10 @@ jQuery(document).ready(function() {
         $('#validation').addClass('hidden');
         $('#upload_success').addClass('hidden');
         $('#date_format_audit').addClass('hidden');
+
+        if ($('#error-list-modal').hasClass('in')) {
+            $('#error-list-modal').modal('hide');
+        }
      });
      
      $('#metadata_file_upload').on('filebatchuploadsuccess', function(event, files, extra) {
