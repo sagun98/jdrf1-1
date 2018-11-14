@@ -483,14 +483,14 @@ jQuery(document).ready(function() {
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-refresh glyphicon-spin"></span></h3>');
     });
 
-    ajax_editor.on('postSubmit', function (e, json, data, action, xhr) {
+    ajax_editor.on('postSubmit', function (e, resp, data, action, xhr) {
         $('#panel_sample_metadata').removeClass('loading');
-        if (json.error) {
+        if (resp.error) {
             $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
             Cookies.remove('sample_metadata');
 
-            populateErrorsList(table, json);
-            updateErrorsDataTable(table, json);
+            populateErrorsList(table, resp);
+            updateErrorsDataTable(table, resp);
         } else {
             $('#datatables_div').hide();
             $('#error_spreadsheet').addClass('hidden')

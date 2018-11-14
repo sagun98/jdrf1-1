@@ -180,19 +180,24 @@ def _is_excel_file(in_file):
     return is_excel
 
 
-def validate_sample_metadata(metadata_file, output_folder, logger, sep=None):
+def validate_sample_metadata(metadata_file, output_folder, logger, action="upload", sep=None):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
     logger=logging.getLogger('jdrf1')
 
+    logger.debug(metadata_file)
+
     is_valid = False
+    is_excel = False
     error_context = {}
     metadata_df = None
-    is_excel = _is_excel_file(metadata_file)
 
-    if not sep and not is_excel:
-       sep = "," if _is_csv_file(metadata_file) else "\t"
+    if not sep:
+        is_excel = _is_excel_file(metadata_file)
+
+        if not is_excel:
+            sep = "," if _is_csv_file(metadata_file) else "\t"
 
     try:
         if is_excel:
@@ -231,6 +236,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger, sep=None):
         # If we have an error here we don't want to leave the user hanging
         error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
                                       "Please contant JDRF support for help with your metadata upload")
+        logger.error(str(e))
 
     return (is_valid, metadata_df, error_context)
 
