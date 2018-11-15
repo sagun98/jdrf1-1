@@ -15,7 +15,6 @@ workflow.add_argument("key", desc="the key file to use for the transfer", requir
 workflow.add_argument("user", desc="the user id for the transfer", required=True)
 workflow.add_argument("remote", desc="the remote host name for the transfer", required=True)
 workflow.add_argument("study", desc="the name of the study", required=True)
-workflow.add_argument("study-type", desc="the type of the study", required=True)
 workflow.add_argument("output-transfer", desc="the folder to transfer the data", required=True)
 args = workflow.parse_args()
 
@@ -39,7 +38,6 @@ task2=workflow.add_task(
     "mv [args[0]]/* [args[1]]/",
     depends=task1,
     args=[args.input_processed,process_archive])
-task3_depends = task2
 
 task3=workflow.add_task(
     "cp [args[0]]/metadata*.tsv [args[1]]/",

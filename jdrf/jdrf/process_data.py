@@ -261,14 +261,15 @@ def _validate_md5_checksums(metadata_df, errors):
     for (filename, rows) in metadata_df.groupby('filename'):
         if rows.md5_checksum.nunique() > 1:
             last_md5sum = rows.md5_checksum.iloc[0]
+
             for (idx, md5sum) in rows.md5_checksum.to_dict().iteritems():
-                if last_md5sum != row.md5_checksum:
+                if last_md5sum != md5sum:
                     errors.append(ValidationWarning(
-                        row = idx,
-                        column = "md5_checksum",
-                        message = ("MD5 checksum %s does not match "
-                                   "existing supplied MD5 checksum %s" 
-                                   % (md5sum, last_md5sum))
+                        row=idx,
+                        column="md5_checksum",
+                        value=md5sum,
+                        message=("Multiple MD5 checksums for file %s" 
+                                 % (filename))
                     ))
 
                     last_md5sum = md5sum
@@ -284,7 +285,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
 
     error_context = {}
     errors = schema.validate(metadata_df)
-    errors = _validate_md5sum_checksums(metadata_df, errors)
+    errors = _validate_md5_checksums(metadata_df, errors) if 'md5_checksum' in [c.name for c in schema.columns] else errors
 
     is_valid = False if errors else True
     if errors:
