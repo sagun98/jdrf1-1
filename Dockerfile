@@ -53,7 +53,7 @@ RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
 
 # install modules needed for validation
 RUN pip install pandas && \
-    pip install pathlib && \
+    pip install pathlib2 && \
     pip install typing && \
     pip install git+https://github.com/carze/PandasSchema.git && \
     pip install Jinja2 && \
