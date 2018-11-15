@@ -161,6 +161,7 @@ jQuery(document).ready(function() {
         if (value == "other") {
             $('#analysis_desc_div').removeClass('hidden');
             $('#paired-end-div').addClass('hidden');
+            $("#paired").val("false");
             is_other_data_type = true;
         } else {
             $('#analysis_desc').val("");
@@ -482,17 +483,21 @@ jQuery(document).ready(function() {
         $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-refresh glyphicon-spin"></span></h3>');
     });
 
-    ajax_editor.on('postSubmit', function (e, json, data, action, xhr) {
+    ajax_editor.on('postSubmit', function (e, resp, data, action, xhr) {
         $('#panel_sample_metadata').removeClass('loading');
-        if (json.error) {
+        if (resp.error) {
             $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-remove red"></span></h3>');
             Cookies.remove('sample_metadata');
 
-            populateErrorsList(table, json);
-            updateErrorsDataTable(table, json);
+            populateErrorsList(table, resp);
+            updateErrorsDataTable(table, resp);
         } else {
             $('#datatables_div').hide();
-            $('#error_spreadsheet').addClass('hidden')
+            $('#error_spreadsheet').addClass('hidden');
+
+            if ($('#error-list-modal').hasClass('in')) {
+               $('#error-list-modal').modal('hide');
+            }
 
             $('#panel_sample_metadata .panel-body').slideUp();
             $('#panel_sample_metadata .panel-heading').html('<h3 class="panel-title">Sample Metadata <span class="pull-right glyphicon glyphicon-ok green"></span></h3>');
@@ -595,6 +600,10 @@ jQuery(document).ready(function() {
         $('#validation').addClass('hidden');
         $('#upload_success').addClass('hidden');
         $('#date_format_audit').addClass('hidden');
+
+        if ($('#error-list-modal').hasClass('in')) {
+            $('#error-list-modal').modal('hide');
+        }
      });
      
      $('#metadata_file_upload').on('filebatchuploadsuccess', function(event, files, extra) {

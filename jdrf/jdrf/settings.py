@@ -40,6 +40,10 @@ METADATA_VALIDATION_FILE_NAME = "sample_metadata.errors.xlsx"
 METADATA_VALIDATION_FILE_NAME_CSV = "metadata.error.csv"
 METADATA_EDIT_FILE_NAME = "metadata.update.csv"
 
+# Some base settings for our data release policy
+RELEASE_INTERNAL_MONTHS = 3
+RELEASE_PUBLIC_MONTHS = 6
+
 # function to get environment variables
 def get_env(key):
     try:
@@ -57,7 +61,6 @@ logger.info("Setting are being applied")
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/

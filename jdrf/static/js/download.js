@@ -41,7 +41,7 @@ function centerModal() {
 }
 
 function deleteTableRows(deleted_file) {
-    var target_td = $("td:contains('" + deleted_file + "')");
+    var target_td = $("#uploaded-files-table").find("td:contains('" + deleted_file + "')");
     var target_tr = target_td.parent();
 
     target_tr.addClass('flash-delete');
@@ -351,7 +351,6 @@ jQuery(document).ready(function() {
             });
         }
     });
-    
 
     $('#delete-checked').on('click', function(e) {
         $('#to-delete-list').empty();

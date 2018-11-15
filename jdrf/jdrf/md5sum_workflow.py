@@ -6,22 +6,6 @@ import sys
 from anadama2 import Workflow
 from biobakery_workflows import utilities
 
-# create a workflow and get the arguments
-workflow = Workflow()
-workflow.add_argument("input-metadata", desc="the metadata file", required=True)
-workflow.add_argument("input-extension", desc="the input file extension", required=True)
-args = workflow.parse_args()
-
-# get all of the input files
-input_files = utilities.find_files(args.input, extension=args.input_extension, exit_if_not_found=True)
-sample_names=utilities.sample_names(input_files,args.input_extension)
-
-# for each raw input file, generate an md5sum file
-md5sum_outputs = utilities.name_files(sample_names, args.output, extension="md5sum")
-workflow.add_task_group(
-    "md5sum [depends[0]] > [targets[0]]",
-    depends=input_files,
-    targets=md5sum_outputs)
 
 def get_metadata_column_by_name(metadata_file, column_name):
     """ Read the metadata file and get a list of all of the data for the column """
@@ -53,9 +37,10 @@ def verify_checksum(task):
     try:
         md5sum = filter(lambda x: original_input == x[0], get_metadata_file_md5sums(task.depends[2].name))[0][1]
     except IndexError:
-        sys.stderr.write("ERROR: md5sum not found for sample: "+task.depends[0].name+"\n")
-        sys.stderr.write("\n".join([file+":"+sum for file,sum in get_metadata_file_md5sums(task.depends[2].name)]))
-        raise
+        error_msg = "ERROR: md5sum not found for sample: " + task.depends[0].name + "\n"
+        sys.stderr.write(error_msg)
+        sys.stderr.write("\n".join([file+":"+sum for file,sum in get_metadata_file_md5sums(task.depends[2].name)]) + "\n")
+        raise Exception(error_msg)
 
     # read in the md5sum computed on the raw file
     with open(task.depends[1].name) as file_handle:
@@ -70,6 +55,23 @@ def verify_checksum(task):
         sys.stderr.write(new_sum)
         sys.stderr.write(md5sum)
 
+# create a workflow and get the arguments
+workflow = Workflow()
+workflow.add_argument("input-metadata", desc="the metadata file", required=True)
+workflow.add_argument("input-extension", desc="the input file extension", required=True)
+args = workflow.parse_args()
+
+# get all of the input files
+input_files = utilities.find_files(args.input, extension=args.input_extension, exit_if_not_found=True)
+sample_names=utilities.sample_names(input_files,args.input_extension)
+
+# for each raw input file, generate an md5sum file
+md5sum_outputs = utilities.name_files(sample_names, args.output, extension="md5sum")
+workflow.add_task_group(
+    "md5sum [depends[0]] > [targets[0]]",
+    depends=input_files,
+    targets=md5sum_outputs)
+
 # for each file, verify the checksum
 md5sum_checks = utilities.name_files(sample_names, args.output, extension="check")
 for in_file, sum_file, check_file in zip(input_files, md5sum_outputs, md5sum_checks):
@@ -79,4 +81,3 @@ for in_file, sum_file, check_file in zip(input_files, md5sum_outputs, md5sum_che
         targets=[check_file])
 
 workflow.go()
-

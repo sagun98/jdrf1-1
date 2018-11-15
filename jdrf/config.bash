@@ -16,6 +16,9 @@ mysql_secure_installation
 MYSQL_COMMANDS="create database jdrf; grant all privileges on jdrf.* to 'jdrf_user'@'127.0.0.1' identified by '${JDRF_PASSWORD}'; flush privileges;"
 mysql -u root -p -e "$MYSQL_COMMANDS"
 
+# Start up cron to make sure its running so we periodically check our data-sets for release
+service cron start
+
 # setup initial django database
 python manage.py makemigrations
 python manage.py migrate
