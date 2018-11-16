@@ -33,7 +33,7 @@ import pandas as pd
 import numpy as np
 
 from jdrf.metadata_schema import schemas, sample_optional_cols, mr_parse
-
+from pandas_schema.validation_warning import ValidationWarning
 
 # name the general workflow stdout/stderr files
 WORKFLOW_STDOUT = "workflow.stdout"
@@ -251,6 +251,34 @@ def _get_mismatched_columns(metadata_df, schema):
 
     return [extra_cols, missing_cols]
 
+
+def _validate_md5_checksums(metadata_df, errors):
+    """Verifies whether or not all MD5 checksums in an uploaded sample metadata sheet
+    are unique when paired with a unique filename. Multiple rows may reference the same 
+    filename - md5 pair without triggering an error.
+    """
+    # This is kind of ugly and probably could be achieved in a cleaner fashion...
+    for (filename, rows) in metadata_df.groupby('filename'):
+        if rows.md5_checksum.nunique() > 1:
+            last_md5sum = rows.md5_checksum.iloc[0]
+
+            for (idx, md5sum) in rows.md5_checksum.to_dict().iteritems():
+                if last_md5sum != md5sum:
+                    errors.append(ValidationWarning(
+                        row=idx,
+                        column="md5_checksum",
+                        value=md5sum,
+                        message=("Multiple MD5 checksums for file %s are not "
+                                 "allowed. Please check all MD5 checksum rows "
+                                 "for this file." 
+                                 % (filename))
+                    ))
+
+                    last_md5sum = md5sum
+
+    return errors
+
+
 def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     """ Validates the provided JDRF metadata DataFrame and returns any errors 
         if they are present.
@@ -259,6 +287,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
 
     error_context = {}
     errors = schema.validate(metadata_df)
+    errors = _validate_md5_checksums(metadata_df, errors) if 'md5_checksum' in [c.name for c in schema.columns] else errors
 
     is_valid = False if errors else True
     if errors:

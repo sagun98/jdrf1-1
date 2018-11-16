@@ -40,7 +40,7 @@ task2=workflow.add_task(
     args=[args.input_processed,process_archive])
 
 task3=workflow.add_task(
-    "cp [args[0]]/metadata*.tsv [args[1]]/",
+    "cp [args[0]]/metadata/metadata*.tsv [args[1]]/",
     depends=task2,
     args=[upload_archive,process_archive])
 
