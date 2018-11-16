@@ -268,7 +268,9 @@ def _validate_md5_checksums(metadata_df, errors):
                         row=idx,
                         column="md5_checksum",
                         value=md5sum,
-                        message=("Multiple MD5 checksums for file %s" 
+                        message=("Multiple MD5 checksums for file %s are not "
+                                 "allowed. Please check all MD5 checksum rows "
+                                 "for this file." 
                                  % (filename))
                     ))
 
