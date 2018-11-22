@@ -13,6 +13,7 @@ import argparse
 import glob
 import os
 import pwd
+import re
 import sys
 
 from collections import defaultdict
@@ -31,21 +32,34 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from jdrf.process_data import send_email_update
 
-# Set default email options
-EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
-EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
 
-EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
+def initialize_ldap_session(server_uri, bind_pw, bind_dn):
+    """ Initializes LDAP session to query user information from LDAP server.
+    """
+    ldap_session = ldap.initialize(server_uri)
+    ldap_session.protocol_version = ldap.VERSION3
+    ldap_session.simple_bind_s(bind_dn, bind_pw)
+    return ldap_session
 
-jdrf_users = User.objects.all()
+
+def get_contact_from_username(ldap_session, username):
+    """ Retrieve user email and user first name given a username.
+    """
+    search_scope = ldap.SCOPE_SUBTREE
+    result = ldap_session.search_s("DC=rc,DC=domain", search_scope, "(uid=%s)" % username)
+    email = result.get('mail')[0]
+    first_name = result.get('givenName')[0]
+    ldap_session.unbind_s()
+
+    return (email, first_name)
 
 
-def get_all_archived_data_sets(archive_folder):
+def get_all_archived_data_sets(archive_folder, ldap_session):
     """ Retrieve all archived folders and return a list of dictionaries 
     containing path to folder, owner email, study_name and date archived.
     """
     archived_datasets = defaultdict(list)
-    study_sort = lambda d: os.path.basename(d).split('_')[0]
+    study_sort = lambda d: re.split(r'_\d+_\d+_\d{4}', os.path.basename(d))[0]
 
     data_dirs = list(filter(lambda d: os.path.isdir(d), glob.glob("%s/*/*" % archive_folder)))
     data_dirs = list(filter(lambda d: "public" not in d, data_dirs))
@@ -57,11 +71,11 @@ def get_all_archived_data_sets(archive_folder):
         # Grab the users email
         stat_info = os.stat(archived_dirs[0])
         user = pwd.getpwuid(stat_info.st_uid)[0]
-        user_email = jdrf_users.filter(username=user).get().email
-        first_name = jdrf_users.filter(username=user).get().first_name
+        (first_name, user_email) = get_contact_from_username(user)
 
         # Now get the date that this data was archived
-        archive_date = os.path.basename(archived_dirs[0]).rsplit("_", 1)[0].replace("%s_" % study_name, "")
+        match = re.search(r'\d+_\d+_\d{4}', os.path.basename(archived_dirs[0]))
+        archive_date = match.group()
         current_dt = pendulum.now()
         archive_dt = pendulum.from_format(archive_date, 'MM_D_YYYY')
 
@@ -125,10 +139,12 @@ def send_dataset_notifications(dataset_status):
         public_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[0], d[2].get('internal')) for d in datasets])
 
         release_msg = release_msg % (internal_release_dates, public_release_dates)
-        send_email_update("Data Release Update %s" % pendulum.now, release_msg, to=email)
+        send_email_update("Data Release Update %s" % pendulum.now().to_formatted_date_string, release_msg, to=email)
 
 
-archived_datasets = get_all_archived_data_sets(settings.ARCHIVE_FOLDER)
+ldap_session = initialize_ldap(settings.AUTH_LDAP_SERVER_URI, settings.AUTH_LDAP_BIND_PASSWORD, settings.AUTH_LDAP_BIND_DN)
+
+archived_datasets = get_all_archived_data_sets(settings.ARCHIVE_FOLDER, ldap_session)
 
 # With all our datasets we want to bucket them into three bins by user: 
 #

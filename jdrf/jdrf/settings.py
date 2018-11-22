@@ -41,8 +41,8 @@ METADATA_VALIDATION_FILE_NAME_CSV = "metadata.error.csv"
 METADATA_EDIT_FILE_NAME = "metadata.update.csv"
 
 # Some base settings for our data release policy
-RELEASE_INTERNAL_MONTHS = 3
-RELEASE_PUBLIC_MONTHS = 6
+RELEASE_INTERNAL_MONTHS = 6
+RELEASE_PUBLIC_MONTHS = 18
 
 # function to get environment variables
 def get_env(key):
