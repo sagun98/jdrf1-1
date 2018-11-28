@@ -205,7 +205,7 @@ def upload_sample_metadata(request):
                 metadata_df.to_csv(metadata_file, index=False)
 
                 ## If we are valid here we want to write a MANIFEST file containing our user contact info
-                process_data.write_manifest_file(upload_folder, user, user_email, user_full_name)
+                process_data.write_manifest_file(metadata_folder, user, user_email, user_full_name)
 
             return JsonResponse(data)
 
@@ -228,6 +228,8 @@ def upload_sample_metadata(request):
 
                 metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
                 metadata_df.to_csv(metadata_file, index=False)
+
+                process_data.write_manifest_file(upload_folder, user, user_email, user_full_name)
 
             return HttpResponse(json.dumps(data), content_type="application/json")
         else:
@@ -277,7 +279,7 @@ def process_files(request):
 
     # Var to keep track of our workflow status. Needed so we can clear our some cookies
     # on workflow success.
-    success = False if len(files_nonempty) > 0 else True
+    success = False 
 
     # set the default responses
     responses={"message1":[],"message2":[]}
@@ -345,8 +347,8 @@ def process_files(request):
     
     response = render(request, 'process.html', responses)
     if success and request.COOKIES.get('sample_metadata', False):
-        response.delete_cookie('study_metadata')
-        response.delete_cookie('sample_metadata')
+        response.set_cookie('study_metadata', max_age_seconds=1)
+        response.set_cookie('sample_metadata', max_age_seconds=1)
 
     return response
 

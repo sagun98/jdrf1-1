@@ -44,10 +44,16 @@ task3=workflow.add_task(
     depends=task2,
     args=[upload_archive,process_archive])
 
-# transfer the processed files to a named study folder on remote machine
 task4=workflow.add_task(
-    "rsync --exclude '*.fastq*' --exclude '*.fq*' --exclude '*.fasta*' --exclude '*.fa*' --exclude '*.bam' --exclude '*.sam' --exclude '*.vcf*' --recursive -e 'ssh -i [args[0]] -l [args[1]]' [args[2]] [args[3]]:[args[4]]",
+    "rsync --ignore-existing [args[0]]/metadata/MANIFEST [args[1]] && rm [args[0]]/metadata/MANIFEST",
     depends=task3,
+    args=[upload_archive, os.path.dirname(archive_folder)]
+)
+
+# transfer the processed files to a named study folder on remote machine
+task5=workflow.add_task(
+    "rsync --exclude '*.fastq*' --exclude '*.fq*' --exclude '*.fasta*' --exclude '*.fa*' --exclude '*.bam' --exclude '*.sam' --exclude '*.vcf*' --recursive -e 'ssh -i [args[0]] -l [args[1]]' [args[2]] [args[3]]:[args[4]]",
+    depends=task4,
     args=[args.key, args.user, process_archive, args.remote, args.output_transfer])
 
 workflow.go()
