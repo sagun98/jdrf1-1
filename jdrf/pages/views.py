@@ -166,7 +166,7 @@ def upload_sample_metadata(request):
         data storage directory.
     """ 
     data = {} 
-    (logger, user, upload_folder, process_folder) = get_user_and_folders_plus_logger(request)
+    (logger, user, user_full_name, user_email, upload_folder, process_folder) = get_user_and_folders_plus_logger(request, full_user_info=True)
     metadata_folder = os.path.join(upload_folder, process_data.METADATA_FOLDER)
     study_file = os.path.join(metadata_folder,settings.METADATA_GROUP_FILE_NAME)
 
@@ -203,6 +203,9 @@ def upload_sample_metadata(request):
 
                 metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
                 metadata_df.to_csv(metadata_file, index=False)
+
+                ## If we are valid here we want to write a MANIFEST file containing our user contact info
+                process_data.write_manifest_file(upload_folder, user, user_email, user_full_name)
 
             return JsonResponse(data)
 

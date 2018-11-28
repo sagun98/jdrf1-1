@@ -10,8 +10,10 @@ import re
 
 import smtplib
 import socket
+
 from email.mime.text import MIMEText
 from xlrd import open_workbook, XLRDError
+from yaml import dump
 
 from django.conf import settings
 
@@ -178,6 +180,17 @@ def _is_excel_file(in_file):
        in_file.seek(0)
 
     return is_excel
+
+
+def write_manifest_file(output_folder, user, user_email, user_full_name):
+    """ Upon successful study and sample metadata validation writes a manifest 
+    file containing the owner and contact information for the study. 
+    """
+    manifest_file = os.path.join(output_folder, 'MANIFEST')
+
+    if not os.path.exists(manifest_file):
+        with open(manifest_file, 'w') as manifest_fh:
+           dump({'user': user, 'name': user_full_name, 'lab': "", 'email': user_email}, manifest_fh)
 
 
 def validate_sample_metadata(metadata_file, output_folder, logger, action="upload", sep=None):
