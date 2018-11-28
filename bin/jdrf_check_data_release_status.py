@@ -59,6 +59,10 @@ def get_all_archived_data_sets(archive_folder):
 
         # Grab the users emai
         user = archived_dirs[0].split(os.sep)[3]
+
+        if user == "root":
+            continue
+
         user_info = get_contact_info(archived_dirs[0])
 
         # Now get the date that this data was archived
