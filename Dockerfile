@@ -32,7 +32,8 @@ RUN pip install --upgrade pip && \
     pip install fasteners && \
     pip install pronto && \
     pip install whoosh && \
-    pip install pendulum
+    pip install pendulum && \
+    pip install pyyaml
 
 # add supervisor conf
 RUN mkdir -pv /var/log/supervisord

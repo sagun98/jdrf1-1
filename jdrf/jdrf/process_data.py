@@ -10,12 +10,14 @@ import re
 
 import smtplib
 import socket
+
 from email.mime.text import MIMEText
 from xlrd import open_workbook, XLRDError
 
 from django.conf import settings
 
 import fasteners
+import yaml
 
 # Set default email options
 EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
@@ -44,6 +46,12 @@ METADATA_FOLDER="metadata"
 WORKFLOW_MD5SUM_FOLDER="md5sum_check"
 WORKFLOW_DATA_PRODUCTS_FOLDER="data_products"
 WORFLOW_VISUALIZATIONS_FOLDER="visualizations"
+
+
+def _my_unicode_repr(self, data):
+    return self.represent_str(data.encode('utf-8'))
+
+yaml.representer.Representer.add_representer(unicode, _my_unicode_repr)
 
 
 def get_recursive_files_nonempty(folder,include_path=False,recursive=True):
@@ -180,6 +188,17 @@ def _is_excel_file(in_file):
     return is_excel
 
 
+def write_manifest_file(output_folder, user, user_email, user_full_name):
+    """ Upon successful study and sample metadata validation writes a manifest 
+    file containing the owner and contact information for the study. 
+    """
+    manifest_file = os.path.join(output_folder, 'MANIFEST')
+
+    if not os.path.exists(manifest_file):
+        with open(manifest_file, 'w') as manifest_fh:
+           yaml.safe_dump({'user': user, 'name': user_full_name, 'lab': "", 'email': user_email}, manifest_fh, default_flow_style=False)
+
+
 def validate_sample_metadata(metadata_file, output_folder, logger, action="upload", sep=None):
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
@@ -228,6 +247,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger, action="uploa
     except ValueError as ve:
         if "collection_date" in ve.message:
             error_context['error_msg'] = "Metadata file is malformed and does not match JDRF metadata schema."
+            raise
         else:
             raise Exception
     except Exception as e:
@@ -286,7 +306,9 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     logger=logging.getLogger('jdrf1')
 
     error_context = {}
+    logger.debug("About to validate!")
     errors = schema.validate(metadata_df)
+    logger.debug("Validated base schema!")
     errors = _validate_md5_checksums(metadata_df, errors) if 'md5_checksum' in [c.name for c in schema.columns] else errors
 
     is_valid = False if errors else True

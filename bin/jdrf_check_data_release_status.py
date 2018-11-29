@@ -13,13 +13,14 @@ import argparse
 import glob
 import os
 import pwd
+import re
 import sys
 
 from collections import defaultdict
 from itertools import groupby
+from yaml import safe_load
 
 import django
-import ldap
 import pendulum
 
 # Setup up django outside of the environment 
@@ -31,13 +32,15 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from jdrf.process_data import send_email_update
 
-# Set default email options
-EMAIL_FROM = "jdrfmibc-dev@hutlab-jdrf01.rc.fas.harvard.edu"
-EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
 
-EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
+def get_contact_info(archive_dir):
+    """ Retrieve user email and user first name given an archive directory.
+    """
+    user_manifest_file = os.path.join(os.path.dirname(archive_dir), 'MANIFEST')
+    with open(user_manifest_file) as manifest:
+       user_info = safe_load(manifest)
 
-jdrf_users = User.objects.all()
+    return user_info
 
 
 def get_all_archived_data_sets(archive_folder):
@@ -45,30 +48,34 @@ def get_all_archived_data_sets(archive_folder):
     containing path to folder, owner email, study_name and date archived.
     """
     archived_datasets = defaultdict(list)
-    study_sort = lambda d: os.path.basename(d).split('_')[0]
+    study_sort = lambda d: re.split(r'_\d+_\d+_\d{4}', os.path.basename(d))[0]
 
     data_dirs = list(filter(lambda d: os.path.isdir(d), glob.glob("%s/*/*" % archive_folder)))
     data_dirs = list(filter(lambda d: "public" not in d, data_dirs))
+    data_dirs = list(filter(lambda d: "demo" not in d, data_dirs))
     data_dirs = sorted(data_dirs, key=study_sort)
 
     for (study_name, study_dirs) in groupby(data_dirs, study_sort):
         archived_dirs = list(study_dirs)
 
-        # Grab the users email
-        stat_info = os.stat(archived_dirs[0])
-        user = pwd.getpwuid(stat_info.st_uid)[0]
-        user_email = jdrf_users.filter(username=user).get().email
-        first_name = jdrf_users.filter(username=user).get().first_name
+        # Grab the users emai
+        user = archived_dirs[0].split(os.sep)[3]
+
+        if user == "root":
+            continue
+
+        user_info = get_contact_info(archived_dirs[0])
 
         # Now get the date that this data was archived
-        archive_date = os.path.basename(archived_dirs[0]).rsplit("_", 1)[0].replace("%s_" % study_name, "")
+        match = re.search(r'\d+_\d+_\d{4}', os.path.basename(archived_dirs[0]))
+        archive_date = match.group()
         current_dt = pendulum.now()
         archive_dt = pendulum.from_format(archive_date, 'MM_D_YYYY')
 
         archived_datasets[user].append({'study': study_name, 
                                         'dirs': archived_dirs, 
-                                        'user_email': user_email, 
-                                        'name': first_name,
+                                        'user_email': user_info.get('email'), 
+                                        'name': user_info.get('name'),
                                         'archive_date': archive_dt})
 
     return archived_datasets
@@ -86,7 +93,7 @@ def check_datasets_release_status(datasets, public_release, internal_release):
         for dataset in datasets:
             study = dataset.get('study')
             user_email = dataset.get('user_email')
-            user_first_name = dataset.get('name')
+            user_name = dataset.get('name')
             dataset_dirs = dataset.get('dirs')
             archive_dt = dataset.get('archive_date')
 
@@ -97,7 +104,8 @@ def check_datasets_release_status(datasets, public_release, internal_release):
 
             days_to_public = (public_release_dt - current_dt).days
             days_to_internal = (internal_release_dt - current_dt).days
-            datasets_status[user_email].append([study, dataset_dirs,
+
+            datasets_status[user_email].append([user_name, study, dataset_dirs,
                                                 {'public': max(0, days_to_public),
                                                  'internal': max(0, days_to_internal)}])
 
@@ -110,22 +118,23 @@ def send_dataset_notifications(dataset_status):
     and for remaining datasets will send a status update if the current day matches
     the specified day to send email report out.
     """
-    release_msg = ("Hello!\n\nThis is an automated message "
+    release_msg = ("Hello %s!\n\nThis is an automated message "
                    "to inform you that the following datasets are "
                    "set to be released in the following days.\n\n"
                    "Internal:\n%s\n\n"
                    "Public:\n%s"
-                   "\n\n** Datasets set for public release will not be released without user approval **"
+                   "\n\n** Datasets pending internal and external release will not be released without user approval **"
                    "\n\nPlease feel free to email the JDRF MIBC staff "
                    "if you have any questions regarding the data release "
                    "policy.\n\nThank You!\nThe JDRF MIBC team")
 
     for (email, datasets) in dataset_status.iteritems():
-        internal_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[0], d[2].get('public')) for d in datasets])
-        public_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[0], d[2].get('internal')) for d in datasets])
+        internal_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[1], d[3].get('internal')) for d in datasets])
+        public_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[1], d[3].get('public')) for d in datasets])
 
-        release_msg = release_msg % (internal_release_dates, public_release_dates)
-        send_email_update("Data Release Update %s" % pendulum.now, release_msg, to=email)
+        user_name = datasets[0][0]
+        release_msg = release_msg % (datasets[0][0], internal_release_dates, public_release_dates)
+        send_email_update("Data Release Update %s - %s" % (pendulum.now().to_formatted_date_string(), user_name),  release_msg, to=email)
 
 
 archived_datasets = get_all_archived_data_sets(settings.ARCHIVE_FOLDER)
