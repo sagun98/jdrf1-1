@@ -52,6 +52,7 @@ def get_all_archived_data_sets(archive_folder):
 
     data_dirs = list(filter(lambda d: os.path.isdir(d), glob.glob("%s/*/*" % archive_folder)))
     data_dirs = list(filter(lambda d: "public" not in d, data_dirs))
+    data_dirs = list(filter(lambda d: "demo" not in d, data_dirs))
     data_dirs = sorted(data_dirs, key=study_sort)
 
     for (study_name, study_dirs) in groupby(data_dirs, study_sort):
@@ -92,7 +93,7 @@ def check_datasets_release_status(datasets, public_release, internal_release):
         for dataset in datasets:
             study = dataset.get('study')
             user_email = dataset.get('user_email')
-            user_first_name = dataset.get('name')
+            user_name = dataset.get('name')
             dataset_dirs = dataset.get('dirs')
             archive_dt = dataset.get('archive_date')
 
@@ -103,7 +104,8 @@ def check_datasets_release_status(datasets, public_release, internal_release):
 
             days_to_public = (public_release_dt - current_dt).days
             days_to_internal = (internal_release_dt - current_dt).days
-            datasets_status[user_email].append([study, dataset_dirs,
+
+            datasets_status[user_email].append([user_name, study, dataset_dirs,
                                                 {'public': max(0, days_to_public),
                                                  'internal': max(0, days_to_internal)}])
 
@@ -116,22 +118,23 @@ def send_dataset_notifications(dataset_status):
     and for remaining datasets will send a status update if the current day matches
     the specified day to send email report out.
     """
-    release_msg = ("Hello!\n\nThis is an automated message "
+    release_msg = ("Hello %s!\n\nThis is an automated message "
                    "to inform you that the following datasets are "
                    "set to be released in the following days.\n\n"
                    "Internal:\n%s\n\n"
                    "Public:\n%s"
-                   "\n\n** Datasets set for public release will not be released without user approval **"
+                   "\n\n** Datasets pending internal and external release will not be released without user approval **"
                    "\n\nPlease feel free to email the JDRF MIBC staff "
                    "if you have any questions regarding the data release "
                    "policy.\n\nThank You!\nThe JDRF MIBC team")
 
     for (email, datasets) in dataset_status.iteritems():
-        internal_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[0], d[2].get('public')) for d in datasets])
-        public_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[0], d[2].get('internal')) for d in datasets])
+        internal_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[1], d[3].get('internal')) for d in datasets])
+        public_release_dates = "   - " + "\n   - ".join(["%s: %s days to release" % (d[1], d[3].get('public')) for d in datasets])
 
-        release_msg = release_msg % (internal_release_dates, public_release_dates)
-        send_email_update("Data Release Update %s" % pendulum.now().to_formatted_date_string, release_msg, to=email)
+        user_name = datasets[0][0]
+        release_msg = release_msg % (datasets[0][0], internal_release_dates, public_release_dates)
+        send_email_update("Data Release Update %s - %s" % (pendulum.now().to_formatted_date_string(), user_name),  release_msg, to=email)
 
 
 archived_datasets = get_all_archived_data_sets(settings.ARCHIVE_FOLDER)
