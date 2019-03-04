@@ -561,7 +561,7 @@ def email_workflow_status(user,command,output_folder,workflow,user_name=None,use
 
 def get_study_metadata(study_file):
     """ Parses study metadata file and returns a pandas DataFrame representation of metadata """
-    return pd.read_csv(study_file, dtype={'paired': np.bool}).ix[0]
+    return pd.read_csv(study_file, keep_default_na=False).ix[0]
 
 def get_metadata_samples(metadata_file):
     """ Parses the sample metadata file and returns a list of all sample names """
