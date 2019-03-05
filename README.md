@@ -21,13 +21,21 @@ The JDRF1 site is the data depository. This site hosts raw data and metadata upl
 
     b. ``$ sudo docker exec -it jdrf1_mibc_container bash``
     
-8. From in the container, first run the configuration script to start services running in the container and to setup the environment. Then run gunicorn to start the site.
+8. From in the container, first run the configuration script to start services running in the container and to setup the environment. Then run gunicorn to start the site. Then create symlinks to the usearch software and update the configuration for the humann2 databases.
 
-    a. ``cd /usr/local/src/jdrf``
+    a. ``$ cd /usr/local/src/jdrf``
     
-    b. ``bash config.bash`` (run the configuration script)
+    b. ``$ bash config.bash`` (run the configuration script)
 
-    c. ``nohup gunicorn --bind 127.0.0.1:8000 jdrf.wsgi &``
+    c. ``$ nohup gunicorn --bind 127.0.0.1:8000 jdrf.wsgi &``
+
+    d. ``$ ln -s /opt/usearch/usearch8_64 /usr/local/bin/usearch``
+
+    e. ``$ humann2_config --update database_folders protein /opt/biobakery_workflows_databases/humann2/uniref/``
+
+    f. ``$ humann2_config --update database_folders nucleotide /opt/biobakery_workflows_databases/humann2/chocophlan/``
+
+    g. ``$ humann2_config --update database_folders utility_mapping /opt/biobakery_workflows_databases/humann2/utility_mapping/``
     
 
 To stop the container run ``$ sudo docker stop jdrf1_mibc_container``.
