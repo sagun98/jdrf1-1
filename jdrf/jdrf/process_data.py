@@ -363,7 +363,10 @@ def check_metadata_files_complete(user,folder,metadata_file,study_file):
     error_code = 1
 
     # get the study metadata
-    study_metadata = get_study_metadata(study_file)
+    try:
+        study_metadata = get_study_metadata(study_file)
+    except EnvironmentError:
+        return 1, "ERROR: Unable to find metadata file. Please upload metadata file."
 
     # get all of the files that have been uploaded
     all_raw_files = set(get_recursive_files_nonempty(folder,recursive=False))
