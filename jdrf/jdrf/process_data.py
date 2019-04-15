@@ -203,6 +203,17 @@ def validate_sample_metadata(metadata_file, output_folder, logger, action="uploa
     """ Validates the provided JDRF sample metadata file and returns any errors
         presesnt.
     """
+
+    def record_unexpected_error(e, error_context=None):
+        # If we have an error here we don't want to leave the user hanging
+        if not error_context:
+            error_context={}
+            error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
+                                          "Please contant JDRF support for help with your metadata upload")
+        logger.error(str(e))
+        logger.error(error_context['error_msg'])
+        return error_context
+
     logger=logging.getLogger('jdrf1')
 
     is_valid = False
@@ -242,19 +253,17 @@ def validate_sample_metadata(metadata_file, output_folder, logger, action="uploa
             observed_fields = line_elts[-7]
 
             error_context['error_msg'] = "Line %s contained %s columns, expected %s columns" % (line_number, observed_fields, expected_fields)
+            record_unexpected_error(pe, error_context)
         else:
-            raise
+            error_context=record_unexpected_error(pe)
     except ValueError as ve:
         if "collection_date" in ve.message:
             error_context['error_msg'] = "Metadata file is malformed and does not match JDRF metadata schema."
-            raise
+            record_unexpected_error(ve, error_context)
         else:
-            raise Exception
+            error_context=record_unexpected_error(ve)
     except Exception as e:
-        # If we have an error here we don't want to leave the user hanging
-        error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
-                                      "Please contant JDRF support for help with your metadata upload")
-        logger.error(str(e))
+        error_context=record_unexpected_error(e)
 
     return (is_valid, metadata_df, error_context)
 
