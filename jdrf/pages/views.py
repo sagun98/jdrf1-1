@@ -202,10 +202,17 @@ def upload_sample_metadata(request):
                 process_data.delete_validation_files(upload_folder, logger)
 
                 metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
-                metadata_df.to_csv(metadata_file, index=False)
-
-                ## If we are valid here we want to write a MANIFEST file containing our user contact info
-                process_data.write_manifest_file(metadata_folder, user, user_email, user_full_name)
+                try:
+                    metadata_df.to_csv(metadata_file, index=False)
+                    ## If we are valid here we want to write a MANIFEST file containing our user contact info
+                    process_data.write_manifest_file(metadata_folder, user, user_email, user_full_name)
+                except Exception as e:
+                    error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; "
+                                                  "Please contant JDRF support for help with your metadata upload")
+                    logger.error(str(e))
+                    logger.error(error_context['error_msg'])
+                    data['error'] = 'Metadata validation failed!'
+                    data.update(error_context)
 
             return JsonResponse(data)
 
