@@ -51,9 +51,9 @@ def verify_checksum(task):
         file_handle.write("Match")
         file_handle.close()
     else:
-        sys.stderr.write("ERROR: Sums do not match")
-        sys.stderr.write(new_sum)
-        sys.stderr.write(md5sum)
+        error_msg="ERROR: Sums do not match for file {0}\nComputed Sum: {1}\nExpected Sum: {2}".format(task.depends[1].name,new_sum,md5sum)
+        sys.stderr.write(error_msg)
+        raise Exception(error_msg)
 
 # create a workflow and get the arguments
 workflow = Workflow()
@@ -66,14 +66,14 @@ input_files = utilities.find_files(args.input, extension=args.input_extension, e
 sample_names=utilities.sample_names(input_files,args.input_extension)
 
 # for each raw input file, generate an md5sum file
-md5sum_outputs = utilities.name_files(sample_names, args.output, extension="md5sum")
+md5sum_outputs = [os.path.join(args.output, output_file_name)+".md5sum" for output_file_name in sample_names]
 workflow.add_task_group(
     "md5sum [depends[0]] > [targets[0]]",
     depends=input_files,
     targets=md5sum_outputs)
 
 # for each file, verify the checksum
-md5sum_checks = utilities.name_files(sample_names, args.output, extension="check")
+md5sum_checks = [os.path.join(args.output, check_file_name)+".check" for check_file_name in sample_names]
 for in_file, sum_file, check_file in zip(input_files, md5sum_outputs, md5sum_checks):
     workflow.add_task(
         verify_checksum,
