@@ -669,7 +669,7 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
     elif study_metadata.sample_type != "other":
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
-            extension,"--remove-intermediate-output","--bypass-strain-profiling",
+            extension,"--remove-intermediate-output",
             "--local-jobs",WMGX_PROCESSES,"--threads",WMGX_THREADS]
 
         if study_metadata.paired and study_metadata.paired_id:
