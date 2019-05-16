@@ -76,16 +76,31 @@ RUN apt-get update -y && \
 # install python ldap dependencies
 RUN pip install django-auth-ldap
 
-# install metaphlan2 and dependencies
+# install metaphlan2 plus strainphlan and dependencies
 RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.0.tar.gz && \
     tar xzvf metaphlan2-2.6.0.tar.gz && \
     mv biobakery-metaphlan2-c43e40a443ed/*.py /usr/local/bin/ && \
     mv biobakery-metaphlan2-c43e40a443ed/db_v20 /usr/local/bin/ && \
     mv biobakery-metaphlan2-c43e40a443ed/utils /usr/local/bin/ && \
     mv biobakery-metaphlan2-c43e40a443ed/strainphlan_src /usr/local/bin/ && \
+    cp /usr/local/bin/strainphlan_src/* /usr/local/bin/ && \
     rm metaphlan2-2.6.0.tar.gz && \
     rm -r biobakery-metaphlan2-c43e40a443ed && \
-    pip install biom-format
+    pip install biom-format msgpack pysam
+
+RUN apt-get update -y && \
+    apt-get install -y install raxml muscle ncbi-blast+
+
+RUN wget https://github.com/samtools/samtools/archive/0.1.19.tar.gz && \
+    tar xzvf 0.1.19.tar.gz && \
+    cd samtools-0.1.19 && \
+    make && \
+    make -C bcftools && \
+    cp samtools bcftools/bcftools bcftools/vcfutils.pl /usr/local/bin/ && \
+    cp misc/maq2sam-long misc/maq2sam-short misc/md5fa misc/md5sum-lite misc/wgsim /usr/local/bin/ && \
+    cd ../ && \
+    rm 0.1.19.tar.gz && \
+    rm -r samtools-0.1.19
 
 # Install the latest R
 RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/' && \
