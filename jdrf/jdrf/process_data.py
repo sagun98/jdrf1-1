@@ -321,13 +321,14 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
     errors = _validate_md5_checksums(metadata_df, errors) if 'md5_checksum' in [c.name for c in schema.columns] else errors
 
     # check for period in sample name
-    for (row_number, filename) in metadata_df['filename'].to_dict().iteritems():
-        if len(filename.replace(".gz","").split(".")) > 2 and ("fastq" in filename or "fq" in filename):
-            errors.append(ValidationWarning(
-                row=row_number,
-                column="filename",
-                value=filename,
-                message="Periods in sample names are not supported in file {}".format(filename)))
+    if 'filename' in metadata_df:
+        for (row_number, filename) in metadata_df['filename'].to_dict().iteritems():
+            if len(filename.replace(".gz","").split(".")) > 2 and ("fastq" in filename or "fq" in filename):
+                errors.append(ValidationWarning(
+                    row=row_number,
+                    column="filename",
+                    value=filename,
+                    message="Periods in sample names are not supported in file {}".format(filename)))
 
     is_valid = False if errors else True
     if errors:
