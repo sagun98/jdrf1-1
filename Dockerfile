@@ -50,7 +50,7 @@ RUN crontab /etc/cron.d/jdrf-data-release-cron
 RUN touch /var/log/cron.log
 
 # install workflows dependencies
-RUN pip install --no-cache-dir biobakery_workflows humann2 kneaddata
+RUN pip install --no-cache-dir biobakery_workflows==0.13.0 humann2 kneaddata
 
 # install modules needed for validation
 RUN pip install pandas && \
@@ -75,6 +75,13 @@ RUN apt-get update -y && \
 
 # install python ldap dependencies
 RUN pip install django-auth-ldap
+
+# install panphlan and dependencies
+RUN wget https://bitbucket.org/CibioCM/panphlan/get/1.2.tar.gz && \
+    tar xzvf 1.2.tar.gz && \
+    cp CibioCM-panphlan-b08b5a06deb1/*.py /usr/local/bin/ &&
+    rm 1.2.tar.gz && \
+    rm -r CibioCM-panphlan-b08b5a06deb1
 
 # install metaphlan2 plus strainphlan and dependencies
 RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.0.tar.gz && \
