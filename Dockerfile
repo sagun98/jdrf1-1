@@ -83,16 +83,20 @@ RUN wget https://bitbucket.org/CibioCM/panphlan/get/1.2.tar.gz && \
     rm 1.2.tar.gz && \
     rm -r CibioCM-panphlan-b08b5a06deb1
 
-# install metaphlan2 plus strainphlan and dependencies
+# install metaphlan2 plus strainphlan and dependencies (plus pre-built database for this version)
 RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.0.tar.gz && \
     tar xzvf metaphlan2-2.6.0.tar.gz && \
-    mv biobakery-metaphlan2-c43e40a443ed/*.py /usr/local/bin/ && \
-    mv biobakery-metaphlan2-c43e40a443ed/db_v20 /usr/local/bin/ && \
-    mv biobakery-metaphlan2-c43e40a443ed/utils /usr/local/bin/ && \
-    mv biobakery-metaphlan2-c43e40a443ed/strainphlan_src /usr/local/bin/ && \
-    cp /usr/local/bin/strainphlan_src/* /usr/local/bin/ && \
+    mv biobakery-metaphlan2-c43e40a443ed/db_v20 /usr/local/bin/metaphlan_databases && \
     rm metaphlan2-2.6.0.tar.gz && \
-    rm -r biobakery-metaphlan2-c43e40a443ed && \
+    rm -r biobakery-metaphlan2-c43e40a443ed
+RUN wget https://bitbucket.org/biobakery/metaphlan2/get/2.8.tar.gz && \
+    tar xzvf 2.8.tar.gz && \
+    mv biobakery-metaphlan2-097a52362c79/*.py /usr/local/bin/ && \
+    mv biobakery-metaphlan2-097a52362c79/utils /usr/local/bin/ && \
+    mv biobakery-metaphlan2-097a52362c79/strainphlan_src /usr/local/bin/ && \
+    cp /usr/local/bin/strainphlan_src/* /usr/local/bin/ && \
+    rm 2.8.tar.gz && \
+    rm -r biobakery-metaphlan2-097a52362c79 && \
     pip install biom-format msgpack pysam
 
 RUN apt-get update -y && \
