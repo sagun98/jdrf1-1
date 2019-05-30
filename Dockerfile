@@ -87,6 +87,8 @@ RUN wget https://bitbucket.org/CibioCM/panphlan/get/1.2.tar.gz && \
 RUN wget http://huttenhower.sph.harvard.edu/metaphlan2_downloads/metaphlan2-2.6.0.tar.gz && \
     tar xzvf metaphlan2-2.6.0.tar.gz && \
     mv biobakery-metaphlan2-c43e40a443ed/db_v20 /usr/local/bin/metaphlan_databases && \
+    mkdir /usr/local/bin/db_v20 && \
+    cp /usr/local/bin/metaphlan_databases/mpa_v20_m200.pkl /usr/local/bin/db_v20/ && \
     rm metaphlan2-2.6.0.tar.gz && \
     rm -r biobakery-metaphlan2-c43e40a443ed
 RUN wget https://bitbucket.org/biobakery/metaphlan2/get/2.8.tar.gz && \
