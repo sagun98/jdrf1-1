@@ -30,6 +30,7 @@ WMGX_PROCESSES="6"
 WMGX_THREADS="8"
 SixteenS_PROCESSES="1"
 SixteenS_THREADS="30"
+MAX_STRAINS="5"
 
 import pandas as pd
 import numpy as np
@@ -671,7 +672,8 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
             extension,"--remove-intermediate-output",
-            "--local-jobs",WMGX_PROCESSES,"--threads",WMGX_THREADS,"--run-strain-gene-profiling"]
+            "--local-jobs",WMGX_PROCESSES,"--threads",WMGX_THREADS,"--run-strain-gene-profiling",
+            "--max-strains",MAX_STRAINS]
 
         if study_metadata.paired and study_metadata.paired_id:
             command.extend(['--pair-identifier', study_metadata.paired_id])
