@@ -130,10 +130,10 @@ RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
     rm -r nsegata-hclust2-3d589ab2cb68/ && \
     rm 3d589ab2cb68.tar.gz
 
-# install biobakery 16s dependencies (biom, clustalo, ea-utils, and picrust)
+# install biobakery 16s dependencies (biom, clustalo, ea-utils, fasttree and picrust)
 # rollback numpy version for h5py (to prevent future warning message in vis report with biom version)
 RUN apt-get update -y && \
-    apt-get install -y clustalo ea-utils && \
+    apt-get install -y clustalo ea-utils fasttree && \
     pip install biom-format h5py==2.7.0 cogent==1.5.3 && \
     wget https://github.com/picrust/picrust/releases/download/v1.1.3/picrust-1.1.3.tar.gz && \
     tar -xzf picrust-1.1.3.tar.gz && \
