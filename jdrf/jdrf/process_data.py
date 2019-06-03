@@ -654,7 +654,7 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
     if study_metadata.sample_type == "16S":
         command=["biobakery_workflows","16s","--input",
             upload_folder,"--output",data_products,"--input-extension",
-            extension,"--local-jobs",SixteenS_PROCESSES,"--threads",SixteenS_THREADS]
+            extension,"--local-jobs",SixteenS_PROCESSES,"--threads",SixteenS_THREADS,"--method","usearch"]
 
         if study_metadata.paired and study_metadata.paired_id:
             command.extend(['--pair-identifier', study_metadata.paired_id])
