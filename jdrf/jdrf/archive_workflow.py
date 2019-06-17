@@ -27,7 +27,7 @@ upload_archive = archive_folder+"_uploaded"
 utilities.create_folders(upload_archive)
 
 task1=workflow.add_task(
-    "mv [args[0]]/* [args[1]]/",
+    "mv --backup [args[0]]/* [args[1]]/",
     args=[args.input_upload,upload_archive])
 
 # archive the processed files
@@ -35,7 +35,7 @@ process_archive = archive_folder+"_processed"
 utilities.create_folders(process_archive)
 
 task2=workflow.add_task(
-    "mv [args[0]]/* [args[1]]/",
+    "mv --backup [args[0]]/* [args[1]]/",
     depends=task1,
     args=[args.input_processed,process_archive])
 
