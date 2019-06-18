@@ -206,12 +206,17 @@ def validate_sample_metadata(metadata_file, output_folder, logger, action="uploa
     """
 
     def record_unexpected_error(e, error_context=None):
+        try:
+            error_message = str(e)
+        except ValueError:
+            error_message = ""
+
         # If we have an error here we don't want to leave the user hanging
         if not error_context:
             error_context={}
             error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
-                                          "Please contant JDRF support for help with your metadata upload")
-        logger.error(str(e))
+                                          "Please contant JDRF support for help with your metadata upload. " + error_message)
+        logger.error(error_message)
         logger.error(error_context['error_msg'])
         return error_context
 
