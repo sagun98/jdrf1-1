@@ -45,7 +45,7 @@ sample_schema = Schema([
     Column('subject_age', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_age column.'),
                            InRangeValidation(0, 120)]),
     Column('subject_sex', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_sex column.'),
-                           InListValidation(['M', 'm', 'F', 'f'])]),
+                           InListValidation(['M', 'm', 'F', 'f', 'UNK', 'unk'])]),
     Column('md5_checksum', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the md5_checksum column.'),
                             MatchesPatternValidation(r'[a-zA-Z0-9]{32}', message='MD5 Checksum may only contain 32 alphanumeric characters.')]),
     Column('host_body_mass_index', [LeadingWhitespaceValidation() | CanConvertValidation(float)]),
