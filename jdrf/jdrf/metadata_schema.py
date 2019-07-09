@@ -37,7 +37,7 @@ sample_schema = Schema([
     Column('isolation_source', [LeadingWhitespaceValidation()]), 
     Column('samp_mat_process', [LeadingWhitespaceValidation()]),
     Column('filename', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the filename column.'),
-                        MatchesPatternValidation(r'\w+.[fastq|fasta|fq](.gz)?', message='Filename must be a valid fasta/fastq file with the following supported extensions: .fasta.gz, .fastq.gz, fq.gz')]),
+                        MatchesPatternValidation(r'\w+.[fastq|fasta|fq|raw](.gz)?', message='Filename must be a valid fasta/fastq file with the following supported extensions: .fasta.gz, .fastq.gz, fq.gz')]),
     Column('sample_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_id column.')]),
     Column('collection_date', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the collection_date column.'),
                                DateFormatValidation('%Y-%m-%d', message='Collection date must be in YYYY-MM-DD date format.')]),
