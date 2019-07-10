@@ -598,20 +598,29 @@ def get_metadata_samples(metadata_file):
 def verify_samples_in_analysis_files(raw_files, metadata_samples):
     """ Parses over all analysis files uploaded of data type "other" and verifies that all samples 
     listed in the sample metadata file are present across the analysis files.
+    For raw files where the sample names are not readable, do not check for missing samples.
     """
     analysis_cols = []
 
-    for raw_file in raw_files: 
+    raw_format = False
+    for raw_file in raw_files:
         with open(raw_file, 'rb') as raw_fh:
             if _is_excel_file(raw_fh):
                 raw_df = pd.read_excel(raw_fh)
+                analysis_cols.extend(raw_df.columns.tolist())
+            elif raw_file.endswith("raw"):
+                raw_format = True
             else:
                 sep = "," if _is_csv_file(raw_fh) else "\t"
                 raw_df = pd.read_csv(raw_fh, sep=sep)
+                analysis_cols.extend(raw_df.columns.tolist())
 
-            analysis_cols.extend(raw_df.columns.tolist())
+    if raw_format:
+        missing_samples = []
+    else:
+        missing_samples = set(metadata_samples).difference(set(analysis_cols))
 
-    return set(metadata_samples).difference(set(analysis_cols))
+    return missing_samples
 
 def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata_file,study_file):
     """ First run the md5sum steps then run the remainder of the workflow """
