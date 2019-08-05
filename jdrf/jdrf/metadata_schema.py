@@ -71,7 +71,7 @@ sample_schema = Schema([
                                            "Illumina HiSeq", "Illumina HiSeq X", "illumina hiseq", "illumina hiseq x",
                                            "PacBio Sequel", "Nanopore MinION", "pacbio sequel", "nanopore minion",
                                            "Nanopore PromethION", "Nanopore SmidgION", "nanopore promethion", "nanopore smidgion",
-                                           "454", "Sanger", "sanger", "NA", "N/A"])]),
+                                           "454", "Sanger", "sanger", "Ion torrent", "ion torrent", "NA", "N/A"])]),
     Column('read_number', [LeadingWhitespaceValidation() |
                            InRangeValidation(1, message='Read number must be a positive number.')])
 ])
