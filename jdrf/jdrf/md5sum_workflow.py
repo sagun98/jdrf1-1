@@ -46,7 +46,7 @@ def verify_checksum(task):
     with open(task.depends[1].name) as file_handle:
         new_sum = file_handle.readline().strip().split(" ")[0]
 
-    if new_sum == md5sum:
+    if new_sum.lower() == md5sum.lower():
         file_handle=open(task.targets[0].name,"w")
         file_handle.write("Match")
         file_handle.close()
