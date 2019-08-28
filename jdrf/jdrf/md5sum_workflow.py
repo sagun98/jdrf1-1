@@ -19,7 +19,8 @@ def get_metadata_column_by_name(metadata_file, column_name):
         for line in file_handle:
             data=line.rstrip().split(",")
             try:
-                file_names.append(data[index])
+                # allow for additional spaces in file names
+                file_names.append(data[index].strip())
             except IndexError:
                 pass
     return file_names
