@@ -215,7 +215,7 @@ def validate_sample_metadata(metadata_file, output_folder, logger, action="uploa
         if not error_context:
             error_context={}
             error_context['error_msg'] = ("An unexpected error occurred. This error has been logged; " 
-                                          "Please contant JDRF support for help with your metadata upload. " + error_message)
+                                          "Please contant JDRF support for help with your metadata upload. " +  error_message)
         logger.error(error_message)
         logger.error(error_context['error_msg'])
         return error_context
@@ -335,7 +335,7 @@ def _validate_metadata(metadata_df, schema, logger, output_folder=None):
                     column="filename",
                     value=filename,
                     message="Periods in sample names are not supported in file {}".format(filename)))
-
+ 
     is_valid = False if errors else True
     if errors:
         if len(errors) == 1 and "columns" in str(errors[0]):
@@ -603,7 +603,7 @@ def verify_samples_in_analysis_files(raw_files, metadata_samples):
     analysis_cols = []
 
     raw_format = False
-    for raw_file in raw_files:
+    for raw_file in raw_files: 
         with open(raw_file, 'rb') as raw_fh:
             if _is_excel_file(raw_fh):
                 raw_df = pd.read_excel(raw_fh)
@@ -676,12 +676,33 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
         if not error_state:
             error_state = email_workflow_status(user,command,data_products,"16s",user_name,user_email)
 
+        dada2_data_products = data_products+"_dada2"
+        create_folder(dada2_data_products)
+        dada2_visualizations = visualizations+"_dada2"
+        create_folder(dada2_visualizations)
+
+        dada2_command=["biobakery_workflows","16s","--input",
+            upload_folder,"--output",dada2_data_products,"--input-extension",
+            extension,"--local-jobs",SixteenS_PROCESSES,"--threads",SixteenS_THREADS,"--method","dada2"]
+
+        if study_metadata.paired and study_metadata.paired_id:
+            dada2_command.extend(['--pair-identifier', study_metadata.paired_id])
+
+        if not error_state:
+            error_state = email_workflow_status(user,dada2_command,dada2_data_products,"16s_dada2",user_name,user_email)
+
         # run the vis workflow
         command=["biobakery_workflows","16s_vis",
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
         if not error_state:
             error_state = email_workflow_status(user,command,visualizations,"visualization",user_name,user_email)
+
+        dada2_vis_command=["biobakery_workflows","16s_vis",
+            "--input",dada2_data_products,"--output",dada2_visualizations,"--project-name",
+            "JDRF MIBC Generated"]
+        if not error_state:
+            error_state = email_workflow_status(user,dada2_vis_command,dada2_visualizations,"visualization_dada2",user_name,user_email)
     elif study_metadata.sample_type != "other":
         command=["biobakery_workflows","wmgx","--input",
             upload_folder,"--output",data_products,"--input-extension",
