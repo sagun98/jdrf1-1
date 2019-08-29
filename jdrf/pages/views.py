@@ -236,7 +236,7 @@ def upload_sample_metadata(request):
                 metadata_file = os.path.join(metadata_folder, settings.METADATA_FILE_NAME)
                 metadata_df.to_csv(metadata_file, index=False)
 
-                process_data.write_manifest_file(upload_folder, user, user_email, user_full_name)
+                process_data.write_manifest_file(metadata_folder, user, user_email, user_full_name)
 
             return HttpResponse(json.dumps(data), content_type="application/json")
         else:
