@@ -674,7 +674,7 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
             command.extend(['--pair-identifier', study_metadata.paired_id])
 
         if not error_state:
-            error_state = email_workflow_status(user,command,data_products,"16s",user_name,user_email)
+            error_state = email_workflow_status(user,command,data_products,"16s_uparse",user_name,user_email)
 
         dada2_data_products = data_products+"_dada2"
         create_folder(dada2_data_products)
@@ -696,7 +696,7 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
             "--input",data_products,"--output",visualizations,"--project-name",
             "JDRF MIBC Generated"]
         if not error_state:
-            error_state = email_workflow_status(user,command,visualizations,"visualization",user_name,user_email)
+            error_state = email_workflow_status(user,command,visualizations,"visualization_uparse",user_name,user_email)
 
         dada2_vis_command=["biobakery_workflows","16s_vis",
             "--input",dada2_data_products,"--output",dada2_visualizations,"--project-name",
