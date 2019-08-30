@@ -95,7 +95,7 @@ def get_metadata_file_md5sums(metadata_file):
 
 def get_metadata_file_names(metadata_file):
     """ Read the metadata file and get a list of all file names """
-    return get_metadata_column_by_name(metadata_file, "file")
+    return [item.strip() for item in get_metadata_column_by_name(metadata_file, "file")]
 
 
 def delete_validation_files(upload_folder, logger):
