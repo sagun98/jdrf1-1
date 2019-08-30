@@ -116,12 +116,18 @@ RUN wget https://github.com/samtools/samtools/archive/0.1.19.tar.gz && \
     rm -r samtools-0.1.19
 
 # Install the latest R
-RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial/' && \
+RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/' && \
     gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 && \
     gpg -a --export E084DAB9 | apt-key add - && \
     apt-get update -y && \
-    apt-get install r-base -y && \
+    apt-get install r-base-dev libcurl4-openssl-dev -y && \
     R -q -e "install.packages('vegan', repos='http://cran.r-project.org')"
+
+# install dada2
+RUN R -q -e "install.packages('BiocManager', repos='http://cran.r-project.org')" && \
+    R -q -e "install.packages('gridExtra', repos='http://cran.r-project.org')" && \
+    R -q -e "install.packages('seqinr', repos='http://cran.r-project.org')" && \
+    R -q -e "library('BiocManager'); BiocManager::install('dada2', version = '3.9');"
 
 # install hclust2
 RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
