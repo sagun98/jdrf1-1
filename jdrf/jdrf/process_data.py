@@ -26,10 +26,10 @@ EMAIL_TO = "jdrfmibc-dev@googlegroups.com"
 EMAIL_SERVER = "rcsmtp.rc.fas.harvard.edu"
 
 # Set default workflow config options
-WMGX_PROCESSES="6"
+WMGX_PROCESSES="3"
 WMGX_THREADS="8"
 SixteenS_PROCESSES="1"
-SixteenS_THREADS="30"
+SixteenS_THREADS="15"
 MAX_STRAINS="5"
 
 import pandas as pd
