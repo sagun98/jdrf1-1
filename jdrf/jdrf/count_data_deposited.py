@@ -60,7 +60,7 @@ def get_size(project_folder):
     """ Get the size of the data set """
 
     try:
-        size = subprocess.check_output(["du","-sc",project_folder,"--block-size","M"]).strip()
+        size = subprocess.check_output(["du","-sc",project_folder,"--block-size","M"]).strip().split("\t")[0]
     except EnvironmentError:
         size = 0
     return size
