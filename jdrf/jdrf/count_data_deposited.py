@@ -74,7 +74,7 @@ def to_GB(size):
         size_int = 0
 
     if size_int > 1024:
-        size_int = size_int / 1024.0
+        size_int = int(size_int / 1024.0)
         size = str(size_int)+"G"
     else:
         size = str(size_int)+"M"
