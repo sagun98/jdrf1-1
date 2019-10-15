@@ -65,6 +65,22 @@ def get_size(project_folder):
         size = 0
     return size
 
+def to_GB(size):
+    """ If larger than 1 GB, convert to GB"""
+
+    try:
+        size_int = int(size.replace("M",""))
+    except ValueError:
+        size_int = 0
+
+    if size_int > 1024:
+        size_int = size_int / 1024.0
+        size = str(size_int)+"G"
+    else:
+        size = str(size_int)+"M"
+
+    return size
+
 def demo_study(pi_name,study_name,user):
     """ Check if this is a test or demo run """
 
@@ -105,7 +121,7 @@ for user in os.listdir(ARCHIVE_FOLDER):
                         counts[pi_name]={}
                     if not sample_type in counts[pi_name]:
                         counts[pi_name][sample_type]={}
-                    counts[pi_name][sample_type][study_name]=[user, total_samples, size, date]
+                    counts[pi_name][sample_type][study_name]=[user, total_samples, to_GB(size), date]
 
 with open(COUNT_FILE, "w") as file_handle:
     file_handle.write(",".join(["'# PI Name'","'User'","'Sample Type'","'Study Name'","'Total Samples'","'Size'","'Deposition Date'"])+"\n")
