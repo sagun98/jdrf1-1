@@ -52,7 +52,7 @@ def get_deposition_date(project_folder):
     """ Get the deposition date from the project folder name """
 
     info = project_folder.split("_")
-    date = "/".join([info[-4],info[-3],info[-2]])
+    date = "-".join([info[-2],info[-3],info[-4]])
 
     return date
 
