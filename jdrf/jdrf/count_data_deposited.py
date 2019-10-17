@@ -11,12 +11,31 @@ METADATA_FOLDER = "metadata"
 METADATA_FILE_NAME = "metadata.tsv"
 METADATA_STUDY_FILE_NAME = "metadata_study.tsv"
 
-DEFAULT_SAMPLE_TYPE = "16S"
+DEFAULT_TYPE = "UNK"
+
+EXTERNAL_RELEASE = 18
+INTERNAL_RELEASE = 6
 
 ARCHIVE_FOLDER = "/opt/archive_folder/"
 COUNT_FILE = os.path.join(ARCHIVE_FOLDER,"data_deposition_counts.csv")
 
-# create a workflow to count the total data deposited
+def add_months(date_years,date_months,months_to_add):
+    """ Add total months to date """
+
+    date_years = int(date_years)
+    date_months = int(date_months)
+
+    if months_to_add > 12:
+        date_years += 1
+        months_to_add -= 12
+
+    if date_months + months_to_add > 12:
+        date_years += 1
+        months_to_add -= 12
+       
+    date_months += months_to_add
+
+    return str(date_years), str(date_months)
 
 def get_study_metadata(study_file):
     """ Parses study metadata file and returns a pandas DataFrame representation of metadata 
@@ -25,7 +44,7 @@ def get_study_metadata(study_file):
 
     try:
         if data_frame.sample_type == "":
-            data_frame.sample_type = DEFAULT_SAMPLE_TYPE
+            data_frame.sample_type = DEFAULT_TYPE
 
         return data_frame.pi_name, data_frame.sample_type, data_frame.study_id
     except KeyError, ValueError:
@@ -57,8 +76,10 @@ def get_deposition_date(project_folder):
     """ Get the deposition date from the project folder name """
 
     info = project_folder.split("_")
-    date = "-".join([info[-2],info[-3],info[-4]])
-
+    date = ["-".join([info[-2],info[-4],info[-3]])]
+    for release in (INTERNAL_RELEASE,EXTERNAL_RELEASE):
+        new_years, new_months = add_months(info[-2],info[-4],release)
+        date.append("-".join([new_years,new_months,info[-3]]))
     return date
 
 def get_size(project_folder):
@@ -126,10 +147,10 @@ for user in os.listdir(ARCHIVE_FOLDER):
                         counts[pi_name]={}
                     if not sample_type in counts[pi_name]:
                         counts[pi_name][sample_type]={}
-                    counts[pi_name][sample_type][study_name]=[user, total_samples, to_GB(size), date]
+                    counts[pi_name][sample_type][study_name]=[user, total_samples, to_GB(size)]+date
 
 with open(COUNT_FILE, "w") as file_handle:
-    file_handle.write(",".join(["Principal Investigator","User","Sample Type","Study Name","Total Samples","Size","Deposition Date"])+"\n")
+    file_handle.write(",".join(["Principal Investigator","User","Sample Type","Study Name","Total Samples","Size","Deposition Date","Internal Release","External Release"])+"\n")
     for pi in counts.keys():
         for sample_type in counts[pi].keys():
             for study_name in counts[pi][sample_type].keys():
