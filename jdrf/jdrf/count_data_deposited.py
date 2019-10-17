@@ -11,6 +11,8 @@ METADATA_FOLDER = "metadata"
 METADATA_FILE_NAME = "metadata.tsv"
 METADATA_STUDY_FILE_NAME = "metadata_study.tsv"
 
+DEFAULT_SAMPLE_TYPE = "16s"
+
 ARCHIVE_FOLDER = "/opt/archive_folder/"
 COUNT_FILE = os.path.join(ARCHIVE_FOLDER,"data_deposition_counts.csv")
 
@@ -22,6 +24,9 @@ def get_study_metadata(study_file):
     data_frame = pandas.read_csv(study_file, keep_default_na=False).ix[0]
 
     try:
+        if data_frame.sample_type == "":
+            data_frame.sample_type = DEFAULT_SAMPLE_TYPE
+
         return data_frame.pi_name, data_frame.sample_type, data_frame.study_id
     except KeyError, ValueError:
         return ("","","")
