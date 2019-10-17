@@ -124,10 +124,10 @@ for user in os.listdir(ARCHIVE_FOLDER):
                     counts[pi_name][sample_type][study_name]=[user, total_samples, to_GB(size), date]
 
 with open(COUNT_FILE, "w") as file_handle:
-    file_handle.write(",".join(["'# PI Name'","'User'","'Sample Type'","'Study Name'","'Total Samples'","'Size'","'Deposition Date'"])+"\n")
+    file_handle.write(",".join(["Principal Investigator","User","Sample Type","Study Name","Total Samples","Size","Deposition Date"])+"\n")
     for pi in counts.keys():
         for sample_type in counts[pi].keys():
             for study_name in counts[pi][sample_type].keys():
                 study_info = counts[pi][sample_type][study_name]
-                file_handle.write(",".join(map(lambda x: "'"+str(x)+"'",[pi,study_info[0],sample_type,study_name]+study_info[1:]))+"\n")
+                file_handle.write(",".join(map(lambda x: str(x),[pi,study_info[0],sample_type,study_name]+study_info[1:]))+"\n")
 
