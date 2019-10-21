@@ -16,6 +16,8 @@ DEFAULT_TYPE = "UNK"
 EXTERNAL_RELEASE = 18
 INTERNAL_RELEASE = 6
 
+taxid_to_host = {"9606":"human", "10090": "mouse"}
+
 ARCHIVE_FOLDER = "/opt/archive_folder/"
 COUNT_FILE = os.path.join(ARCHIVE_FOLDER,"data_deposition_counts.csv")
 
@@ -51,16 +53,18 @@ def get_study_metadata(study_file):
         return ("","","")
 
 def get_metadata(file):
-    """ Read in the total number of samples """
+    """ Read in the total number of samples and host"""
 
     if not os.path.isfile(file):
-        return 0
+        return 0, DEFAULT_TYPE
 
     try:
-        data_frame = pandas.read_csv(file, keep_default_na=False)
-        return len(list(set(data_frame['sample_id'])))
-    except KeyError, EnvironmentError:
-        return 0
+        data_frame = pandas.read_csv(file, keep_default_na=False) 
+        taxid = data_frame['subject_tax_id'][0]
+        host = taxid_to_host.get(str(taxid), DEFAULT_TYPE)
+        return len(list(set(data_frame['sample_id']))), host
+    except (KeyError, EnvironmentError, AttributeError):
+        return 0, DEFAULT_TYPE
 
 def count_total_data(metadata_file):
     """ Count the total number of data sets included """
@@ -137,7 +141,7 @@ for user in os.listdir(ARCHIVE_FOLDER):
                 metadata_file = os.path.join(user_folder,project_folder,METADATA_FOLDER,METADATA_FILE_NAME)
 
                 total_data_files = count_total_data(metadata_file)        
-                total_samples = get_metadata(metadata_file)
+                total_samples, host = get_metadata(metadata_file)
                 pi_name, sample_type, study_name = get_study_metadata(metadata_study_file)
                 date = get_deposition_date(project_folder)            
                 size = get_size(os.path.join(user_folder,project_folder))
@@ -147,10 +151,10 @@ for user in os.listdir(ARCHIVE_FOLDER):
                         counts[pi_name]={}
                     if not sample_type in counts[pi_name]:
                         counts[pi_name][sample_type]={}
-                    counts[pi_name][sample_type][study_name]=[user, total_samples, to_GB(size)]+date
+                    counts[pi_name][sample_type][study_name]=[user, host, total_samples, to_GB(size)]+date
 
 with open(COUNT_FILE, "w") as file_handle:
-    file_handle.write(",".join(["Principal Investigator","User","Sample Type","Study Name","Total Samples","Size","Deposition Date","Internal Release","External Release"])+"\n")
+    file_handle.write(",".join(["Principal Investigator","User","Sample Type","Study Name","Host","Total Samples","Size","Deposition Date","Internal Release","External Release"])+"\n")
     for pi in counts.keys():
         for sample_type in counts[pi].keys():
             for study_name in counts[pi][sample_type].keys():
