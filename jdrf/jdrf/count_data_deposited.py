@@ -10,6 +10,7 @@ IGNORE_NAMES = ["huttenhower","arze","ljmciver","demo","test"]
 METADATA_FOLDER = "metadata"
 METADATA_FILE_NAME = "metadata.tsv"
 METADATA_STUDY_FILE_NAME = "metadata_study.tsv"
+METADATA_UPDATE_FILE_NAME = "metadata_manual_updates.tsv"
 
 DEFAULT_TYPE = "UNK"
 
@@ -39,6 +40,17 @@ def add_months(date_years,date_months,months_to_add):
 
     return str(date_years), str(date_months)
 
+def update_metadata(file, id, original_value):
+    """ Check the manual updates file to determine if there is a new value for this metadata """
+
+    try:
+        updated_data_frame = pandas.read_csv(file, keep_default_na=False)
+        new_value = updated_data_frame[id][0]
+    except (KeyError, EnvironmentError, AttributeError):
+        new_value = original_value
+
+    return new_value
+
 def get_study_metadata(study_file):
     """ Parses study metadata file and returns a pandas DataFrame representation of metadata 
         Use the same method as the site uses to parse this file """
@@ -55,16 +67,22 @@ def get_study_metadata(study_file):
 def get_metadata(file):
     """ Read in the total number of samples and host"""
 
-    if not os.path.isfile(file):
-        return 0, DEFAULT_TYPE
+    # set defaults
+    total_samples = 0
+    host = DEFAULT_TYPE    
 
     try:
         data_frame = pandas.read_csv(file, keep_default_na=False) 
         taxid = data_frame['subject_tax_id'][0]
+        total_samples = len(list(set(data_frame['sample_id'])))
         host = taxid_to_host.get(str(taxid), DEFAULT_TYPE)
-        return len(list(set(data_frame['sample_id']))), host
+        # check for update to host value
+        updated_file = os.path.join(os.path.dirname(file),METADATA_UPDATE_FILE_NAME)
+        host = taxid_to_host.get(str(update_metadata(updated_file,'subject_tax_id', host)), host)
     except (KeyError, EnvironmentError, AttributeError):
-        return 0, DEFAULT_TYPE
+        pass
+
+    return total_samples, host
 
 def count_total_data(metadata_file):
     """ Count the total number of data sets included """
