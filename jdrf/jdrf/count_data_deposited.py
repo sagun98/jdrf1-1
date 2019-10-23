@@ -21,6 +21,7 @@ taxid_to_host = {"9606":"human", "10090": "mouse"}
 
 ARCHIVE_FOLDER = "/opt/archive_folder/"
 COUNT_FILE = os.path.join(ARCHIVE_FOLDER,"data_deposition_counts.csv")
+PUBLIC_COUNT_FILE = os.path.join(ARCHIVE_FOLDER,"data_deposition_counts_public.csv")
 
 def add_months(date_years,date_months,months_to_add):
     """ Add total months to date """
@@ -73,14 +74,15 @@ def get_metadata(file):
 
     try:
         data_frame = pandas.read_csv(file, keep_default_na=False) 
-        taxid = data_frame['subject_tax_id'][0]
         total_samples = len(list(set(data_frame['sample_id'])))
+        taxid = data_frame['subject_tax_id'][0]
         host = taxid_to_host.get(str(taxid), DEFAULT_TYPE)
-        # check for update to host value
-        updated_file = os.path.join(os.path.dirname(file),METADATA_UPDATE_FILE_NAME)
-        host = taxid_to_host.get(str(update_metadata(updated_file,'subject_tax_id', host)), host)
     except (KeyError, EnvironmentError, AttributeError):
         pass
+
+    # check for update to host value
+    updated_file = os.path.join(os.path.dirname(file),METADATA_UPDATE_FILE_NAME)
+    host = taxid_to_host.get(str(update_metadata(updated_file,'subject_tax_id', host)), host)
 
     return total_samples, host
 
@@ -116,10 +118,12 @@ def get_size(project_folder):
 def to_GB(size):
     """ If larger than 1 GB, convert to GB"""
 
-    try:
-        size_int = int(size.replace("M",""))
-    except ValueError:
-        size_int = 0
+    size_int = size
+    if not isinstance(size,int):
+        try:
+            size_int = int(size.replace("M",""))
+        except ValueError:
+            size_int = 0
 
     if size_int > 1024:
         size_int = int(size_int / 1024.0)
@@ -149,6 +153,7 @@ def demo_study(pi_name,study_name,user):
 
 # for each user folder, count the projects
 counts = {}
+public_counts = {}
 for user in os.listdir(ARCHIVE_FOLDER):
     user_folder = os.path.join(ARCHIVE_FOLDER,user)
     if os.path.isdir(user_folder):
@@ -171,6 +176,12 @@ for user in os.listdir(ARCHIVE_FOLDER):
                         counts[pi_name][sample_type]={}
                     counts[pi_name][sample_type][study_name]=[user, host, total_samples, to_GB(size)]+date
 
+                    if not sample_type in public_counts:
+                        public_counts[sample_type]={}
+                    if not host in public_counts[sample_type]:
+                        public_counts[sample_type][host]=[0,0]
+                    public_counts[sample_type][host]=[public_counts[sample_type][host][0]+int(total_samples),public_counts[sample_type][host][1]+int(size.replace('M',''))]
+
 with open(COUNT_FILE, "w") as file_handle:
     file_handle.write(",".join(["Principal Investigator","User","Sample Type","Study Name","Host","Total Samples","Size","Deposition Date","Internal Release","External Release"])+"\n")
     for pi in counts.keys():
@@ -178,4 +189,10 @@ with open(COUNT_FILE, "w") as file_handle:
             for study_name in counts[pi][sample_type].keys():
                 study_info = counts[pi][sample_type][study_name]
                 file_handle.write(",".join(map(lambda x: str(x),[pi,study_info[0],sample_type,study_name]+study_info[1:]))+"\n")
+
+with open(PUBLIC_COUNT_FILE, "w") as file_handle:
+    file_handle.write(",".join(["Sample Type","Host","Total Samples","Size"])+"\n")
+    for type in public_counts.keys():
+        for host in public_counts[type]:
+            file_handle.write(",".join(map(lambda x: str(x),[type,host,public_counts[type][host][0],to_GB(public_counts[type][host][1])]))+"\n")
 
