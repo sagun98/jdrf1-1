@@ -41,7 +41,7 @@ sample_schema = Schema([
     Column('sample_id', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the sample_id column.')]),
     Column('collection_date', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the collection_date column.'),
                                DateFormatValidation('%Y-%m-%d', message='Collection date must be in YYYY-MM-DD date format.')]),
-    Column('subject_tax_id', [MatchesPatternValidation(r'\d+')]),
+    Column('subject_tax_id', [InListValidation(['10090', '9606'])]),
     Column('subject_age', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_age column.'),
                            InRangeValidation(0, 120)]),
     Column('subject_sex', [CustomSeriesValidation(lambda x: ~x.isnull(), 'A value is required for the subject_sex column.'),
