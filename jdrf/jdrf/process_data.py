@@ -593,7 +593,7 @@ def get_study_metadata(study_file):
 
 def get_metadata_samples(metadata_file):
     """ Parses the sample metadata file and returns a list of all sample names """
-    return pd.read_csv(metadata_file)['sample_id'].tolist()    
+    return pd.read_csv(metadata_file)['sample_id'].tolist()
 
 def verify_samples_in_analysis_files(raw_files, metadata_samples):
     """ Parses over all analysis files uploaded of data type "other" and verifies that all samples 
@@ -728,17 +728,18 @@ def run_workflow(user,user_name,user_email,upload_folder,process_folder,metadata
         command=["cp",upload_folder+"/*.*",process_folder+"/"]
         subprocess_capture_stdout_stderr(" ".join(command),process_folder,shell=True)
 
-    # run the archive and transfer workflow
     archive_folder = os.path.join(settings.ARCHIVE_FOLDER,user)
     create_folder(archive_folder)
+    # run the archive and transfer workflow
     command=["python",os.path.join(folder,"archive_workflow.py"),
         "--input-upload",upload_folder,"--input-processed",process_folder,
         "--key",settings.SSH_KEY,"--remote",settings.REMOTE_TRANSFER_SERVER,
         "--user",settings.REMOTE_TRANSFER_USER,
         "--study",study_metadata.study_id,"--output",archive_folder,"--output-transfer",
-        os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/"]
+        os.path.join(settings.REMOTE_TRANSFER_FOLDER,user)+"/",
+        "--count-script",os.path.join(folder,"count_data_deposited.py")]
     if not error_state:
-        email_workflow_status(user,command,archive_folder,"archive and transfer",user_name,user_email)
+        email_workflow_status(user,command,archive_folder,"archive, update stats, and transfer",user_name,user_email)
 
 def check_workflow_running(user, process_folder):
     """ Check if any of the process workflows are running for a user """
