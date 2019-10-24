@@ -19,9 +19,10 @@ INTERNAL_RELEASE = 6
 
 taxid_to_host = {"9606":"human", "10090": "mouse"}
 
-ARCHIVE_FOLDER = "/opt/archive_folder/"
-COUNT_FILE = os.path.join(ARCHIVE_FOLDER,"data_deposition_counts.csv")
-PUBLIC_COUNT_FILE = os.path.join(ARCHIVE_FOLDER,"data_deposition_counts_public.csv")
+COUNT_FILE = sys.argv[1]
+PUBLIC_COUNT_FILE = sys.argv[2]
+
+ARCHIVE_FOLDER = os.path.dirname(COUNT_FILE)
 
 def add_months(date_years,date_months,months_to_add):
     """ Add total months to date """
@@ -55,14 +56,18 @@ def update_metadata(file, id, original_value):
 def get_study_metadata(study_file):
     """ Parses study metadata file and returns a pandas DataFrame representation of metadata 
         Use the same method as the site uses to parse this file """
-    data_frame = pandas.read_csv(study_file, keep_default_na=False).ix[0]
+
+    try:
+        data_frame = pandas.read_csv(study_file, keep_default_na=False).ix[0]
+    except IOError:
+        data_frame = None
 
     try:
         if data_frame.sample_type == "":
             data_frame.sample_type = DEFAULT_TYPE
 
         return data_frame.pi_name, data_frame.sample_type, data_frame.study_id
-    except KeyError, ValueError:
+    except (KeyError, ValueError, AttributeError):
         return ("","","")
 
 def get_metadata(file):
