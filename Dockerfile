@@ -13,6 +13,7 @@ RUN apt-get update -y && \
         python-dev \
 	python-setuptools \
         python-pip \
+        python3-pip \
         dialog \
         net-tools \
 	nginx \
