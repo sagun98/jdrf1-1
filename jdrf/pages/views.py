@@ -21,7 +21,7 @@ from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import requires_csrf_token
 
-from django.http import StreamingHttpResponse
+from django.http import FileResponse
 
 from whoosh.qparser import QueryParser
 
@@ -192,7 +192,7 @@ def upload_sample_metadata(request):
             # We need to validate this file and if any errors exist prevent 
             # the user from saving this file.
             (is_valid, metadata_df, error_context) = process_data.validate_sample_metadata(file, upload_folder, logger)
-                                
+               
             if not is_valid:
                 data['error'] = 'Metadata validation failed!'
                 data.update(error_context)
@@ -354,8 +354,8 @@ def process_files(request):
     
     response = render(request, 'process.html', responses)
     if success and request.COOKIES.get('sample_metadata', False):
-        response.set_cookie('study_metadata', max_age_seconds=1)
-        response.set_cookie('sample_metadata', max_age_seconds=1)
+        response.set_cookie('study_metadata', max_age=1)
+        response.set_cookie('sample_metadata', max_age=1)
 
     return response
 
@@ -558,7 +558,8 @@ def download_file(request, file_name):
 
     logger.info("File to download: %s", download_file)
 
-    response = StreamingHttpResponse(open(download_file, 'r'), content_type="text")
+    response = FileResponse(open(download_file, 'rb'))
+    response['Content-Length'] = os.path.getsize(download_file)
     response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(download_file)+'"'
 
     return response
