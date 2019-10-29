@@ -21,7 +21,7 @@ TEMP_FOLDER = "/opt/temp/"
 SSH_KEY = "/opt/SSH/jdrf_transfer_key"
 REMOTE_TRANSFER_SERVER = "jdrf2.rc.fas.harvard.edu"
 REMOTE_TRANSFER_FOLDER = "/data/processed_data/"
-REMOTE_TRANSFER_USER = "ljmciver"
+REMOTE_TRANSFER_USER = "smaharjan"
 
 FILE_FOLDER_MAP = {
     'upload': UPLOAD_FOLDER,

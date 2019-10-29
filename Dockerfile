@@ -25,8 +25,9 @@ RUN git clone https://github.com/biobakery/jdrf1.git && \
     rmdir jdrf1
 
 # install python dependencies
-RUN pip install --upgrade pip && \
-    pip install setuptools && \
+RUN pip install -U pip 
+
+RUN pip install setuptools && \
     pip install supervisor && \
     pip install django==1.11.0 gunicorn==19.7 MySQL-python==1.2.5 && \
     pip install django-widget-tweaks && \
@@ -75,12 +76,12 @@ RUN apt-get update -y && \
     pip install matplotlib==2.0.0
 
 # install python ldap dependencies
-RUN pip install django-auth-ldap
+RUN pip install --ignore-installed django-auth-ldap
 
 # install panphlan and dependencies
 RUN wget https://bitbucket.org/CibioCM/panphlan/get/1.2.tar.gz && \
     tar xzvf 1.2.tar.gz && \
-    cp CibioCM-panphlan-b08b5a06deb1/*.py /usr/local/bin/ &&
+    cp CibioCM-panphlan-b08b5a06deb1/*.py /usr/local/bin/ && \
     rm 1.2.tar.gz && \
     rm -r CibioCM-panphlan-b08b5a06deb1
 
@@ -100,13 +101,16 @@ RUN wget https://bitbucket.org/biobakery/metaphlan2/get/2.8.tar.gz && \
     cp /usr/local/bin/strainphlan_src/* /usr/local/bin/ && \
     rm 2.8.tar.gz && \
     rm -r biobakery-metaphlan2-097a52362c79 && \
-    pip install biom-format msgpack pysam
+    pip install biom-format msgpack 
+    
+RUN pip install pysam==0.13
 
 RUN apt-get update -y && \
-    apt-get install -y install raxml muscle ncbi-blast+
+    apt-get install -y raxml muscle ncbi-blast+
 
-RUN wget https://github.com/samtools/samtools/archive/0.1.19.tar.gz && \
-    tar xzvf 0.1.19.tar.gz && \
+RUN wget https://github.com/samtools/samtools/archive/0.1.19.tar.gz 
+
+RUN tar xzvf 0.1.19.tar.gz && \
     cd samtools-0.1.19 && \
     make && \
     make -C bcftools && \
@@ -117,12 +121,13 @@ RUN wget https://github.com/samtools/samtools/archive/0.1.19.tar.gz && \
     rm -r samtools-0.1.19
 
 # Install the latest R
-RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/' && \
-    gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 && \
-    gpg -a --export E084DAB9 | apt-key add - && \
-    apt-get update -y && \
-    apt-get install r-base-dev libcurl4-openssl-dev -y && \
-    R -q -e "install.packages('vegan', repos='http://cran.r-project.org')"
+RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/' 
+
+RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 
+RUN gpg -a --export E084DAB9 | apt-key add - 
+RUN apt-get update -y 
+RUN apt-get -y --allow-unauthenticated install r-base-dev libcurl4-openssl-dev
+RUN R -q -e "install.packages('vegan', repos='http://cran.r-project.org')"
 
 # install dada2
 RUN R -q -e "install.packages('BiocManager', repos='http://cran.r-project.org')" && \
@@ -139,8 +144,9 @@ RUN wget https://bitbucket.org/nsegata/hclust2/get/3d589ab2cb68.tar.gz && \
 
 # install biobakery 16s dependencies (biom, clustalo, ea-utils, fasttree and picrust)
 # rollback numpy version for h5py (to prevent future warning message in vis report with biom version)
-RUN apt-get update -y && \
-    apt-get install -y clustalo ea-utils fasttree && \
+RUN apt-get update -y 
+
+RUN apt-get install -y clustalo ea-utils fasttree && \
     pip install biom-format h5py==2.7.0 cogent==1.5.3 && \
     wget https://github.com/picrust/picrust/releases/download/v1.1.3/picrust-1.1.3.tar.gz && \
     tar -xzf picrust-1.1.3.tar.gz && \
